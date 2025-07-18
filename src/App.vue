@@ -15,6 +15,7 @@
     loading: boolean;
   };
 
+  const token = ref(ENV.TOKEN);
   const messages = ref<Message[]>([]);
   const input = ref('');
   const computeTime = ref(0);
@@ -58,7 +59,7 @@
       {
         headers: { 
           'Content-Type': 'application/json', 
-          'Authorization': 'Bearer ' + ENV.TOKEN
+          'Authorization': 'Bearer ' + token.value
         },
       }
     ).then((result) => {
@@ -79,7 +80,12 @@
     <h1>enerKI</h1>
   </header>
 
-  <main>
+  <!-- ASK for token if not set (e.g. on deployed website) -->
+  <form action="#" ref="token-form" v-if="token?.length == 0">
+    <input type="text" v-model="token" placeholder="Gib hier dein BeeChat Token ein" style="width: 100%"></input>
+  </form>
+
+  <main v-else>
     <div class="error" v-if="error">
       <h2>Leider ist etwas schief gegangen:</h2>
       {{ error }}
@@ -100,7 +106,7 @@
         <button @click="send" type="submit" :disabled="messages[messages.length -1]?.loading">
           SENDEN
         </button>
-    </form>
+      </form>
     <span class="usage" v-if="computeTime > 0">Gesamthaft verbrauchte Zeit: {{ (computeTime / 1000000000).toFixed(2) }} Sekunden</span>
     </div>
     
