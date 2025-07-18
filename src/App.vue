@@ -1,6 +1,8 @@
 <script setup lang="ts">
-  import { ref } from 'vue';
+  import { ref, useTemplateRef } from 'vue';
   import axios from 'axios';
+  import { ENV } from '../env.js';
+  import markdownit from 'markdown-it'
 
   enum USER_ROLE {
     USER = 'user',
@@ -13,24 +15,18 @@
     loading: boolean;
   };
 
-  const BASE_URL = 'https://opora.ti.bfh.ch';
-  const MODEL = 'llama3.3:70b-instruct-q6_K';
-  const TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjQ4ZmNmOTk1LWFlZWQtNGJkNC1iOThlLTI2MGUyNmU5ZjBlNyIsImV4cCI6MTc1NTAwNzU4MX0.ftvUZq-4v9HZ3i9VUacXyf8aiRnNb0In51hFzvSyOkQ';
-
   const messages = ref<Message[]>([]);
-  const input = ref('Gib hier deinen Text ein');
+  const input = ref('');
   const computeTime = ref(0);
   const error = ref<string | undefined>();
+  const inputForm = useTemplateRef('input-form');
+  const markdown = markdownit();
 
   function reset() {
     error.value = undefined;
     messages.value = [];
     computeTime.value = 0;
-    input.value = 'Gib hier deinen Text ein'
-  }
-
-  function getTime(): string {
-    return (computeTime.value / 1000000000).toFixed(2) + ' Sekunden';
+    input.value = '';
   }
 
   function send() {
@@ -45,7 +41,7 @@
     messages.value.push(message);
 
     const body = {
-      model: MODEL,
+      model: ENV.MODEL,
       messages: [...messages.value]
     }
     input.value = '';
@@ -57,12 +53,12 @@
     });
 
     axios.post(
-      BASE_URL + '/api/chat/completions', 
+      ENV.BASE_URL + '/api/chat/completions', 
       body, 
       {
         headers: { 
           'Content-Type': 'application/json', 
-          'Authorization': 'Bearer ' + TOKEN
+          'Authorization': 'Bearer ' + ENV.TOKEN
         },
       }
     ).then((result) => {
@@ -71,6 +67,7 @@
         ...result.data.choices[0].message,
         loading: false
       };
+      inputForm.value?.scrollIntoView({ behavior: 'smooth' });
     }).catch((error) => {
       error.value = JSON.stringify(error);
     });
@@ -78,9 +75,9 @@
 </script>
 
 <template>
-  <!--header>
+  <header>
     <h1>enerKI</h1>
-  </header-->
+  </header>
 
   <main>
     <div class="error" v-if="error">
@@ -95,13 +92,13 @@
         <div v-if="message.loading" class="spinner-border" role="status">
           <span class="visually-hidden">Loading...</span>
         </div>
-        <span v-else>{{ message.content }}</span>
+        <div v-else v-html="markdown.render(message.content)"></div>
         </li>
       </ul>
-      <form action="#">
-        <input type="text" v-model="input"></input>
-        <button @click="send" type="submit">
-          SUBMIT
+      <form action="#" ref="input-form">
+        <input type="text" v-model="input" placeholder="Gib hier deinen Text ein"></input>
+        <button @click="send" type="submit" :disabled="messages[messages.length -1]?.loading">
+          SENDEN
         </button>
     </form>
     <span class="usage" v-if="computeTime > 0">Gesamthaft verbrauchte Zeit: {{ (computeTime / 1000000000).toFixed(2) }} Sekunden</span>
@@ -114,6 +111,9 @@
 ul {
   margin: 2em 0;
   padding: 0;
+}
+.message-bubble p {
+  margin-bottom: 0;
 }
 .message-bubble {
   list-style: none;
