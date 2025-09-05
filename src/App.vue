@@ -1,77 +1,44 @@
 <script setup lang="ts">
-  import { ref, useTemplateRef } from 'vue';
-  import axios from 'axios';
-  import { ENV } from '../env.js';
-  import markdownit from 'markdown-it'
+  import { ref } from "vue";
+  import { ENV } from "../env";
+  import AuthForm from "./components/AuthForm.vue";
+  import ConnectModal from "./components/ConnectModal.vue";
+  import Chat from "./components/Chat.vue";
+  import { getPersisted, persist, store, STORE_KEY } from "./store";
+  import PowerSimulator from './components/PowerSimulator.vue';
 
-  enum USER_ROLE {
-    USER = 'user',
-    AI = 'assistant'
-  };
+  const token = ref(getPersisted<string>(STORE_KEY.TOKEN) || ENV.TOKEN);
 
-  interface Message {
-    role: USER_ROLE;
-    content: string;
-    loading: boolean;
-  };
-
-  const token = ref(ENV.TOKEN);
-  const messages = ref<Message[]>([]);
-  const input = ref('');
-  const computeTime = ref(0);
   const error = ref<string | undefined>();
-  const inputForm = useTemplateRef('input-form');
-  const markdown = markdownit();
 
+  const percent = ref<number>(0);
+
+  /**
+   * Resets the app
+   */
   function reset() {
     error.value = undefined;
-    messages.value = [];
-    computeTime.value = 0;
-    input.value = '';
+    token.value = ENV.TOKEN;
   }
 
-  function send() {
-    if (input.value == '') return;
-
-    const message: Message = {
-      role: USER_ROLE.USER,
-      content: input.value,
-      loading: false
-    };
-
-    messages.value.push(message);
-
-    const body = {
-      model: ENV.MODEL,
-      messages: [...messages.value]
+  /**
+   * Sets the token recieved from authentication
+   * @param t    object with the new token and a boolean value
+   *             that defines if the token should be persistet to local storage
+   */
+  function setToken(t: {token: string, persist: boolean}) {
+    token.value = t.token;
+    if (t.persist) {
+      persist(STORE_KEY.TOKEN, token.value);
     }
-    input.value = '';
+  }
 
-    messages.value.push({
-      role: USER_ROLE.AI,
-      content: '...',
-      loading: true
-    });
-
-    axios.post(
-      ENV.BASE_URL + '/api/chat/completions', 
-      body, 
-      {
-        headers: { 
-          'Content-Type': 'application/json', 
-          'Authorization': 'Bearer ' + token.value
-        },
-      }
-    ).then((result) => {
-      computeTime.value += result.data.usage.total_duration;
-      messages.value[messages.value.length - 1] = {
-        ...result.data.choices[0].message,
-        loading: false
-      };
-      inputForm.value?.scrollIntoView({ behavior: 'smooth' });
-    }).catch((error) => {
-      error.value = JSON.stringify(error);
-    });
+  /**
+   * Handles an error and displays it to the user
+   * @param error   the error message to display to the user
+   */
+  function handleError(e: string = "Unbekannter Fehler.") {
+    error.value = e;
   }
 </script>
 
@@ -80,107 +47,63 @@
     <h1>enerKI</h1>
   </header>
 
-  <!-- ASK for token if not set (e.g. on deployed website) -->
-  <form action="#" ref="token-form" v-if="token?.length == 0">
-    <input type="text" v-model="token" placeholder="Gib hier dein BeeChat Token ein" style="width: 100%"></input>
-  </form>
+  <!-- if no token is set, we show the auth form -->
+  <auth-form v-if="token?.length == 0" @on-token="setToken" @on-error="handleError" />
 
   <main v-else>
+    <!-- display error message -->
     <div class="error" v-if="error">
       <h2>Leider ist etwas schief gegangen:</h2>
       {{ error }}
       <button @click="reset">OK</button>
     </div>
 
-    <div class="chat" v-else>
-      <ul>
-        <li v-for="message of messages" :class="'message-bubble chat-' + message.role">
-        <div v-if="message.loading" class="spinner-border" role="status">
-          <span class="visually-hidden">Loading...</span>
-        </div>
-        <div v-else v-html="markdown.render(message.content)"></div>
-        </li>
-      </ul>
-      <form action="#" ref="input-form">
-        <input type="text" v-model="input" placeholder="Gib hier deinen Text ein"></input>
-        <button @click="send" type="submit" :disabled="messages[messages.length -1]?.loading">
-          SENDEN
-        </button>
-      </form>
-    <span class="usage" v-if="computeTime > 0">Gesamthaft verbrauchte Zeit: {{ (computeTime / 1000000000).toFixed(2) }} Sekunden</span>
-    </div>
+    <!-- chat window -->
+    <chat v-else 
+      :token="token" 
+      :percent="percent"
+      @on-error="handleError" 
+    />  
+
+    <!-- window for power simulation / debug -->
+    <PowerSimulator v-if="store.isDebug && store.connected"/>
+
     
   </main>
+
+  <ConnectModal v-if="!store.connected" @on-error="handleError" />
+
+  <ul class="toast-list">
+    <li
+      v-for="(toast, i) of store.toasts"
+      :style="'opacity: ' + (i + 1) / store.toasts.length"
+    >
+      <div class="alert alert-info" role="alert">
+        {{ toast }}
+      </div>
+    </li>
+  </ul>
 </template>
 
 <style scoped>
-ul {
-  margin: 2em 0;
-  padding: 0;
-}
-.message-bubble p {
-  margin-bottom: 0;
-}
-.message-bubble {
-  list-style: none;
-  padding: 0.25em 1em;
-  border-radius: 1em;
-  width: 75%;
-  margin-top: 0.5em;
-}
-.chat-user {
-  background-color: azure;
-  margin-left: 25%
-}
-.chat-assistant {
-  background-color: aquamarine;
-  margin-right: 25%
-}
-.spinner-border {
-  display: block;
-  height: 1em;
-  width: 1em;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.chat input {
-  border-bottom-left-radius: 1em;
-  border-top-left-radius: 1em;
-  border-bottom-right-radius: 0;
-  border-top-right-radius: 0;
-  padding-left: 0.5em;
-  width: 75%;
-}
-
-.chat button {
-  border-bottom-left-radius: 0;
-  border-top-left-radius: 0;
-  border-bottom-right-radius: 1em;
-  border-top-right-radius: 1em;
-  padding-right: 0.5em;
-  width: 25%;
-}
-
-.usage {
-  width: 100%;
-  margin-top: 1em;
-  display: block;
-  text-align: center;
-  color: darkgray
-}
-
 .error {
   background-color: salmon;
+  color: white;
   margin: 1em;
   width: 100%;
   padding: 0.5em;
   border-radius: 0.5em;
-  color: white;
 }
 
 .error h2 {
   font-size: 1.5em;
   font-weight: bold;
+}
+.toast-list {
+  list-style-type: none;
+  position: fixed;
+  bottom: 30%;
+  width: 60%;
+  margin-left: 20%;
 }
 </style>
