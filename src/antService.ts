@@ -223,7 +223,7 @@ export class PowerService extends AntService {
         if (settings) {
             this.debug = settings.debug;
         }
-        if (this.stick && this.sensor) {
+        if (this.stick) {
             this.sensor = new BicyclePowerSensor(this.stick);
         }   
     
@@ -280,6 +280,7 @@ export class PowerService extends AntService {
      * ⚠️ Keep in mind that this method MUST be called by user action!
      */
     connect() {
+        console.log('connect', this.debug, this.sensor)
         if (this.debug) { // debug mode with fake data
             this.fakeData();
         } else if (this.sensor) { // prod mode with actual data from power sensor
