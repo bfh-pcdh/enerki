@@ -19,22 +19,40 @@ type Quantity = {
  *  -> see HeartRateService for Heart rate sensor
  */
 export abstract class AntService {
-    protected stick = new WebUsbStick();
+    protected stick: WebUsbStick | undefined;
     private subscriptions = new Array<AntCallback>();
-    abstract sensor: BicyclePowerSensor | HeartRateSensor;
+    abstract sensor: BicyclePowerSensor | HeartRateSensor | undefined;
     abstract unit: string;          // the unit for target and total
     protected target: number = 0;     // the target value
     protected total: number = 0;      // the total effort since last reset
     protected value: number = 0;      // the current effort
 
     constructor() {
-        this.stick.on('shutdown', () => {
-        console.log('Stick shutdown detected');
-        });
+        try {
+            this.stick = new WebUsbStick();
+            this.stick.on('shutdown', () => {
+                console.log('Stick shutdown detected');
+            });
 
-        this.stick.on('unhandled', (data) => {
-        console.warn('Unhandled event received:', data);
-        });
+            this.stick.on('unhandled', (data) => {
+                console.warn('Unhandled event received:', data);
+            });
+
+        } catch (e) {
+            console.log('caught an error', e);
+        }
+    }
+
+    /**
+     * Method to check if WebUSB is available in the browser and thus the 
+     * stick was initialized.
+     * @returns     TRUE if the stick has been initialized
+     *              FALSE if the stick could not have been initialized
+     *                    (usually the case if the browser does not 
+     *                     support WebUSB (only Chrome does))
+     */
+    stickAvailable(): boolean {
+        return this.stick != undefined;
     }
 
     /**
@@ -43,12 +61,12 @@ export abstract class AntService {
      */
     connect() {
         try {
-            this.stick.on('startup', () => {
+            this.stick?.on('startup', () => {
                 console.log('Stick initialized successfully with sensor of type ' + typeof this.sensor + '.');
-                this.sensor.attach(0, 0);
+                this.sensor?.attach(0, 0);
             });
 
-            this.stick.open().then((o) => {
+            this.stick?.open().then((o) => {
                 console.log('stick opened', o);
                 return () => {
                     if (this.stick) {
@@ -191,7 +209,7 @@ interface PowerData {
 export class PowerService extends AntService {
     private debug = false;
     private debugWatt = 0;
-    sensor: BicyclePowerSensor;
+    sensor: BicyclePowerSensor | undefined;
     unit = 'Wh';
     lastBeat = 0; // Timestamp in milliseconds
     accumulatedPower = 0; // accumulated power
@@ -205,7 +223,10 @@ export class PowerService extends AntService {
         if (settings) {
             this.debug = settings.debug;
         }
-        this.sensor = new BicyclePowerSensor(this.stick);
+        if (this.stick && this.sensor) {
+            this.sensor = new BicyclePowerSensor(this.stick);
+        }   
+    
     }
 
     /**
@@ -261,7 +282,7 @@ export class PowerService extends AntService {
     connect() {
         if (this.debug) { // debug mode with fake data
             this.fakeData();
-        } else { // prod mode with actual data from power sensor
+        } else if (this.sensor) { // prod mode with actual data from power sensor
             super.connect();
             this.sensor.on('powerData', (data: PowerData) => { 
                 // the pedals keep sending previous watt value if they are idling (instead of 0), so we have to check if the 
@@ -302,7 +323,7 @@ interface HeartRateData {
  * ⚠️ Please mind, that the constructor must be triggered by an user action to work in the Browser
  */
 export class HeartRateService extends AntService {
-    sensor: HeartRateSensor;
+    sensor: HeartRateSensor | undefined;
     unit = 'beats';
 
     /**
@@ -310,12 +331,14 @@ export class HeartRateService extends AntService {
      */
     constructor() {
         super();
-        this.sensor = new HeartRateSensor(this.stick);
-        this.sensor.on('heartRateData', (data: HeartRateData) => {
-            this.updateValue(
-                data.ComputedHeartRate,
-                data.BeatCount
-            );
-        });
+        if (this.stick) {
+            this.sensor = new HeartRateSensor(this.stick);
+            this.sensor.on('heartRateData', (data: HeartRateData) => {
+                this.updateValue(
+                    data.ComputedHeartRate,
+                    data.BeatCount
+                );
+            });
+        }
     }
 }
