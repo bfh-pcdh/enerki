@@ -22,5 +22,8 @@ npm run build
 ```
 
 ## Changelog
+### 2025-09-08 V0.1.1
+Fixed a bug where the WebApp did not launch on browsers not supporting WebUSB.
+
 ### 2025-09-05 V0.1.0
 First functional version published, with demo mode for usage without sensor attached.

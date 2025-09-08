@@ -25,12 +25,14 @@ import { store } from '../store';
           <div class="button-container">
             <!-- button 
               @click="connect('heartRate')"
+              :disabled="!store.heartRate.stickAvailable()"
               class="connect-button">
               Pulssensor verbinden
             </button-->
             <button 
               @click="connect('power')"
               class="connect-button"
+              :disabled="!store.power.stickAvailable()"
               title="Powermeter verbinden: Benötigt einen ANT+ USB-Adapter und kompatible Powermeter-Pedale">
               Powermeter verbinden
             </button>
