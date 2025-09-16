@@ -66,8 +66,7 @@
     />  
 
     <!-- window for power simulation / debug -->
-    <PowerSimulator v-if="store.isDebug && store.connected"/>
-
+    <PowerSimulator v-if="store.connected" :debug="store.isDebug" :watt="Math.round(store.power.getValues().value)"/>
     
   </main>
 

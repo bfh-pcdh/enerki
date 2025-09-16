@@ -174,7 +174,7 @@ export abstract class AntService {
                 target: this.target,
                 total: this.total,
                 value: this.value,
-                percent: this.total / this.target * 100
+                percent: Math.round(this.total / this.target * 1000) / 10
             }));
         } else {
             console.warn('No target set yet, do not notify subscribers!');
