@@ -3,9 +3,10 @@
   import { ENV } from '../../env';
   import { type Message, USER_ROLE } from '@/models';
   import axios from 'axios';
-    import markdownit from 'markdown-it';
-    import { store } from '../store';
+  import markdownit from 'markdown-it';
+  import { store } from '../store';
   import { AntSubscription } from '@/antService';
+  import ToastService from '@/toastService';
 
   // define props
   const props = defineProps<{
@@ -30,7 +31,13 @@
     return 'filter: blur(' + (10 - Math.round(loadingPercent.value / 10)) + 'px);opacity:' + (0.009 * loadingPercent.value + 0.1).toFixed(2)  + ';';
   })
 
-  const messages = ref<Message[]>([]);
+  const messages = ref<Message[]>([
+    {
+      role: USER_ROLE.DEV,
+      content: ENV.PROMPT_ENHANCEMENT,
+      loading: false
+    }
+  ]);
   const input = ref('');
   const computeTime = ref(0);
 
@@ -80,14 +87,9 @@
       content: '...',
       loading: true,
       percent: 0
-    }
+    };
 
-    store.addToast(
-      store.isDebug 
-      ? 'Gute Frage! DEMO-MODUS: Mit dem Regler unten rechts kannst du simulieren, wie stark in die Pedale getreten wird.' 
-      : 'Gute Frage! Nun gilt es aktiv zu werden: Tritt in die Pedale, um die Energie für die KI zu erzeugen!', 
-      3000
-    );
+    ToastService.startToast();
 
     messages.value.push(answerMessage);
 
@@ -96,8 +98,12 @@
     store.startAndSubscribe(1, (ant: AntSubscription) => {
       answerMessage.percent = Math.min(ant.percent, 100);
       loadingPercent.value = Math.min(ant.percent, 100);
-      // TODO: bessere Nachrichten
-      answerMessage.percent > 0 && store.addToast('Du hast ' + Math.round(answerMessage.percent) +'% geschafft - go for it!', 3000);
+
+      ToastService.progressToast(
+        answerMessage.percent,
+        answerMessage.content !== '...',
+        ant.value
+      )
     });
 
     const time = Date.now();
@@ -119,6 +125,10 @@
 
       console.log('Energie verbraucht: ' + usage + ' Wh in ' + duration + ' Sekunden. \nDas benötigt eine Durchschnittsleistung von ' + Math.round(3600 * usage / duration) + ' Watt.');
       const resultMessage = result.data.choices[0].message;
+      answerMessage.content = {
+        ...resultMessage.content,
+        loading: false
+      };
       messages.value[messages.value.length - 1] = {
         ...resultMessage,
         loading: false,
@@ -130,14 +140,13 @@
     }).catch((e) => {
       console.error(e);
       emit('onError', JSON.stringify(e, null, 2));
-      // window.alert('Es gab einen Fehler:\n' + JSON.stringify(e, null, 2));
     });
   }
 </script>
 
 <template>
   <ul ref="chat-list">
-    <li v-for="message, i of messages" 
+    <li v-for="message, i of messages.filter(m => m.role != USER_ROLE.DEV)" 
         :class="'message-bubble chat-' + message.role" 
         :style="message.percent != undefined && message.percent < 100 && isLastMessage(i) ? loadingStyle : ''"
     >

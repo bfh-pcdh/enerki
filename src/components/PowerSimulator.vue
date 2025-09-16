@@ -4,12 +4,20 @@
   const MIN_WATT = 0;
   const MAX_WATT = 500;
 
-  const watt = ref(MIN_WATT);
+  const props = defineProps({
+    debug: Boolean,
+    watt: Number
+  });
 
-  watch(watt, () => store.power.setDebugWatt(watt.value));
+  const simulatedWatt = ref(MIN_WATT);
+
+  watch(simulatedWatt, () => 
+    store.power.setDebugWatt(simulatedWatt.value)
+  );
 
   function getBackgroundColor(): string {
-    const clamped = Math.max(0, Math.min(MAX_WATT, watt.value));
+    const calcWatt = (props.debug ? simulatedWatt.value : props.watt) || 0;
+    const clamped = Math.max(0, Math.min(MAX_WATT,calcWatt));
 
     const green = { r: 182, g: 242, b: 195 }; 
     const yellow = { r: 255, g: 255, b: 102 }; 
@@ -42,7 +50,7 @@
   <div class="power" :style="getBackgroundColor()">
     <h3>Wie stark trittst du in die Pedale?</h3>
     <span class="watts">{{ watt }} Watt</span>
-    <input type="range" v-model="watt" :min="MIN_WATT" :max="MAX_WATT"></input>
+    <input type="range" v-if="debug "v-model="simulatedWatt" :min="MIN_WATT" :max="MAX_WATT"></input>
   </div>
 </template>
 
