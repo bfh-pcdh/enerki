@@ -93,7 +93,7 @@
 
     chat.value.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'end' });
 
-    store.startAndSubscribe(2.5, (ant: AntSubscription) => {
+    store.startAndSubscribe(1, (ant: AntSubscription) => {
       answerMessage.percent = Math.min(ant.percent, 100);
       loadingPercent.value = Math.min(ant.percent, 100);
       // TODO: bessere Nachrichten
