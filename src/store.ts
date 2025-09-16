@@ -61,9 +61,9 @@ export const store = reactive({
   /**
    * Adds a toast to the toast array
    * @param text      The text to display
-   * @param timeout?  The timeout (in ms) after which the toast is deleted.
+   * @param timeout   The timeout (in ms) after which the toast is deleted (default: 1250 ms)
    */
-  addToast(text: string, timeout?: number) {
+  addToast(text: string, timeout: number = 3000) {
     this.toasts.push(text);
     if (timeout) {
       setTimeout(() => this.removeToast(text), timeout);

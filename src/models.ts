@@ -1,6 +1,7 @@
 export enum USER_ROLE {
     USER = 'user',
-    AI = 'assistant'
+    AI = 'assistant',
+    DEV = 'developer'
 };
 
 export interface Message {
