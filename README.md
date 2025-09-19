@@ -22,6 +22,9 @@ npm run build
 ```
 
 ## Changelog
+### 2025-09-19 V0.2.1
+- Fix a bug where the response was not obfuscated before reaching necessary power level
+
 ### 2025-09-16 V0.2.0
 - Improve feedback via toasts.
 - Added prompt enhancement in env for better fitting outputs of LLM.

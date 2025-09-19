@@ -146,7 +146,7 @@
 
 <template>
   <ul ref="chat-list">
-    <li v-for="message, i of messages.filter(m => m.role != USER_ROLE.DEV)" 
+    <li v-for="message, i of messages" 
         :class="'message-bubble chat-' + message.role" 
         :style="message.percent != undefined && message.percent < 100 && isLastMessage(i) ? loadingStyle : ''"
     >
@@ -192,6 +192,9 @@ li:first-child {
 .chat-assistant {
   background-color: aquamarine;
   margin-right: 25%
+}
+.chat-developer {
+  display: none;
 }
 .spinner-border {
   display: block;
