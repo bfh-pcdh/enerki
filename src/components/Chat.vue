@@ -31,13 +31,16 @@
     return 'filter: blur(' + (10 - Math.round(loadingPercent.value / 10)) + 'px);opacity:' + (0.009 * loadingPercent.value + 0.1).toFixed(2)  + ';';
   })
 
-  const messages = ref<Message[]>([
-    {
-      role: USER_ROLE.DEV,
-      content: ENV.PROMPT_ENHANCEMENT,
-      loading: false
-    }
-  ]);
+  const messages = ref<Message[]>([]);
+
+  // if (ENV.PROMPT_ENHANCEMENT.length > 0) {
+  //   messages.value.push( {
+  //     role: USER_ROLE.DEV,
+  //     content: ENV.PROMPT_ENHANCEMENT,
+  //     loading: false
+  //   })
+  // }
+
   const input = ref('');
   const computeTime = ref(0);
 
@@ -186,11 +189,13 @@ li:first-child {
   transition: opacity 1.2s ease, filter 1.2s ease;
 }
 .chat-user {
-  background-color: azure;
+  background-color: #64788b;
+  color: #eff1f3;
   margin-left: 25%
 }
 .chat-assistant {
-  background-color: aquamarine;
+  background-color: #e0e4e8;
+  color: #4b647d;
   margin-right: 25%
 }
 .chat-developer {
