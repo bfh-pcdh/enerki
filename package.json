@@ -1,6 +1,6 @@
 {
   "name": "enerki",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "private": true,
   "scripts": {
     "dev": "webpack serve --config webpack.config.js",
@@ -14,6 +14,7 @@
     "ant-plus-next": "^0.3.2",
     "axios": "^1.11.0",
     "bootstrap": "^5.3.7",
+    "file-loader": "^6.2.0",
     "markdown-it": "^14.1.0",
     "vue": "^3.4.26"
   },

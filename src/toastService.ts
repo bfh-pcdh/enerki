@@ -8,8 +8,7 @@ enum Replacer {
 
 const start = [
     'Gute Frage! Nun gilt es aktiv zu werden: Tritt in die Pedale, um die Energie für die KI zu erzeugen!',
-    'Los gehts! Tritt in die Pedale und erzeuge die Energie für deine KI-Anfrage!',
-    ''
+    'Los gehts! Tritt in die Pedale und erzeuge die Energie für deine KI-Anfrage!'
 ];
 
 const startDebug = [
