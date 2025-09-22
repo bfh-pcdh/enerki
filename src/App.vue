@@ -33,6 +33,10 @@
     }
   }
 
+  function settings() {
+    console.log('TODO: settings');
+  }
+
   /**
    * Handles an error and displays it to the user
    * @param error   the error message to display to the user
@@ -44,7 +48,9 @@
 
 <template>
   <header>
+    <img :src="require('@/assets/logo.png')" alt="Logo Berner Fachhochschule" class="logo" />
     <h1>enerKI</h1>
+    <a @click="settings()" class="settings-button">⚙︎</a>
   </header>
 
   <!-- if no token is set, we show the auth form -->
@@ -93,11 +99,40 @@
   padding: 0.5em;
   border-radius: 0.5em;
 }
+header {
+  color: #697d91;
+  display:flex;
+  flex-direction: row;
+}
+
+header h1 {
+  line-height: 1.6em;
+  margin-left: 1em;
+}
 
 .error h2 {
   font-size: 1.5em;
   font-weight: bold;
 }
+.settings-button {
+  cursor: pointer;
+  text-decoration: none;
+  color: #c1c9d1;
+  font-size: 2em;
+  line-height: 2em;
+  width: 1em;
+  margin-left: auto;
+}
+
+.settings-button:hover {
+  color: #697d91
+}
+
+.logo {
+  height: 2.5em;
+  margin: 0.75em;
+}
+
 .toast-list {
   list-style-type: none;
   position: fixed;

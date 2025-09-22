@@ -22,6 +22,10 @@ npm run build
 ```
 
 ## Changelog
+### 2025-09-22 V0.2.2
+- Use BFH colors
+- Use special model for enabling system prompt
+
 ### 2025-09-19 V0.2.1
 - Fix a bug where the response was not obfuscated before reaching necessary power level
 
