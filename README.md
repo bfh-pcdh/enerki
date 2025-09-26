@@ -22,6 +22,12 @@ npm run build
 ```
 
 ## Changelog
+### 2025-09-22 V0.3.0
+- Bugfixes
+- Improved toasts
+- Removed system prompt (since it was not working correctly and can be set up directly in the model)
+- Feature to reset user
+
 ### 2025-09-22 V0.2.2
 - Use BFH colors
 - Use special model for enabling system prompt

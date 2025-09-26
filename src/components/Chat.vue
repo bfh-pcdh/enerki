@@ -31,16 +31,6 @@
     return 'filter: blur(' + (10 - Math.round(loadingPercent.value / 10)) + 'px);opacity:' + (0.009 * loadingPercent.value + 0.1).toFixed(2)  + ';';
   })
 
-  const messages = ref<Message[]>([]);
-
-  // if (ENV.PROMPT_ENHANCEMENT.length > 0) {
-  //   messages.value.push( {
-  //     role: USER_ROLE.DEV,
-  //     content: ENV.PROMPT_ENHANCEMENT,
-  //     loading: false
-  //   })
-  // }
-
   const input = ref('');
   const computeTime = ref(0);
 
@@ -55,13 +45,21 @@
   }
 
   /**
+   * Estimates the energy usage before knowing the answer
+   * @returns         an estimation of energy (in Wh)
+   */
+  function preEstimateUsage() {
+    return 1;
+  }
+
+  /**
    * Checks if a message is currently the last
    * @param index   the index of the message
    * @returns       TRUE if the message is the last in the array
    *                FALSE if there are more messages after it in the array
    */
   function isLastMessage(index: number): boolean {
-    return messages.value.length - index === 1;
+    return store.chatMessages.length - index === 1;
   } 
   
   /**
@@ -77,11 +75,11 @@
     };
     loadingPercent.value = 0;
 
-    messages.value.push(message);
+    store.chatMessages.push(message);
 
     const body = {
       model: ENV.MODEL,
-      messages: [...messages.value]
+      messages: [...store.chatMessages]
     }
     input.value = '';
 
@@ -94,13 +92,15 @@
 
     ToastService.startToast();
 
-    messages.value.push(answerMessage);
+    store.chatMessages.push(answerMessage);
 
     chat.value.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'end' });
 
-    store.startAndSubscribe(1, (ant: AntSubscription) => {
-      answerMessage.percent = Math.min(ant.percent, 100);
-      loadingPercent.value = Math.min(ant.percent, 100);
+    store.startAndSubscribe(
+      preEstimateUsage(), 
+      (ant: AntSubscription) => {
+        answerMessage.percent = Math.min(ant.percent, 100);
+        loadingPercent.value = Math.min(ant.percent, 100);
 
       ToastService.progressToast(
         answerMessage.percent,
@@ -132,10 +132,10 @@
         ...resultMessage.content,
         loading: false
       };
-      messages.value[messages.value.length - 1] = {
+      store.chatMessages[store.chatMessages.length - 1] = {
         ...resultMessage,
         loading: false,
-        percent: messages.value[messages.value.length - 1].percent
+        percent: store.chatMessages[store.chatMessages.length - 1].percent
       };
       chat.value.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'end' });
       emit('onAnswer', resultMessage);
@@ -149,7 +149,7 @@
 
 <template>
   <ul ref="chat-list">
-    <li v-for="message, i of messages" 
+    <li v-for="message, i of store.chatMessages" 
         :class="'message-bubble chat-' + message.role" 
         :style="message.percent != undefined && message.percent < 100 && isLastMessage(i) ? loadingStyle : ''"
     >
@@ -161,8 +161,8 @@
     <li style="height: 10em; color: white"></li>
   </ul>
   <form action="#" ref="input-form">
-    <input type="text" v-model="input" placeholder="Gib hier deinen Text ein" />
-    <button @click="send" type="submit" :disabled="messages[messages.length -1]?.loading">
+    <input autofocus type="text" v-model="input" placeholder="Gib hier deinen Text ein" />
+    <button @click="send" type="submit" :disabled="store.chatMessages[store.chatMessages.length -1]?.loading">
       SENDEN
     </button>
   </form>

@@ -6,6 +6,8 @@ enum Replacer {
     WATT = '%watts'
 };
 
+const MINIMAL_TIME_BETWEEN_TOASTS = 2000;
+
 const start = [
     'Gute Frage! Nun gilt es aktiv zu werden: Tritt in die Pedale, um die Energie für die KI zu erzeugen!',
     'Los gehts! Tritt in die Pedale und erzeuge die Energie für deine KI-Anfrage!'
@@ -65,9 +67,21 @@ const getStarted = [
     'Lege jetzt los und tritt in die Pedale!'
 ];
 const done = [
-    'Fertig!',
-    'Gratuliere, du hast es geschafft!'
+    'Fertig! Du kannst aufhören zu treten!',
+    'Gratuliere, du hast es geschafft!',
 ];
+const reallyDone = [
+    'Du hast kannst aufhören zu treten, du hast es geschafft!',
+    'Du hast die benötigte Energie erzeugt und kannst aufhören zu treten.'
+];
+
+let lastToast = 0;
+
+function lastToastExpired(override = false): boolean {
+    const expired = Date.now() - MINIMAL_TIME_BETWEEN_TOASTS > lastToast;
+    if (expired) lastToast = Date.now();
+    return expired || override;
+}
 
 function getRandom(arr: string[], replacer?: Replacer, replacement: string = ''): string {
     const i = Math.floor(Math.random() * arr.length);
@@ -83,46 +97,46 @@ export default class ToastService {
     static done = false;
     static startToast() {
         this.done = false;
-        store.addToast(getRandom(store.isDebug ? startDebug : start), 3000);
+        lastToastExpired() && store.addToast(getRandom(store.isDebug ? startDebug : start), 3000);
     }
-    static endToast(generatedWatt: number) {
-        store.addToast(getRandom(end, Replacer.WATTHOUR, generatedWatt.toFixed(1)), 3000);
+    static stillPedalingToast() {
+        lastToastExpired(true) && store.addToast(getRandom(reallyDone), 3000);
     }
     static progressToast(percent: number, loaded: boolean, currentWatts: number) {
         if (currentWatts > 400 && !this.highPowerTimeout) {
             this.highPowerTimeout = true;
             // wait 20 seconds before we trigger this toast again
             window.setTimeout(() => this.highPowerTimeout = false, 20000);
-            return store.addToast(getRandom(highPower, Replacer.WATT, currentWatts.toString()), 3000);           
+            return lastToastExpired() && store.addToast(getRandom(highPower, Replacer.WATT, currentWatts.toString()), 3000);           
         } else if (currentWatts < 10) {
             if (!this.lowPowerTimeout) {
                 this.lowPowerTimeout = true;
                 // wait 10 seconds before we trigger this toast again
                 window.setTimeout(() => this.lowPowerTimeout = false, 10000);
-                return store.addToast(getRandom(getStarted), 5000);    
+                return lastToastExpired() && store.addToast(getRandom(getStarted), 5000);    
             } 
         } else if (!loaded) {
             if (percent >= 100) {
                 // user completed before response from AI arrived
-                return store.addToast(getRandom(tooFast), 5000);
+                return lastToastExpired() && store.addToast(getRandom(tooFast), 5000);
             } else if (!this.notLoadedTimeout) {
                 this.notLoadedTimeout = true;
                 // wait 6 seconds before we trigger this toast again
                 window.setTimeout(() => this.notLoadedTimeout = false, 6000);
-                return store.addToast(getRandom(notLoaded, Replacer.WATT, currentWatts.toString()), 3000);      
+                return lastToastExpired() && store.addToast(getRandom(notLoaded, Replacer.WATT, currentWatts.toString()), 3000);      
             }
         } else {
             if (percent == 100 && !this.done) {
                 this.done = true;
-                return store.addToast(getRandom(done), 3000);
+                return lastToastExpired() && store.addToast(getRandom(done), 5000);
             } else if (percent > 80) {
-                return store.addToast(getRandom(lastPercents, Replacer.PERCENT, (100 - percent).toFixed(1)));
+                return lastToastExpired() && store.addToast(getRandom(lastPercents, Replacer.PERCENT, (100 - percent).toFixed(1)));
             } else if (percent > 55) {
-                return store.addToast(getRandom(highPercents, Replacer.PERCENT, percent.toFixed(1)));
+                return lastToastExpired() && store.addToast(getRandom(highPercents, Replacer.PERCENT, percent.toFixed(1)));
             } else if (percent > 45) {
-                return store.addToast(getRandom(halfPercents, Replacer.PERCENT, percent.toFixed(1)));
+                return lastToastExpired() && store.addToast(getRandom(halfPercents, Replacer.PERCENT, percent.toFixed(1)));
             } else {
-                return store.addToast(getRandom(lowPercents, Replacer.PERCENT, percent.toFixed(1)));
+                return lastToastExpired() && store.addToast(getRandom(lowPercents, Replacer.PERCENT, percent.toFixed(1)));
             } 
         }
     }
