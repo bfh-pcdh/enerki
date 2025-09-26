@@ -285,15 +285,19 @@ export class PowerService extends AntService {
             this.fakeData();
         } else if (this.sensor) { // prod mode with actual data from power sensor
             super.connect();
-            this.sensor.on('powerData', (data: PowerData) => { 
+            this.sensor.on('powerData', (data: PowerData) => {
                 // the pedals keep sending previous watt value if they are idling (instead of 0), so we have to check if the 
                 // user is actually pedalling
                 const idle = (this.accumulatedPower == data.AccumulatedPower);
+                const actualPower = idle
+                    ? 0
+                    : data.Power;
                 this.accumulatedPower = data.AccumulatedPower;
-                if (!idle && this.lastBeat > 0) {
+
+                if (this.lastBeat > 0) {
                     this.updateValue(
-                        data.Power,
-                        this.total + this.getWattHours(data.Power)
+                        actualPower,
+                        this.total + this.getWattHours(actualPower)
                     );
                 }
                 this.lastBeat = Date.now();

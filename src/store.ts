@@ -1,5 +1,6 @@
 import { reactive } from 'vue';
 import { AntCallback, HeartRateService, PowerService } from './antService';
+import { Message } from './models';
 
 export const store = reactive({
   power: new PowerService({debug: false}),
@@ -8,6 +9,7 @@ export const store = reactive({
   connectedType: undefined as 'heartRate' | 'power' | undefined,
   toasts: new Array<string>(),
   isDebug: false,
+  chatMessages: new Array<Message>(),
   /**
    * Connect a new sensor.
    * @param type  Either 'heartRate' or 'power'
@@ -26,6 +28,12 @@ export const store = reactive({
     this.connected = true;
   },
   /**
+   * Resets the chat log and everything, when a new user is using the device
+   */
+  resetUser() {
+    this.chatMessages = [];
+  },
+  /**
    * Starts a new measurement and subscribes to it.
    * Subscription stops when 100% is reached, pass autoUnsubscribe = false when you want to avoid this behaviour.
    * Cave: Resets existing subscriptions!
@@ -41,7 +49,7 @@ export const store = reactive({
    */
   startAndSubscribe(target: number, callback: AntCallback, autoUnsubscribe = true): number {
     if (this.connectedType) {
-        return this[this.connectedType].startAndSubscribe(target, callback,autoUnsubscribe);
+        return this[this.connectedType].startAndSubscribe(target, callback, autoUnsubscribe);
     } else {
         console.warn('No sensor connected yet!');
         return -1;

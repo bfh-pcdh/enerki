@@ -3,6 +3,7 @@
   import { ENV } from "../env";
   import AuthForm from "./components/AuthForm.vue";
   import ConnectModal from "./components/ConnectModal.vue";
+  import Settings from "./components/Settings.vue";
   import Chat from "./components/Chat.vue";
   import { getPersisted, persist, store, STORE_KEY } from "./store";
   import PowerSimulator from './components/PowerSimulator.vue';
@@ -12,6 +13,8 @@
   const error = ref<string | undefined>();
 
   const percent = ref<number>(0);
+
+  const showSettings = ref(false);
 
   /**
    * Resets the app
@@ -33,8 +36,8 @@
     }
   }
 
-  function settings() {
-    console.log('TODO: settings');
+  function toggleSettings() {
+    showSettings.value = !showSettings.value;
   }
 
   /**
@@ -50,10 +53,11 @@
   <header>
     <img :src="require('@/assets/logo.png')" alt="Logo Berner Fachhochschule" class="logo" />
     <h1>enerKI</h1>
-    <a @click="settings()" class="settings-button">⚙︎</a>
+    <a @click="toggleSettings()" class="settings-button">{{showSettings ? '←' : '⚙︎'}}</a>
   </header>
-
-  <!-- if no token is set, we show the auth form -->
+  <Settings v-if="showSettings" @on-close="showSettings = false"/>
+  <div v-else>
+   <!-- if no token is set, we show the auth form -->
   <auth-form v-if="token?.length == 0" @on-token="setToken" @on-error="handleError" />
 
   <main v-else>
@@ -88,6 +92,9 @@
       </div>
     </li>
   </ul>
+  </div>
+
+ 
 </template>
 
 <style scoped>

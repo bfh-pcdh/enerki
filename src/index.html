@@ -3,7 +3,7 @@
   <style>
     #app {
       font-weight: normal;
-      font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+      font-family: Lucida Sans, Verdana, sans-serif;
     }
 
     main {
@@ -16,6 +16,10 @@
     .message-bubble p {
       margin-bottom: 0;
     }
+    .message-bubble p:not(:first-child){
+      margin-top: 0.5em;
+    }
+
     .message-bubble h2 {
       font-size: 1.2rem !important;
     }
