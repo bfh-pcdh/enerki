@@ -132,13 +132,16 @@
       const usage = estimateEnergyUsage(result.data.usage.completion_tokens);
       store.setTarget(usage);    
 
-      console.log('Energie verbraucht: ' + usage + ' Wh in ' + duration + ' Sekunden. \nDas benötigt eine Durchschnittsleistung von ' + Math.round(3600 * usage / duration) + ' Watt.');
-      const resultMessage = result.data.choices[0].message;
-      answerMessage.content = resultMessage.content;
+      console.log('Energie verbraucht: ' + usage.toFixed(2) + ' Wh in ' + duration + ' Sekunden. \nDas benötigt eine Durchschnittsleistung von ' + Math.round(3600 * usage / duration) + ' Watt.');
+
+      answerMessage.content = result.data.choices[0].message.content;
       answerMessage.loading = false;
 
+      // we need to do this, or vue won't detect the update...
+      store.chatMessages = [...store.chatMessages]
+
       chat.value.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-      emit('onAnswer', resultMessage);
+      emit('onAnswer', answerMessage);
     }).catch((e) => {
       console.error(e);
       emit('onError', JSON.stringify(e, null, 2));
@@ -173,7 +176,7 @@
         :style="message.percent != undefined && message.percent < 100 && isLastMessage(i) ? loadingStyle : ''"
     >
       <div v-if="message.loading" class="spinner-border" role="status">
-          <span class="visually-hidden">Loading...</span>
+        <span class="visually-hidden">Loading...</span>
       </div>
       <div v-else v-html="md.render(message.content)" />
     </li>
