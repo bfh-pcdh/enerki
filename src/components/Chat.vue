@@ -7,6 +7,7 @@
   import { store } from '../store';
   import { AntSubscription } from '@/antService';
   import ToastService from '@/toastService';
+  import PromptExamples from './PromptExamples.vue';
 
   // define props
   const props = defineProps<{
@@ -26,6 +27,10 @@
   const chat: ShallowRef = useTemplateRef('chat-list');
 
   const loadingPercent = ref(0);
+  
+  const userInput = ref(false);
+  const chatInput = ref(null);
+  let inputTimeout = -1;
 
   const loadingStyle = computed(() => {
     return 'filter: blur(' + (10 - Math.round(loadingPercent.value / 10)) + 'px);opacity:' + (0.009 * loadingPercent.value + 0.1).toFixed(2)  + ';';
@@ -121,34 +126,48 @@
       }
     ).then((result) => {
 
-      computeTime.value += result.data.usage.total_duration;
+      // store.examplePrompts = [];
+
       const duration = Math.round((Date.now() - time) / 1000);
       const usage = estimateEnergyUsage(result.data.usage.completion_tokens);
       store.setTarget(usage);    
 
       console.log('Energie verbraucht: ' + usage + ' Wh in ' + duration + ' Sekunden. \nDas benötigt eine Durchschnittsleistung von ' + Math.round(3600 * usage / duration) + ' Watt.');
       const resultMessage = result.data.choices[0].message;
-      answerMessage.content = {
-        ...resultMessage.content,
-        loading: false
-      };
-      store.chatMessages[store.chatMessages.length - 1] = {
-        ...resultMessage,
-        loading: false,
-        percent: store.chatMessages[store.chatMessages.length - 1].percent
-      };
+      answerMessage.content = resultMessage.content;
+      answerMessage.loading = false;
+
       chat.value.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'end' });
       emit('onAnswer', resultMessage);
-
     }).catch((e) => {
       console.error(e);
       emit('onError', JSON.stringify(e, null, 2));
     });
   }
+
+  /**
+   * Sets a 1 second timeout in which we don't listen to hotkey inputs
+   */
+  function inputting() {
+    userInput.value = true;
+    if (inputTimeout > 0) {
+      window.clearTimeout(inputTimeout);
+    }
+    inputTimeout = window.setTimeout(() => {
+      userInput.value = false;
+    }, 1000);
+  }
+
+  function setPrompt(prompt: string) {
+    if (!store.chatMessages[store.chatMessages.length -1]?.loading) {
+      input.value = prompt;
+      (chatInput.value as any)?.focus();
+    }
+  }
 </script>
 
 <template>
-  <ul ref="chat-list">
+  <ul ref="chat-list" class="chat-list">
     <li v-for="message, i of store.chatMessages" 
         :class="'message-bubble chat-' + message.role" 
         :style="message.percent != undefined && message.percent < 100 && isLastMessage(i) ? loadingStyle : ''"
@@ -160,17 +179,19 @@
     </li>
     <li style="height: 10em; color: white"></li>
   </ul>
+  
+  <PromptExamples @on-select-prompt="setPrompt" :user-inputting="userInput" v-if="!store.isPedalling() && store.examplePrompts.length > 0"/>
+
   <form action="#" ref="input-form">
-    <input autofocus type="text" v-model="input" placeholder="Gib hier deinen Text ein" />
-    <button @click="send" type="submit" :disabled="store.chatMessages[store.chatMessages.length -1]?.loading">
+    <input autofocus type="text" v-model="input" :placeholder="'Gib hier deinen Text ein' + (store.examplePrompts.length > 0 ? ' oder wähle einen der Prompts oben aus':'')" @input="inputting" ref="chatInput"/>
+    <button @click="send" type="submit" :disabled="store.isPedalling()">
       SENDEN
     </button>
   </form>
-<!--span class="usage" v-if="computeTime > 0">Gesamthaft verbrauchte Zeit: {{ (computeTime / 1000000000).toFixed(2) }} Sekunden</span-->
 </template>
 
 <style scoped>
-ul {
+ul.chat-list {
   overflow: scroll;
   height: 100vh;
   margin-bottom: 0;
