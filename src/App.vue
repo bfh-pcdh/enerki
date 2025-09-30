@@ -7,6 +7,7 @@
   import Chat from "./components/Chat.vue";
   import { getPersisted, persist, store, STORE_KEY } from "./store";
   import PowerSimulator from './components/PowerSimulator.vue';
+import QuizService from "./quizService";
 
   const token = ref(getPersisted<string>(STORE_KEY.TOKEN) || ENV.TOKEN);
 
@@ -15,6 +16,21 @@
   const percent = ref<number>(0);
 
   const showSettings = ref(false);
+
+  const HEADER_BUTTONS = [
+    {
+      icon: '🀙',
+      title: 'Neue Karte ziehen',
+      action: drawCard,
+      style: 'line-height: 1.8em;'
+    },
+    {
+      icon: '⚙︎',
+      title: 'Einstellungen',
+      action: toggleSettings,
+      style: ''
+    }
+  ]
 
   /**
    * Resets the app
@@ -40,6 +56,11 @@
     showSettings.value = !showSettings.value;
   }
 
+  function drawCard() {
+    const card = QuizService.drawRandomQuizCard();
+    console.log(card);
+  }
+
   /**
    * Handles an error and displays it to the user
    * @param error   the error message to display to the user
@@ -53,7 +74,9 @@
   <header>
     <img :src="require('@/assets/logo.png')" alt="Logo Berner Fachhochschule" class="logo" />
     <h1>enerKI</h1>
-    <a @click="toggleSettings()" class="settings-button">{{showSettings ? '←' : '⚙︎'}}</a>
+    <div class="header-buttons">
+      <a v-for="b of HEADER_BUTTONS" @click="b.action" :title="b.title" class="header-button" :style="b.style">{{ b.icon }}</a>
+    </div>
   </header>
   <Settings v-if="showSettings" @on-close="showSettings = false"/>
   <div v-else>
@@ -121,17 +144,22 @@ header h1 {
   font-size: 1.5em;
   font-weight: bold;
 }
-.settings-button {
+.header-buttons {
+  width: 4em;
+  margin-left: auto;
+  justify-content: space-evenly;
+  display: flex
+;
+}
+.header-button {
   cursor: pointer;
   text-decoration: none;
   color: #c1c9d1;
   font-size: 2em;
   line-height: 2em;
-  width: 1em;
-  margin-left: auto;
 }
 
-.settings-button:hover {
+.header-button:hover {
   color: #697d91
 }
 
