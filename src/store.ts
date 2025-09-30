@@ -5,11 +5,20 @@ import { Message } from './models';
 export const store = reactive({
   power: new PowerService({debug: false}),
   heartRate: new HeartRateService(),
+  // quiz: new QuizService(),
   connected: false,
   connectedType: undefined as 'heartRate' | 'power' | undefined,
   toasts: new Array<string>(),
   isDebug: false,
   chatMessages: new Array<Message>(),
+  examplePrompts: new Array<string>(),
+  isPedalling() {
+    const lastMessage = this.chatMessages[this.chatMessages.length -1];
+    if (lastMessage) {
+      return lastMessage.loading || (lastMessage.percent !== undefined && lastMessage.percent < 100)
+    }
+    return false;
+  },
   /**
    * Connect a new sensor.
    * @param type  Either 'heartRate' or 'power'
@@ -32,6 +41,8 @@ export const store = reactive({
    */
   resetUser() {
     this.chatMessages = [];
+    this.examplePrompts = [];
+    this.toasts = [];
   },
   /**
    * Starts a new measurement and subscribes to it.

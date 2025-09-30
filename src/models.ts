@@ -10,3 +10,10 @@ export interface Message {
     loading: boolean;
     percent?: number;
 };
+
+
+export interface QuizCard {
+    id: string;
+    question: string;
+    prompts: string[]
+};
