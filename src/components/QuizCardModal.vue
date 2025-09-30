@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { QuizCard } from "@/models";
 
-const emit = defineEmits(["onError"]);
+const emit = defineEmits(["onClose"]);
 const props = defineProps<{
   card: QuizCard
 }>(); 
@@ -14,6 +14,7 @@ const props = defineProps<{
       <div class="modal-content">
         <div class="modal-header">
           <h1 class="modal-title">Quiz-Karte #{{card.id}}</h1>
+          <span class="close-button" @click="emit('onClose')">×</span>
         </div>
         <div class="modal-body">
           <p class="additional">Versuche, diese Frage zu beantworten:</p>
@@ -63,5 +64,14 @@ p.question {
 }
 h1 {
   font-size: 1.2em;
+}
+.close-button {
+  cursor: pointer;
+  text-decoration: none;
+  width: 1em;
+  margin-left: auto;
+}
+.close-button:hover {
+  opacity: 0.8;
 }
 </style>

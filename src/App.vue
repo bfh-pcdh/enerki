@@ -148,7 +148,7 @@
     </main>
 
     <ConnectModal v-if="!store.connected" @on-error="handleError" />
-    <QuizCardModal v-if="activeCard && showCardModal" :card="activeCard"/>
+    <QuizCardModal v-if="activeCard && showCardModal" :card="activeCard" @on-close="showCardModal = false"/>
 
     <ul class="toast-list">
       <li
