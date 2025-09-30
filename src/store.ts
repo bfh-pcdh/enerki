@@ -41,6 +41,7 @@ export const store = reactive({
    */
   resetUser() {
     this.chatMessages = [];
+    this.examplePrompts = [];
     this.toasts = [];
   },
   /**

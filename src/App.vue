@@ -11,6 +11,8 @@
   import QuizService from "./quizService";
   import { QuizCard } from "./models";
 
+  const version = require('../package.json').version;
+
   const token = ref(getPersisted<string>(STORE_KEY.TOKEN) || ENV.TOKEN);
 
   const error = ref<string | undefined>();
@@ -22,33 +24,43 @@
 
   const showSettings = ref(false);
 
-  const HEADER_BUTTONS = [
-    {
-      icon: '🀙',
-      title: 'Neue Karte ziehen',
-      action: drawCard,
-      style: 'line-height: 1.8em;'
-    },
-    {
-      icon: '⚙︎',
-      title: 'Einstellungen',
-      action: toggleSettings,
-      style: ''
+  document.addEventListener('keydown', function(event) {
+    if (showCardModal.value && event.key == 'Enter') {
+      showCardModal.value = false;
     }
-  ];
-
-    document.addEventListener('keydown', function(event) {
-      if (showCardModal.value && event.key == 'Enter') {
-        showCardModal.value = false;
-      }
-    });
+  });
 
   /**
-   * Resets the app
+   * Calculates the header buttons
    */
-  function reset() {
-    error.value = undefined;
-    token.value = ENV.TOKEN;
+  function getHeaderButtons() {
+    return [
+    activeCard.value == undefined 
+      ? {
+        icon: '🀙',
+        title: 'Neue Karte ziehen',
+        action: drawCard,
+        style: 'line-height: 1.8em;'
+      }
+      : {
+        icon: '🀙',
+        title: 'Karte nochmal anzeigen',
+        action: () => showCardModal.value = true,
+        style: 'text-shadow: #fac300 0px 0 3px; line-height: 1.8em;'
+      },
+    {
+      icon: '⟲',
+      title: 'Zurücksetzen',
+      action: resetUser,
+      style: ''
+    },
+    // {
+    //   icon: '⚙︎',
+    //   title: 'Einstellungen',
+    //   action: () => showSettings.value = !showSettings.value,
+    //   style: ''
+    // }
+  ];
   }
 
   /**
@@ -63,10 +75,31 @@
     }
   }
 
-  function toggleSettings() {
-    showSettings.value = !showSettings.value;
+  /**
+   * Resets the app to start with a new user
+   */
+  function resetUser() {
+     if (
+      confirm('Soll enerKI für eine·n Benutzer·in zurückgesetz werden?')
+    ) {
+      activeCard.value = undefined;
+      store.resetUser();
+    }
   }
 
+
+  /**
+   * Resets the whole app
+   */
+  function reset() {
+    resetUser();
+    error.value = undefined;
+    token.value = ENV.TOKEN;
+  }
+
+  /**
+   * Draws a new quiz card and sets the example prompts.
+   */
   function drawCard() {
     activeCard.value = QuizService.drawRandomQuizCard();
     showCardModal.value = true;
@@ -84,10 +117,10 @@
 
 <template>
   <header>
-    <img :src="require('@/assets/logo.png')" alt="Logo Berner Fachhochschule" class="logo" />
+    <img :src="require('@/assets/logo.png')" alt="Logo Berner Fachhochschule" class="logo" :title="'EnerKI Version: '+version" />
     <h1>enerKI</h1>
     <div class="header-buttons">
-      <a v-for="b of HEADER_BUTTONS" @click="b.action" :title="b.title" class="header-button" :style="b.style">{{ b.icon }}</a>
+      <a v-for="b of getHeaderButtons()" @click="b.action" :title="b.title" class="header-button" :style="b.style">{{ b.icon }}</a>
     </div>
   </header>
   <Settings v-if="showSettings" @on-close="showSettings = false"/>
@@ -159,8 +192,7 @@ header h1 {
   width: 4em;
   margin-left: auto;
   justify-content: space-evenly;
-  display: flex
-;
+  display: flex;
 }
 .header-button {
   cursor: pointer;
@@ -168,6 +200,9 @@ header h1 {
   color: #c1c9d1;
   font-size: 2em;
   line-height: 2em;
+}
+.glow {
+  text-shadow: #fac300 0px 0 3px;
 }
 
 .header-button:hover {
