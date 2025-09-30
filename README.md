@@ -22,6 +22,11 @@ npm run build
 ```
 
 ## Changelog
+### 2025-09-30 V0.4.0
+- Introduced example prompts
+- Introduces quiz cards
+- Code cleanup
+
 ### 2025-09-22 V0.3.0
 - Bugfixes
 - Improved toasts
