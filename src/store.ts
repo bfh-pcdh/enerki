@@ -1,12 +1,11 @@
 import { reactive } from 'vue';
 import { AntCallback, HeartRateService, PowerService } from './antService';
 import { Message } from './models';
-import QuizService from './quizService';
 
 export const store = reactive({
   power: new PowerService({debug: false}),
   heartRate: new HeartRateService(),
-  quiz: new QuizService(),
+  // quiz: new QuizService(),
   connected: false,
   connectedType: undefined as 'heartRate' | 'power' | undefined,
   toasts: new Array<string>(),

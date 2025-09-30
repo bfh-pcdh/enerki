@@ -37,7 +37,6 @@
   })
 
   const input = ref('');
-  const computeTime = ref(0);
 
   /**
    * Estimates the energy usage for an answer, based on the number of output tokens. Samsi et al. estimated the energy usage with 3 - 4 Joule per token, which equals to ~0.001 Wh

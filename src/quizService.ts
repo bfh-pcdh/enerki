@@ -1,32 +1,12 @@
+import { QuizCard } from "./models";
 import { store } from "./store";
 
-interface QuizCard {
-    question: string;
-    answerOptions: 
-        {
-            answer: string,
-            correct: boolean
-        }[],
-    prompts: string[]
-}
+
 
 const QUIZ: QuizCard[]  = [
     {
+        id: '1',
         question: 'Wie viel Energie verbraucht ein ChatGPT-Prompt im Durchschnitt?',
-        answerOptions: [
-           {
-            answer: 'ungefähr so viel wie eine LED-Lampe für 1 Sekunde leuchtet',
-            correct: false
-           },
-           {
-            answer: 'ungefähr so viel wie ein Smartphone für 10 Sekunden benutzt wird',
-            correct: true
-           },
-           {
-            answer: 'ungefähr so viel wie ein Laptop für 1 Minute läuft ',
-            correct: false
-           },
-        ],
         prompts: [
             'Kurze Antwort: Wie viel Energie verbraucht ein ChatGPT-Prompt im Durchschnitt?',
             'Ausführliche Antwort: Wie viel Energie verbraucht ein ChatGPT-Prompt im Durchschnitt?',
@@ -34,21 +14,8 @@ const QUIZ: QuizCard[]  = [
         ]
     },
     {
+        id: '2',
         question: 'Wieviel CO₂ verursacht eine Google-Suche?',
-        answerOptions: [
-           {
-            answer: 'ca. 0,2 g CO₂',
-            correct: true
-           },
-           {
-            answer: 'ca. 20 g CO₂',
-            correct: false
-           },
-           {
-            answer: 'gar nichts',
-            correct: false
-           },
-        ],
         prompts: [
             'Wie viel CO2 entsteht bei einer durchschnittlichen Google-Suche?',
             'Was erzeugt mehr CO2: Eine Frage durch Google zu beantworten, oder mit einem KI-Modell? Erstelle eine Tabelle mit den wichtigsten Einfluss-Faktoren.',
@@ -56,25 +23,12 @@ const QUIZ: QuizCard[]  = [
         ]
     },
     {
+        id: '3',
         question: 'Wie wirkt sich die steigende Nutzung energieintensiver digitaler Technologien langfristig auf die Gesundheit aus?',
-        answerOptions: [
-           {
-            answer: 'Erhöhtes Risiko für Hitzestress und Dehydrierung',
-            correct: true
-           },
-           {
-            answer: 'Verbesserte Fitness mit Apps',
-            correct: true
-           },
-           {
-            answer: 'Schnellere Genesung bei Krankheiten durch digitalen Informationszugang',
-            correct: false
-           },
-        ],
         prompts: [
             'Wie wirkt sich die steigende Nutzung energieintensiver digitaler Technologien langfristig auf die Gesundheit aus?',
-            'Ausführliche Antwort',
-            'Verbraucht ein ChatGPT-Prompt so viel Energie wie eine LED-Lampe in einer Sekunde, ein Smartphone in zehn Sekunden oder ein Laptop in einer Minute?'
+            'Erläutere, inwiefern sich die steigende Nutzung energieintensiver digitaler Technologien über längere Frist auf die Gesundheit auswirkt.',
+            'Mache eine Auflistung von Auswirkungen energieintensiver Technologien auf die Gesundheit.'
         ]
     }
 ];

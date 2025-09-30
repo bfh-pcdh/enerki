@@ -12,7 +12,7 @@
     if (!props.userInputting && event.key != ' ' && !isNaN(key) && key <= store.examplePrompts.length) {
       selectPrompt(key - 1);
     }
-});
+  }); 
 
 
   function selectPrompt(index: number) {

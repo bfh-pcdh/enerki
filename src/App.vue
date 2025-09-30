@@ -7,13 +7,18 @@
   import Chat from "./components/Chat.vue";
   import { getPersisted, persist, store, STORE_KEY } from "./store";
   import PowerSimulator from './components/PowerSimulator.vue';
-import QuizService from "./quizService";
+  import QuizCardModal from "./components/QuizCardModal.vue";
+  import QuizService from "./quizService";
+  import { QuizCard } from "./models";
 
   const token = ref(getPersisted<string>(STORE_KEY.TOKEN) || ENV.TOKEN);
 
   const error = ref<string | undefined>();
 
   const percent = ref<number>(0);
+
+  const activeCard = ref<QuizCard | undefined>();
+  const showCardModal = ref(false);
 
   const showSettings = ref(false);
 
@@ -30,7 +35,13 @@ import QuizService from "./quizService";
       action: toggleSettings,
       style: ''
     }
-  ]
+  ];
+
+    document.addEventListener('keydown', function(event) {
+      if (showCardModal.value && event.key == 'Enter') {
+        showCardModal.value = false;
+      }
+    });
 
   /**
    * Resets the app
@@ -57,8 +68,9 @@ import QuizService from "./quizService";
   }
 
   function drawCard() {
-    const card = QuizService.drawRandomQuizCard();
-    console.log(card);
+    activeCard.value = QuizService.drawRandomQuizCard();
+    showCardModal.value = true;
+    store.examplePrompts = activeCard.value.prompts;
   }
 
   /**
@@ -80,43 +92,42 @@ import QuizService from "./quizService";
   </header>
   <Settings v-if="showSettings" @on-close="showSettings = false"/>
   <div v-else>
-   <!-- if no token is set, we show the auth form -->
-  <auth-form v-if="token?.length == 0" @on-token="setToken" @on-error="handleError" />
+    <!-- if no token is set, we show the auth form -->
+    <auth-form v-if="token?.length == 0" @on-token="setToken" @on-error="handleError" />
 
-  <main v-else>
-    <!-- display error message -->
-    <div class="error" v-if="error">
-      <h2>Leider ist etwas schief gegangen:</h2>
-      {{ error }}
-      <button @click="reset">OK</button>
-    </div>
-
-    <!-- chat window -->
-    <chat v-else 
-      :token="token" 
-      :percent="percent"
-      @on-error="handleError" 
-    />  
-
-    <!-- window for power simulation / debug -->
-    <PowerSimulator v-if="store.connected && store.isPedalling()" :debug="store.isDebug" :watt="Math.round(store.power.getValues().value)"/>
-    
-  </main>
-
-  <ConnectModal v-if="!store.connected" @on-error="handleError" />
-
-  <ul class="toast-list">
-    <li
-      v-for="(toast, i) of store.toasts"
-      :style="'opacity: ' + (i + 1) / store.toasts.length"
-    >
-      <div class="alert alert-info" role="alert">
-        {{ toast }}
+    <main v-else>
+      <!-- display error message -->
+      <div class="error" v-if="error">
+        <h2>Leider ist etwas schief gegangen:</h2>
+        {{ error }}
+        <button @click="reset">OK</button>
       </div>
-    </li>
-  </ul>
-  </div>
 
+      <!-- chat window -->
+      <chat v-else 
+        :token="token" 
+        :percent="percent"
+        @on-error="handleError" 
+      />  
+
+      <!-- window for power simulation / debug -->
+      <PowerSimulator v-if="store.connected && store.isPedalling()" :debug="store.isDebug" :watt="Math.round(store.power.getValues().value)"/>
+    </main>
+
+    <ConnectModal v-if="!store.connected" @on-error="handleError" />
+    <QuizCardModal v-if="activeCard && showCardModal" :card="activeCard"/>
+
+    <ul class="toast-list">
+      <li
+        v-for="(toast, i) of store.toasts"
+        :style="'opacity: ' + (i + 1) / store.toasts.length"
+      >
+        <div class="alert alert-info" role="alert">
+          {{ toast }}
+        </div>
+      </li>
+    </ul>
+  </div>
  
 </template>
 
