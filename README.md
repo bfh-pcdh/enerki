@@ -22,6 +22,9 @@ npm run build
 ```
 
 ## Changelog
+### 2025-09-30 V0.4.1
+- add Favicon
+
 ### 2025-09-30 V0.4.0
 - Introduced example prompts
 - Introduces quiz cards
