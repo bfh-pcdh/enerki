@@ -124,9 +124,6 @@
         },
       }
     ).then((result) => {
-
-      // store.examplePrompts = [];
-
       const duration = Math.round((Date.now() - time) / 1000);
       const usage = estimateEnergyUsage(result.data.usage.completion_tokens);
       store.setTarget(usage);    

@@ -1,7 +1,4 @@
 import { QuizCard } from "./models";
-import { store } from "./store";
-
-
 
 const QUIZ: QuizCard[]  = [
     {
@@ -35,16 +32,7 @@ const QUIZ: QuizCard[]  = [
 
 export default class QuizService {
     static lastQuizCard = -1;
-    constructor() {
-        window.setTimeout(() => {
-            store.examplePrompts = [
-                'Wie viel CO2 entsteht bei einer durchschnittlichen Google-Suche?',
-                'Was erzeugt mehr CO2: Eine Frage durch Google zu beantworten, oder mit einem KI-Modell? Erstelle eine Tabelle mit den wichtigsten Einfluss-Faktoren.',
-                'Was erzeugt mehr CO2: Eine Frage durch Google zu beantworten, oder mit einem KI-Modell? Halte die Antwort kurz.'
-            ];
-            console.log('QuizService constructor, example prompts are', store.examplePrompts);
-        }, 200);
-    }
+    constructor() {}
 
     static drawRandomQuizCard(): QuizCard {
         let i = Math.floor(Math.random() * QUIZ.length);
