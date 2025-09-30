@@ -7,6 +7,11 @@
   import Chat from "./components/Chat.vue";
   import { getPersisted, persist, store, STORE_KEY } from "./store";
   import PowerSimulator from './components/PowerSimulator.vue';
+  import QuizCardModal from "./components/QuizCardModal.vue";
+  import QuizService from "./quizService";
+  import { QuizCard } from "./models";
+
+  const version = require('../package.json').version;
 
   const token = ref(getPersisted<string>(STORE_KEY.TOKEN) || ENV.TOKEN);
 
@@ -14,14 +19,48 @@
 
   const percent = ref<number>(0);
 
+  const activeCard = ref<QuizCard | undefined>();
+  const showCardModal = ref(false);
+
   const showSettings = ref(false);
 
+  document.addEventListener('keydown', function(event) {
+    if (showCardModal.value && event.key == 'Enter') {
+      showCardModal.value = false;
+    }
+  });
+
   /**
-   * Resets the app
+   * Calculates the header buttons
    */
-  function reset() {
-    error.value = undefined;
-    token.value = ENV.TOKEN;
+  function getHeaderButtons() {
+    return [
+    activeCard.value == undefined 
+      ? {
+        icon: '🀙',
+        title: 'Neue Karte ziehen',
+        action: drawCard,
+        style: 'line-height: 1.8em;'
+      }
+      : {
+        icon: '🀙',
+        title: 'Karte nochmal anzeigen',
+        action: () => showCardModal.value = true,
+        style: 'text-shadow: #fac300 0px 0 3px; line-height: 1.8em;'
+      },
+    {
+      icon: '⟲',
+      title: 'Zurücksetzen',
+      action: resetUser,
+      style: ''
+    },
+    // {
+    //   icon: '⚙︎',
+    //   title: 'Einstellungen',
+    //   action: () => showSettings.value = !showSettings.value,
+    //   style: ''
+    // }
+  ];
   }
 
   /**
@@ -36,8 +75,35 @@
     }
   }
 
-  function toggleSettings() {
-    showSettings.value = !showSettings.value;
+  /**
+   * Resets the app to start with a new user
+   */
+  function resetUser() {
+     if (
+      confirm('Soll enerKI für eine·n Benutzer·in zurückgesetz werden?')
+    ) {
+      activeCard.value = undefined;
+      store.resetUser();
+    }
+  }
+
+
+  /**
+   * Resets the whole app
+   */
+  function reset() {
+    resetUser();
+    error.value = undefined;
+    token.value = ENV.TOKEN;
+  }
+
+  /**
+   * Draws a new quiz card and sets the example prompts.
+   */
+  function drawCard() {
+    activeCard.value = QuizService.drawRandomQuizCard();
+    showCardModal.value = true;
+    store.examplePrompts = activeCard.value.prompts;
   }
 
   /**
@@ -51,49 +117,50 @@
 
 <template>
   <header>
-    <img :src="require('@/assets/logo.png')" alt="Logo Berner Fachhochschule" class="logo" />
+    <img :src="require('@/assets/logo.png')" alt="Logo Berner Fachhochschule" class="logo" :title="'EnerKI Version: '+version" />
     <h1>enerKI</h1>
-    <a @click="toggleSettings()" class="settings-button">{{showSettings ? '←' : '⚙︎'}}</a>
+    <div class="header-buttons">
+      <a v-for="b of getHeaderButtons()" @click="b.action" :title="b.title" class="header-button" :style="b.style">{{ b.icon }}</a>
+    </div>
   </header>
   <Settings v-if="showSettings" @on-close="showSettings = false"/>
   <div v-else>
-   <!-- if no token is set, we show the auth form -->
-  <auth-form v-if="token?.length == 0" @on-token="setToken" @on-error="handleError" />
+    <!-- if no token is set, we show the auth form -->
+    <auth-form v-if="token?.length == 0" @on-token="setToken" @on-error="handleError" />
 
-  <main v-else>
-    <!-- display error message -->
-    <div class="error" v-if="error">
-      <h2>Leider ist etwas schief gegangen:</h2>
-      {{ error }}
-      <button @click="reset">OK</button>
-    </div>
-
-    <!-- chat window -->
-    <chat v-else 
-      :token="token" 
-      :percent="percent"
-      @on-error="handleError" 
-    />  
-
-    <!-- window for power simulation / debug -->
-    <PowerSimulator v-if="store.connected" :debug="store.isDebug" :watt="Math.round(store.power.getValues().value)"/>
-    
-  </main>
-
-  <ConnectModal v-if="!store.connected" @on-error="handleError" />
-
-  <ul class="toast-list">
-    <li
-      v-for="(toast, i) of store.toasts"
-      :style="'opacity: ' + (i + 1) / store.toasts.length"
-    >
-      <div class="alert alert-info" role="alert">
-        {{ toast }}
+    <main v-else>
+      <!-- display error message -->
+      <div class="error" v-if="error">
+        <h2>Leider ist etwas schief gegangen:</h2>
+        {{ error }}
+        <button @click="reset">OK</button>
       </div>
-    </li>
-  </ul>
-  </div>
 
+      <!-- chat window -->
+      <chat v-else 
+        :token="token" 
+        :percent="percent"
+        @on-error="handleError" 
+      />  
+
+      <!-- window for power simulation / debug -->
+      <PowerSimulator v-if="store.connected && store.isPedalling()" :debug="store.isDebug" :watt="Math.round(store.power.getValues().value)"/>
+    </main>
+
+    <ConnectModal v-if="!store.connected" @on-error="handleError" />
+    <QuizCardModal v-if="activeCard && showCardModal" :card="activeCard" @on-close="showCardModal = false"/>
+
+    <ul class="toast-list">
+      <li
+        v-for="(toast, i) of store.toasts"
+        :style="'opacity: ' + (i + 1) / store.toasts.length"
+      >
+        <div class="alert alert-info" role="alert">
+          {{ toast }}
+        </div>
+      </li>
+    </ul>
+  </div>
  
 </template>
 
@@ -121,17 +188,24 @@ header h1 {
   font-size: 1.5em;
   font-weight: bold;
 }
-.settings-button {
+.header-buttons {
+  width: 4em;
+  margin-left: auto;
+  justify-content: space-evenly;
+  display: flex;
+}
+.header-button {
   cursor: pointer;
   text-decoration: none;
   color: #c1c9d1;
   font-size: 2em;
   line-height: 2em;
-  width: 1em;
-  margin-left: auto;
+}
+.glow {
+  text-shadow: #fac300 0px 0 3px;
 }
 
-.settings-button:hover {
+.header-button:hover {
   color: #697d91
 }
 

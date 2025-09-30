@@ -7,6 +7,7 @@
   import { store } from '../store';
   import { AntSubscription } from '@/antService';
   import ToastService from '@/toastService';
+  import PromptExamples from './PromptExamples.vue';
 
   // define props
   const props = defineProps<{
@@ -26,13 +27,16 @@
   const chat: ShallowRef = useTemplateRef('chat-list');
 
   const loadingPercent = ref(0);
+  
+  const userInput = ref(false);
+  const chatInput = ref(null);
+  let inputTimeout = -1;
 
   const loadingStyle = computed(() => {
     return 'filter: blur(' + (10 - Math.round(loadingPercent.value / 10)) + 'px);opacity:' + (0.009 * loadingPercent.value + 0.1).toFixed(2)  + ';';
   })
 
   const input = ref('');
-  const computeTime = ref(0);
 
   /**
    * Estimates the energy usage for an answer, based on the number of output tokens. Samsi et al. estimated the energy usage with 3 - 4 Joule per token, which equals to ~0.001 Wh
@@ -120,57 +124,73 @@
         },
       }
     ).then((result) => {
-
-      computeTime.value += result.data.usage.total_duration;
       const duration = Math.round((Date.now() - time) / 1000);
       const usage = estimateEnergyUsage(result.data.usage.completion_tokens);
       store.setTarget(usage);    
 
-      console.log('Energie verbraucht: ' + usage + ' Wh in ' + duration + ' Sekunden. \nDas benötigt eine Durchschnittsleistung von ' + Math.round(3600 * usage / duration) + ' Watt.');
-      const resultMessage = result.data.choices[0].message;
-      answerMessage.content = {
-        ...resultMessage.content,
-        loading: false
-      };
-      store.chatMessages[store.chatMessages.length - 1] = {
-        ...resultMessage,
-        loading: false,
-        percent: store.chatMessages[store.chatMessages.length - 1].percent
-      };
-      chat.value.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-      emit('onAnswer', resultMessage);
+      console.log('Energie verbraucht: ' + usage.toFixed(2) + ' Wh in ' + duration + ' Sekunden. \nDas benötigt eine Durchschnittsleistung von ' + Math.round(3600 * usage / duration) + ' Watt.');
 
+      answerMessage.content = result.data.choices[0].message.content;
+      answerMessage.loading = false;
+
+      // we need to do this, or vue won't detect the update...
+      store.chatMessages = [...store.chatMessages]
+
+      chat.value.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      emit('onAnswer', answerMessage);
     }).catch((e) => {
       console.error(e);
       emit('onError', JSON.stringify(e, null, 2));
     });
   }
+
+  /**
+   * Sets a 1 second timeout in which we don't listen to hotkey inputs
+   */
+  function inputting() {
+    userInput.value = true;
+    if (inputTimeout > 0) {
+      window.clearTimeout(inputTimeout);
+    }
+    inputTimeout = window.setTimeout(() => {
+      userInput.value = false;
+    }, 1000);
+  }
+
+  function setPrompt(prompt: string) {
+    if (!store.chatMessages[store.chatMessages.length -1]?.loading) {
+      input.value = prompt;
+      (chatInput.value as any)?.focus();
+    }
+  }
 </script>
 
 <template>
-  <ul ref="chat-list">
+  <ul ref="chat-list" class="chat-list">
     <li v-for="message, i of store.chatMessages" 
         :class="'message-bubble chat-' + message.role" 
         :style="message.percent != undefined && message.percent < 100 && isLastMessage(i) ? loadingStyle : ''"
     >
       <div v-if="message.loading" class="spinner-border" role="status">
-          <span class="visually-hidden">Loading...</span>
+        <span class="visually-hidden">Loading...</span>
       </div>
       <div v-else v-html="md.render(message.content)" />
     </li>
     <li style="height: 10em; color: white"></li>
   </ul>
+  
+  <PromptExamples @on-select-prompt="setPrompt" :user-inputting="userInput" v-if="!store.isPedalling() && store.examplePrompts.length > 0"/>
+
   <form action="#" ref="input-form">
-    <input autofocus type="text" v-model="input" placeholder="Gib hier deinen Text ein" />
-    <button @click="send" type="submit" :disabled="store.chatMessages[store.chatMessages.length -1]?.loading">
+    <input autofocus type="text" v-model="input" :placeholder="'Gib hier deinen Text ein' + (store.examplePrompts.length > 0 ? ' oder wähle einen der Prompts oben aus':'')" @input="inputting" ref="chatInput"/>
+    <button @click="send" type="submit" :disabled="store.isPedalling()">
       SENDEN
     </button>
   </form>
-<!--span class="usage" v-if="computeTime > 0">Gesamthaft verbrauchte Zeit: {{ (computeTime / 1000000000).toFixed(2) }} Sekunden</span-->
 </template>
 
 <style scoped>
-ul {
+ul.chat-list {
   overflow: scroll;
   height: 100vh;
   margin-bottom: 0;
