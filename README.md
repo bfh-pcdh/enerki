@@ -22,8 +22,11 @@ npm run build
 ```
 
 ## Changelog
+### 2025-10-01 V0.4.2
+- fix bug: continued to show toasts after resetting user
+
 ### 2025-09-30 V0.4.1
-- add Favicon
+- add favicon
 
 ### 2025-09-30 V0.4.0
 - Introduced example prompts
