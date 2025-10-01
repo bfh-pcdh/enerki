@@ -2,6 +2,8 @@ import { reactive } from 'vue';
 import { AntCallback, HeartRateService, PowerService } from './antService';
 import { Message } from './models';
 
+let activeSubscriptions = new Array<number>();
+
 export const store = reactive({
   power: new PowerService({debug: false}),
   heartRate: new HeartRateService(),
@@ -43,6 +45,7 @@ export const store = reactive({
     this.chatMessages = [];
     this.examplePrompts = [];
     this.toasts = [];
+    this.resetSubscriptions();
   },
   /**
    * Starts a new measurement and subscribes to it.
@@ -60,7 +63,19 @@ export const store = reactive({
    */
   startAndSubscribe(target: number, callback: AntCallback, autoUnsubscribe = true): number {
     if (this.connectedType) {
-        return this[this.connectedType].startAndSubscribe(target, callback, autoUnsubscribe);
+        const subscription = this[this.connectedType].startAndSubscribe(target, callback, autoUnsubscribe);
+        activeSubscriptions.push(subscription);
+        return subscription;
+    } else {
+        console.warn('No sensor connected yet!');
+        return -1;
+    }
+  },
+  resetSubscriptions() {
+    if (this.connectedType) {
+      while (activeSubscriptions.length > 0) {
+        this[this.connectedType].unsubscribe(activeSubscriptions.pop()!)
+      }
     } else {
         console.warn('No sensor connected yet!');
         return -1;
