@@ -22,6 +22,9 @@ npm run build
 ```
 
 ## Changelog
+### 2025-10-13 V0.4.3
+- added additional quiz cards
+
 ### 2025-10-01 V0.4.2
 - fix bug: continued to show toasts after resetting user
 
