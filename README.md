@@ -22,6 +22,9 @@ npm run build
 ```
 
 ## Changelog
+### 2025-10-14 V0.5.0
+- display how many calories where burned when finishing
+
 ### 2025-10-13 V0.4.3
 - added additional quiz cards
 
