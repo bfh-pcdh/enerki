@@ -30,6 +30,7 @@
   
   const userInput = ref(false);
   const chatInput = ref(null);
+  let usage = -1;
   let inputTimeout = -1;
 
   const loadingStyle = computed(() => {
@@ -97,6 +98,7 @@
     ToastService.startToast();
 
     store.chatMessages.push(answerMessage);
+    usage = -1;
 
     chat.value.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'end' });
 
@@ -106,12 +108,16 @@
         answerMessage.percent = Math.min(ant.percent, 100);
         loadingPercent.value = Math.min(ant.percent, 100);
 
-      ToastService.progressToast(
-        answerMessage.percent,
-        answerMessage.content !== '...',
-        ant.value
-      )
-    });
+        ToastService.progressToast(
+          answerMessage.percent,
+          answerMessage.content !== '...',
+          ant.value
+        );
+        if (ant.percent >= 100 && usage > 0) {
+          ToastService.energyToast(usage);
+        }
+      }
+    );
 
     const time = Date.now();
     axios.post(
@@ -125,7 +131,7 @@
       }
     ).then((result) => {
       const duration = Math.round((Date.now() - time) / 1000);
-      const usage = estimateEnergyUsage(result.data.usage.completion_tokens);
+      usage = estimateEnergyUsage(result.data.usage.completion_tokens);
       store.setTarget(usage);    
 
       console.log('Energie verbraucht: ' + usage.toFixed(2) + ' Wh in ' + duration + ' Sekunden. \nDas benötigt eine Durchschnittsleistung von ' + Math.round(3600 * usage / duration) + ' Watt.');

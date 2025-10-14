@@ -3,7 +3,8 @@ import { store } from "./store";
 enum Replacer {
     PERCENT = '%percent%',
     WATTHOUR = '%watthours%',
-    WATT = '%watts'
+    WATT = '%watts',
+    KCAL = '%calories'
 };
 
 const MINIMAL_TIME_BETWEEN_TOASTS = 2000;
@@ -64,6 +65,10 @@ const reallyDone = [
     'Du hast kannst aufhören zu treten, du hast es geschafft!',
     'Du hast die benötigte Energie erzeugt und kannst aufhören zu treten.'
 ];
+const energyUsed = [
+    'Fertig! Du hast mehr als ' + Replacer.KCAL + ' kcal verbraucht, um diese Antwort anzuzeigen!',
+    'Uff! Das waren gerade über ' + Replacer.KCAL + ' kcal, die du verbraucht hast!',
+];
 
 let lastToast = 0;
 
@@ -78,6 +83,12 @@ function getRandom(arr: string[], replacer?: Replacer, replacement: string = '')
     return replacer
         ? arr[i].replace(replacer, replacement)
         : arr[i];
+}
+
+function getKiloCalsFromWatthour(wh: number): string {
+    const kcalWhFactor = 0.8598452279;
+    const bodyEfficiencyFactor = 0.25;
+    return (wh * kcalWhFactor / bodyEfficiencyFactor).toFixed(1);
 }
 
 export default class ToastService {
@@ -129,5 +140,9 @@ export default class ToastService {
                 return lastToastExpired() && store.addToast(getRandom(lowPercents, Replacer.PERCENT, percent.toFixed(1)));
             } 
         }
+    }
+
+    static energyToast(wh: number) {
+        store.addToast(getRandom(energyUsed, Replacer.KCAL, getKiloCalsFromWatthour(wh)), 5000);
     }
 }
