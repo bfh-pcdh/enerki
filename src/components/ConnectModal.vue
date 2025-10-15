@@ -22,6 +22,7 @@ import { store } from '../store';
         </div>
         <div class="modal-body">
           <p>Es ist noch kein Sensor verbunden.</p>
+          <p><a href="https://gitlab.ti.bfh.ch/pcdh/enerki/-/blob/main/SETUP.md" target="_blank">Anleitung zum Einrichten</a></p>
           <div class="button-container">
             <!-- button 
               @click="connect('heartRate')"
