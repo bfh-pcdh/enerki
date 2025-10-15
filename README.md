@@ -3,6 +3,8 @@
 
 Use Chrome for WebUSB support if you want to use ANT+ sensors.
 
+For instructions how to prepare the setup, see [SETUP.md](./SETUP.md) (in german).
+
 ## Project Setup
 
 ```sh
@@ -22,17 +24,20 @@ npm run build
 ```
 
 ## Changelog
+### 2025-10-14 V0.5.1
+- Added [instructions](/SETUP.md) to set up the enerKI hardware
+
 ### 2025-10-14 V0.5.0
-- display how many calories where burned when finishing
+- Added funktion to display how many calories where burned when finishing
 
 ### 2025-10-13 V0.4.3
-- added additional quiz cards
+- Added additional quiz cards
 
 ### 2025-10-01 V0.4.2
-- fix bug: continued to show toasts after resetting user
+- Fixed bug: continued to show toasts after resetting user
 
 ### 2025-09-30 V0.4.1
-- add favicon
+- Added favicon
 
 ### 2025-09-30 V0.4.0
 - Introduced example prompts
@@ -50,7 +55,7 @@ npm run build
 - Use special model for enabling system prompt
 
 ### 2025-09-19 V0.2.1
-- Fix a bug where the response was not obfuscated before reaching necessary power level
+- Fixed a bug where the response was not obfuscated before reaching necessary power level
 
 ### 2025-09-16 V0.2.0
 - Improve feedback via toasts.
