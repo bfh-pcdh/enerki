@@ -37,8 +37,6 @@
     return 'filter: blur(' + (10 - Math.round(loadingPercent.value / 10)) + 'px);opacity:' + (0.009 * loadingPercent.value + 0.1).toFixed(2)  + ';';
   })
 
-  const input = ref('');
-
   /**
    * Estimates the energy usage for an answer, based on the number of output tokens. Samsi et al. estimated the energy usage with 3 - 4 Joule per token, which equals to ~0.001 Wh
    * @see Paper       Samsi et al. (2023): From Words to Watts: Benchmarking the Energy Costs of Large Language Model Inference. https://doi.org/10.48550/arXiv.2310.03003 
@@ -71,11 +69,11 @@
    * Sends a message to the model, with all previous messages as context
    */
   function send() {
-    if (input.value == '') return;
+    if (store.textInput == '') return;
 
     const message: Message = {
       role: USER_ROLE.USER,
-      content: input.value,
+      content: store.textInput,
       loading: false
     };
     loadingPercent.value = 0;
@@ -86,7 +84,7 @@
       model: ENV.MODEL,
       messages: [...store.chatMessages]
     }
-    input.value = '';
+    store.textInput = '';
 
     const answerMessage = {
       role: USER_ROLE.AI,
@@ -165,7 +163,7 @@
 
   function setPrompt(prompt: string) {
     if (!store.chatMessages[store.chatMessages.length -1]?.loading) {
-      input.value = prompt;
+      store.textInput = prompt;
       (chatInput.value as any)?.focus();
     }
   }
@@ -188,7 +186,7 @@
   <PromptExamples @on-select-prompt="setPrompt" :user-inputting="userInput" v-if="!store.isPedalling() && store.examplePrompts.length > 0"/>
 
   <form action="#" ref="input-form">
-    <input autofocus type="text" v-model="input" :placeholder="'Gib hier deinen Text ein' + (store.examplePrompts.length > 0 ? ' oder wähle einen der Prompts oben aus':'')" @input="inputting" ref="chatInput"/>
+    <input autofocus type="text" v-model="store.textInput" :placeholder="'Gib hier deinen Text ein' + (store.examplePrompts.length > 0 ? ' oder wähle einen der Prompts oben aus':'')" @input="inputting" ref="chatInput"/>
     <button @click="send" type="submit" :disabled="store.isPedalling()">
       SENDEN
     </button>

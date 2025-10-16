@@ -27,6 +27,8 @@
   document.addEventListener('keydown', function(event) {
     if (showCardModal.value && event.key == 'Enter') {
       showCardModal.value = false;
+    } else if (event.key == 'Enter' && store.textInput == '') {
+      drawCard();
     }
   });
 
