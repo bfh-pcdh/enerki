@@ -82,6 +82,7 @@
     margin-bottom: 0;
     margin-top: -1.5rem;
     position: relative;
+    font-size: 1.7em;
     z-index: 10;
   }
 

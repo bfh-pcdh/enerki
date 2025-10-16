@@ -136,7 +136,7 @@
 
       console.log('Energie verbraucht: ' + usage.toFixed(2) + ' Wh in ' + duration + ' Sekunden. \nDas benötigt eine Durchschnittsleistung von ' + Math.round(3600 * usage / duration) + ' Watt.');
 
-      answerMessage.content = result.data.choices[0].message.content;
+      answerMessage.content = (result.data.choices[0].message.content as string).replaceAll('ß', 'ss');
       answerMessage.loading = false;
 
       // we need to do this, or vue won't detect the update...
