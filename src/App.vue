@@ -28,7 +28,7 @@
     if (showCardModal.value && event.key == 'Enter') {
       showCardModal.value = false;
     } else if (event.key == 'Enter' && store.textInput == '') {
-      drawCard();
+      showCard();
     }
   });
 
@@ -37,32 +37,29 @@
    */
   function getHeaderButtons() {
     return [
-    activeCard.value == undefined 
-      ? {
+      {
         icon: '🀙',
-        title: 'Neue Karte ziehen',
-        action: drawCard,
-        style: 'line-height: 1.8em;'
-      }
-      : {
-        icon: '🀙',
-        title: 'Karte nochmal anzeigen',
-        action: () => showCardModal.value = true,
-        style: 'text-shadow: #fac300 0px 0 3px; line-height: 1.8em;'
+        title: activeCard.value == undefined 
+          ? 'Neue Karte ziehen'
+          : 'Karte nochmal anzeigen',
+        action: showCard,
+        style: activeCard.value == undefined 
+          ? 'line-height: 1.8em;'
+          : 'text-shadow: #fac300 0px 0 3px; line-height: 1.8em;'
       },
-    {
-      icon: '⟲',
-      title: 'Zurücksetzen',
-      action: resetUser,
-      style: ''
-    },
-    // {
-    //   icon: '⚙︎',
-    //   title: 'Einstellungen',
-    //   action: () => showSettings.value = !showSettings.value,
-    //   style: ''
-    // }
-  ];
+      {
+        icon: '⟲',
+        title: 'Zurücksetzen',
+        action: resetUser,
+        style: ''
+      },
+      // {
+      //   icon: '⚙︎',
+      //   title: 'Einstellungen',
+      //   action: () => showSettings.value = !showSettings.value,
+      //   style: ''
+      // }
+    ];
   }
 
   /**
@@ -102,10 +99,12 @@
   /**
    * Draws a new quiz card and sets the example prompts.
    */
-  function drawCard() {
-    activeCard.value = QuizService.drawRandomQuizCard();
+  function showCard() {
+    if (activeCard.value == undefined) {
+      activeCard.value = QuizService.drawRandomQuizCard();
+      store.examplePrompts = activeCard.value.prompts;
+    }
     showCardModal.value = true;
-    store.examplePrompts = activeCard.value.prompts;
   }
 
   /**
