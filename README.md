@@ -24,6 +24,12 @@ npm run build
 ```
 
 ## Changelog
+### 2025-10-15 V0.6.0
+- Fixes from first event
+    - bigger font in example prompts
+    - replace ß in responses
+    - enter key draws a new card if input field is empty
+
 ### 2025-10-14 V0.5.1
 - Added [instructions](/SETUP.md) to set up the enerKI hardware
 

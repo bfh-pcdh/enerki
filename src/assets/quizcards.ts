@@ -57,11 +57,11 @@ export const QUIZ: QuizCard[]  = [
     },
     {
         id: '7',
-        question: 'Schätze, wie viel Prozent der Menschen atmen laut WHO-Daten ungesunde Außenluft ein, die größtenteils durch die Verbrennung fossiler Brennstoffe verursacht wird?',
+        question: 'Schätze, wie viel Prozent der Menschen atmen laut WHO-Daten ungesunde Aussenluft ein, die grösstenteils durch die Verbrennung fossiler Brennstoffe verursacht wird?',
         prompts: [
-            'Wie viel Prozent der Menschen atmen laut WHO-Daten ungesunde Außenluft ein, die größtenteils durch die Verbrennung fossiler Brennstoffe verursacht wird?',
-            'Wie viel Prozent der Menschen atmen laut WHO-Daten ungesunde Außenluft ein, die größtenteils durch die Verbrennung fossiler Brennstoffe verursacht wird? Mache mir eine ausführliche Analyse.',
-            'Wie viel Prozent der Menschen atmen laut WHO-Daten ungesunde Außenluft ein, die größtenteils durch die Verbrennung fossiler Brennstoffe verursacht wird? Gib mir eine möglichst kurze Antwort.'
+            'Wie viel Prozent der Menschen atmen laut WHO-Daten ungesunde Aussenluft ein, die grösstenteils durch die Verbrennung fossiler Brennstoffe verursacht wird?',
+            'Wie viel Prozent der Menschen atmen laut WHO-Daten ungesunde Aussenluft ein, die grösstenteils durch die Verbrennung fossiler Brennstoffe verursacht wird? Mache mir eine ausführliche Analyse.',
+            'Wie viel Prozent der Menschen atmen laut WHO-Daten ungesunde Aussenluft ein, die grösstenteils durch die Verbrennung fossiler Brennstoffe verursacht wird? Gib mir eine möglichst kurze Antwort.'
         ]
     }
 ];
