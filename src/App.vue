@@ -37,32 +37,29 @@
    */
   function getHeaderButtons() {
     return [
-    activeCard.value == undefined 
-      ? {
+      {
         icon: '🀙',
-        title: 'Neue Karte ziehen',
+        title: activeCard.value == undefined 
+          ? 'Neue Karte ziehen'
+          : 'Karte nochmal anzeigen',
         action: showCard,
-        style: 'line-height: 1.8em;'
-      }
-      : {
-        icon: '🀙',
-        title: 'Karte nochmal anzeigen',
-        action: showCard,
-        style: 'text-shadow: #fac300 0px 0 3px; line-height: 1.8em;'
+        style: activeCard.value == undefined 
+          ? 'line-height: 1.8em;'
+          : 'text-shadow: #fac300 0px 0 3px; line-height: 1.8em;'
       },
-    {
-      icon: '⟲',
-      title: 'Zurücksetzen',
-      action: resetUser,
-      style: ''
-    },
-    // {
-    //   icon: '⚙︎',
-    //   title: 'Einstellungen',
-    //   action: () => showSettings.value = !showSettings.value,
-    //   style: ''
-    // }
-  ];
+      {
+        icon: '⟲',
+        title: 'Zurücksetzen',
+        action: resetUser,
+        style: ''
+      },
+      // {
+      //   icon: '⚙︎',
+      //   title: 'Einstellungen',
+      //   action: () => showSettings.value = !showSettings.value,
+      //   style: ''
+      // }
+    ];
   }
 
   /**
