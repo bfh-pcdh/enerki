@@ -24,6 +24,9 @@ npm run build
 ```
 
 ## Changelog
+### 2025-10-20 V0.6.1
+- Show drawn card again if pressing enter (instead of drawing new card)
+
 ### 2025-10-15 V0.6.0
 - Fixes from first event
     - bigger font in example prompts
