@@ -28,7 +28,7 @@
     if (showCardModal.value && event.key == 'Enter') {
       showCardModal.value = false;
     } else if (event.key == 'Enter' && store.textInput == '') {
-      drawCard();
+      showCard();
     }
   });
 
@@ -41,13 +41,13 @@
       ? {
         icon: '🀙',
         title: 'Neue Karte ziehen',
-        action: drawCard,
+        action: showCard,
         style: 'line-height: 1.8em;'
       }
       : {
         icon: '🀙',
         title: 'Karte nochmal anzeigen',
-        action: () => showCardModal.value = true,
+        action: showCard,
         style: 'text-shadow: #fac300 0px 0 3px; line-height: 1.8em;'
       },
     {
@@ -102,10 +102,12 @@
   /**
    * Draws a new quiz card and sets the example prompts.
    */
-  function drawCard() {
-    activeCard.value = QuizService.drawRandomQuizCard();
+  function showCard() {
+    if (activeCard.value == undefined) {
+      activeCard.value = QuizService.drawRandomQuizCard();
+      store.examplePrompts = activeCard.value.prompts;
+    }
     showCardModal.value = true;
-    store.examplePrompts = activeCard.value.prompts;
   }
 
   /**
