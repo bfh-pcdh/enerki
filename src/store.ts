@@ -11,6 +11,7 @@ export const store = reactive({
   connected: false,
   connectedType: undefined as 'heartRate' | 'power' | undefined,
   toasts: new Array<string>(),
+  textInput: '',
   isDebug: false,
   chatMessages: new Array<Message>(),
   examplePrompts: new Array<string>(),
@@ -45,6 +46,7 @@ export const store = reactive({
     this.chatMessages = [];
     this.examplePrompts = [];
     this.toasts = [];
+    this.textInput = '';
     this.resetSubscriptions();
   },
   /**
