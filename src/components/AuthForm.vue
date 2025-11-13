@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { i18n } from '@/assets/i18n';
 import { ref } from 'vue';
 
   const emit = defineEmits(['onToken', 'onError']);
@@ -26,8 +27,7 @@ import { ref } from 'vue';
       persist.value = false;
     } else {
       const confirm = window.confirm(
-          '⚠️ Das Token wird unverschlüsselt gespeichert. Andere Websiten, die du mit diesem Browser besuchst, können das Token potenziell auslesen.' + 
-          '\n\nMöchtest du es trotzdem speichern?'
+          i18n('AUTH_CONFIRM')
       );
       window.setTimeout(() => persist.value = confirm, 1); // hack necessary to set negative answer when user checked checkbox and said no in prompt
     }
@@ -39,11 +39,11 @@ import { ref } from 'vue';
     <div class="token-box">
       <input type="text" v-model="token" placeholder="Bitte gib dein BeeChat Token ein" style="width: 100%"></input>
       <button @click="setToken" type="submit" :disabled="token.length == 0">
-        SPEICHERN
+        {{ i18n('SAVE').toUpperCase() }}
       </button>
     </div>
     <div class="persist-box">
-      <input type="checkbox" v-model="persist" @click="togglePersist">Das Token auf diesem Computer speichern</input>
+      <input type="checkbox" v-model="persist" @click="togglePersist">{{ i18n('AUTH_PERSIST') }}</input>
     </div>
   </form>
 </template>

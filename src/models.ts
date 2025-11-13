@@ -14,6 +14,6 @@ export interface Message {
 
 export interface QuizCard {
     id: string;
-    question: string;
-    prompts: string[]
+    question: {de: string, fr: string};
+    prompts: {de: string[], fr: string[]}
 };

@@ -5,11 +5,12 @@
   import ConnectModal from "./components/ConnectModal.vue";
   import Settings from "./components/Settings.vue";
   import Chat from "./components/Chat.vue";
-  import { getPersisted, persist, store, STORE_KEY } from "./store";
+  import { getPersisted, LANG, persist, store, STORE_KEY } from "./store";
   import PowerSimulator from './components/PowerSimulator.vue';
   import QuizCardModal from "./components/QuizCardModal.vue";
   import QuizService from "./quizService";
   import { QuizCard } from "./models";
+import { i18n } from "./assets/i18n";
 
   const version = require('../package.json').version;
 
@@ -40,8 +41,8 @@
       {
         icon: '🀙',
         title: activeCard.value == undefined 
-          ? 'Neue Karte ziehen'
-          : 'Karte nochmal anzeigen',
+          ? i18n('NEW_CARD')
+          : i18n('SHOW_CARD'),
         action: showCard,
         style: activeCard.value == undefined 
           ? 'line-height: 1.8em;'
@@ -49,9 +50,15 @@
       },
       {
         icon: '⟲',
-        title: 'Zurücksetzen',
+        title: i18n('RESET'),
         action: resetUser,
         style: ''
+      },
+      {
+        icon: store.lang === LANG.DE ? '🇩🇪' : '🇫🇷',
+        title: i18n('LANGUAGE'),
+        action: toggleLanguage,
+        style: 'filter: saturate(0)'
       },
       // {
       //   icon: '⚙︎',
@@ -75,11 +82,25 @@
   }
 
   /**
+   * 
+   */
+  function toggleLanguage() {
+    switch (store.lang) {
+      case LANG.DE: 
+        store.lang = LANG.FR;
+        break;
+      case LANG.FR:
+        store.lang = LANG.DE;
+        break;
+    }
+  }
+
+  /**
    * Resets the app to start with a new user
    */
   function resetUser() {
      if (
-      confirm('Soll enerKI für eine·n Benutzer·in zurückgesetz werden?')
+      confirm(i18n('RESET_USER'))
     ) {
       activeCard.value = undefined;
       store.resetUser();
@@ -102,7 +123,7 @@
   function showCard() {
     if (activeCard.value == undefined) {
       activeCard.value = QuizService.drawRandomQuizCard();
-      store.examplePrompts = activeCard.value.prompts;
+      store.examplePrompts = activeCard.value.prompts[store.lang];
     }
     showCardModal.value = true;
   }
@@ -132,9 +153,9 @@
     <main v-else>
       <!-- display error message -->
       <div class="error" v-if="error">
-        <h2>Leider ist etwas schief gegangen:</h2>
+        <h2>{{i18n('ERROR')}}</h2>
         {{ error }}
-        <button @click="reset">OK</button>
+        <button @click="reset">{{i18n('ERROR')}}</button>
       </div>
 
       <!-- chat window -->
@@ -190,7 +211,7 @@ header h1 {
   font-weight: bold;
 }
 .header-buttons {
-  width: 4em;
+  width: 6em;
   margin-left: auto;
   justify-content: space-evenly;
   display: flex;
@@ -201,13 +222,15 @@ header h1 {
   color: #c1c9d1;
   font-size: 2em;
   line-height: 2em;
+  margin-left: 0.2em;
 }
 .glow {
   text-shadow: #fac300 0px 0 3px;
 }
 
 .header-button:hover {
-  color: #697d91
+  color: #697d91;
+  filter: saturate(1) !important; 
 }
 
 .logo {

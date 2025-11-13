@@ -1,6 +1,8 @@
 <script setup lang="ts">
   import { store } from '@/store';
   import { ref, watch } from 'vue';
+  import { i18n } from '@/assets/i18n';
+
   const MIN_WATT = 0;
   const MAX_WATT = 500;
 
@@ -48,8 +50,8 @@
 
 <template>
   <div class="power" :style="getBackgroundColor()">
-    <h3>Wie stark trittst du in die Pedale?</h3>
-    <span class="watts">{{ watt }} Watt</span>
+    <h3>{{ i18n('POWERSIM_LABEL') }}</h3>
+    <span class="watts">{{ watt + ' ' + i18n('POWERSIM_WATT') }}</span>
     <input type="range" v-if="debug "v-model="simulatedWatt" :min="MIN_WATT" :max="MAX_WATT"></input>
   </div>
 </template>
