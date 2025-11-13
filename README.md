@@ -24,6 +24,9 @@ npm run build
 ```
 
 ## Changelog
+### 2025-11-12 V0.7.0
+- Added french translation
+
 ### 2025-10-20 V0.6.1
 - Show drawn card again if pressing enter (instead of drawing new card)
 

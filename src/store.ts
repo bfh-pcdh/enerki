@@ -4,6 +4,11 @@ import { Message } from './models';
 
 let activeSubscriptions = new Array<number>();
 
+export enum LANG {
+  DE = 'de',
+  FR = 'fr'
+};
+
 export const store = reactive({
   power: new PowerService({debug: false}),
   heartRate: new HeartRateService(),
@@ -15,6 +20,7 @@ export const store = reactive({
   isDebug: false,
   chatMessages: new Array<Message>(),
   examplePrompts: new Array<string>(),
+  lang: LANG.DE,
   isPedalling() {
     const lastMessage = this.chatMessages[this.chatMessages.length -1];
     if (lastMessage) {

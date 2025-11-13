@@ -1,15 +1,16 @@
 <script setup lang="ts">
 import { store } from '../store';
+import { i18n } from '@/assets/i18n';
 
-  const emit = defineEmits(['onError']);
+const emit = defineEmits(['onError']);
 
-  function connect(type: 'heartRate' | 'power' | 'debug') {
-    try {
-      store.connect(type);
-    } catch (e) {
-      emit('onError', JSON.stringify(e, null, 2));
-    }
+function connect(type: 'heartRate' | 'power' | 'debug') {
+  try {
+    store.connect(type);
+  } catch (e) {
+    emit('onError', JSON.stringify(e, null, 2));
   }
+}
 </script>
 
 <template>
@@ -18,11 +19,11 @@ import { store } from '../store';
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
-          <h1 class="modal-title">Sensor verbinden</h1>
+          <h1 class="modal-title">{{ i18n('CONNECT_TITLE') }}</h1>
         </div>
         <div class="modal-body">
-          <p>Es ist noch kein Sensor verbunden.</p>
-          <p><a href="https://gitlab.ti.bfh.ch/pcdh/enerki/-/blob/main/SETUP.md" target="_blank">Anleitung zum Einrichten</a></p>
+          <p>{{ i18n('CONNECT_NOTCONNECTED') }}</p>
+          <p><a href="https://gitlab.ti.bfh.ch/pcdh/enerki/-/blob/main/SETUP.md" target="_blank">{{ i18n('CONNECT_INSTRUCTIONS') }}</a></p>
           <div class="button-container">
             <!-- button 
               @click="connect('heartRate')"
@@ -34,14 +35,14 @@ import { store } from '../store';
               @click="connect('power')"
               class="connect-button"
               :disabled="!store.power.stickAvailable()"
-              title="Powermeter verbinden: Benötigt einen ANT+ USB-Adapter und kompatible Powermeter-Pedale">
-              Powermeter verbinden
+              :title="i18n('CONNECT_POWERMETER_TOOLTIP')">
+              {{ i18n('CONNECT_POWERMETER') }}
             </button>
             <button 
               @click="connect('debug')"
               class="connect-button"
-              title="Ohne Sensor verwenden: Im Debug-Modus wird ein Powermeter simuliert, um enerKI auch ohne Ergometer-Infrastruktur testen zu können.">
-              ohne Sensor verwenden
+              :title="i18n('CONNECT_DEBUG_TOOLTIP')">
+              {{ i18n('CONNECT_DEBUG') }}
             </button>
           </div>
         </div>

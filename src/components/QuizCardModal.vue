@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { QuizCard } from "@/models";
+import { i18n } from "@/assets/i18n";
+import { store } from "@/store";
 
 const emit = defineEmits(["onClose"]);
 const props = defineProps<{
@@ -13,13 +15,13 @@ const props = defineProps<{
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
-          <h1 class="modal-title">Quiz-Karte #{{card.id}}</h1>
+          <h1 class="modal-title">{{i18n('QUIZCARD_TITLE') + card.id}}</h1>
           <span class="close-button" @click="emit('onClose')">×</span>
         </div>
         <div class="modal-body">
-          <p class="additional">Versuche, diese Frage zu beantworten:</p>
-          <p class="question">{{ card.question }}</p>
-          <p class="additional">Drücke <i>[Enter]</i> um einen Prompt auszuwählen oder einen eigenen Prompt einzugeben.</p>
+          <p class="additional">{{i18n('QUIZCARD_DESCRIPTION')}}</p>
+          <p class="question">{{ card.question[store.lang] }}</p>
+          <p class="additional">{{i18n('QUIZCARD_INSTRUCTION')}}</p>
         </div>
       </div>
     </div>
