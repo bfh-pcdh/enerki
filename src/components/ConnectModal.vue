@@ -23,7 +23,7 @@ function connect(type: 'heartRate' | 'power' | 'debug') {
         </div>
         <div class="modal-body">
           <p>{{ i18n('CONNECT_NOTCONNECTED') }}</p>
-          <p><a href="https://gitlab.ti.bfh.ch/pcdh/enerki/-/blob/main/SETUP.md" target="_blank">{{ i18n('CONNECT_INSTRUCTIONS') }}</a></p>
+          <p><a href="https://github.com/bfh-pcdh/enerki/blob/main/SETUP.md" target="_blank">{{ i18n('CONNECT_INSTRUCTIONS') }}</a></p>
           <div class="button-container">
             <!-- button 
               @click="connect('heartRate')"
