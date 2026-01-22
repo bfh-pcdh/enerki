@@ -1,5 +1,5 @@
 # enerKI
-[See it in action](https://enerki-2ddc65.pages.ti.bfh.ch).
+[See it in action](https://bfh-pcdh.github.io/enerki/).
 
 Use Chrome for WebUSB support if you want to use ANT+ sensors.
 
@@ -24,6 +24,10 @@ npm run build
 ```
 
 ## Changelog
+### 2026-01-22 V0.7.1
+- Moved repo to Github
+- Fixed dependency vulnerabilities
+
 ### 2025-11-12 V0.7.0
 - Added french translation
 
