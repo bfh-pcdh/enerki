@@ -9,7 +9,8 @@ module.exports = {
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: '[name].chunk.js',
-    clean: true
+    clean: true,
+    publicPath: '/enerki/'
   },
   optimization: {
     splitChunks: {
