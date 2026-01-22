@@ -21,6 +21,9 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Debugging dist
+        run: ls -R dist/ # Zeigt den Inhalt des dist/-Ordners an
+
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
