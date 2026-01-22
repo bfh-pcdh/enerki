@@ -28,3 +28,5 @@ For receiving the power sensors signal, we need an ANT+ dongle. We were using a 
 
 ### LLM endpoint
 enerki needs a chatbot API in order to work. Per default, we are using our [own internal inference service](https://inference.mlmp.ti.bfh.ch/). This is however only accessible in the network of the Bern University of Applied Sciences, so if you want to use another service, you need to adjust the [env file](./env.ts) accordingly.
+
+2026-01-22 heg2@bfh.ch

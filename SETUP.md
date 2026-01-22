@@ -1,5 +1,4 @@
 # Anleitung: enerKI für den Gebrauch vorbereiten
-2025-10-15 heg2@bfh.ch
 
 1. Laptop starten und einloggen (Passwort siehe 1Password).
 2. Sicherstellen, dass der Laptop eine WLAN-Verbingung hat
@@ -11,3 +10,5 @@
 8. Schaltfläche "Powermeter verbinden" auswählen. `ANT USB-m Stick gekoppelt` auswählen. Wenn keine kompatiblen Geräte gefunden wurden, zurück zu Schritt 5.
 9. Testen, ob alles funktioniert. Danach mit dem Button `⟲` für den/die ersten User*in zurücksetzen.
 10. Hometrainer einstellen (Höhe Lenker, Höhe Sattel, Widerstand des Schwungrades)
+
+2025-10-15 heg2@bfh.ch
