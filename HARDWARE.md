@@ -1,5 +1,5 @@
 # Hardware used for enerki
-This document describes the hardware used in the enerki project. It provides you with the information used to reproduce the setup yourself.
+This document describes the hardware used in the enerki project. It provides you with the information to reproduce the setup yourself.
 
 ## What is needed
 - [some kind of stationary bicycle](#bicycle)
