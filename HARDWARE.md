@@ -29,4 +29,18 @@ For receiving the power sensors signal, we need an ANT+ dongle. We were using a 
 ### LLM endpoint
 enerki needs a chatbot API in order to work. Per default, we are using our [own internal inference service](https://inference.mlmp.ti.bfh.ch/). This is however only accessible in the network of the Bern University of Applied Sciences, so if you want to use another service, you need to adjust the [env file](./env.ts) accordingly.
 
-2026-01-22 heg2@bfh.ch
+
+## Set up
+The following chapter describes how we prepared our set up. If you use other components, things might be a bit different.
+### Bicycle
+1. Remove the old pedals from the bicycle. This may need a bit of strength. Also mind that bicycle pedals have a different threaded mount on the left side. If you encounter problems, ask your local bike nerd or [YouTube](https://www.youtube.com/shorts/UbGWbPbRW9M).
+2. Charge the power meter pedals with the cable that came in the box and install them on the bicycle. 
+3. Before you can use the power meter pedals, you need to register them with the [Assioma App](https://cycling.favero.com/faq/#sezione-5). In the app, you can also download firmware updates to your pedals, or set the time after which the pedals go to sleep. Our experience was, that a higher sleep time (e.g. 30 minutes) is useful during events.
+### Laptop
+1. On Windows, you may have to [install a driver for the Garmin ANT+ dongle](https://support.garmin.com/de-CH/?faq=lhcXYdqFRP1bbumefCOf37). On MacOS and Android, we experienced the dongle to work out of the box. We needed an USB A to USB C adapter though.
+2. If you want to run the WebApp locally, you need to have [node.js](https://nodejs.org/en/download) installed. The WebApp is written in Vue.js, so if you're not yet familiar with that, you can consult the [Vue.js documentation](https://vuejs.org/guide/introduction.html).
+3. Run `npm install` in the root directory of the repository to install the dependencies.
+4. Set up the [env file](./env.ts) to match the LLM endpoint you're using. You can enter the access token to the env file (but make sure not to commit it to Github), or enter it in the Webapp during runtime.
+5. With `npm run dev`, you can run the WebApp on your local computer. When running, point your browser to [localhost:4200](http://localhost:4200). With `npm run build`, you can build the WebApp to deploy it on a web server.
+
+2026-01-23 heg2@bfh.ch
