@@ -3,7 +3,8 @@
 
 Use Chrome for WebUSB support if you want to use ANT+ sensors.
 
-For instructions how to prepare the setup, see [SETUP.md](./SETUP.md) (in german).
+For instructions how to prepare the existing setup for use, see [SETUP.md](./SETUP.md) (in german).
+For instructions how to reproduce the enerki setting with your own hardware, see [HARDWARE.md](./HARDWARE.md).
 
 ## Project Setup
 
