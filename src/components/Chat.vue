@@ -139,7 +139,8 @@ function send() {
     answerMessage.loading = false;
 
     // we need to do this, or vue won't detect the update...
-    store.chatMessages = [...store.chatMessages]
+    store.chatMessages.pop();
+    store.chatMessages.push(answerMessage);
 
     chat.value.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'end' });
     emit('onAnswer', answerMessage);
@@ -192,7 +193,7 @@ function setPrompt(prompt: string) {
   <PromptExamples
     @on-select-prompt="setPrompt"
     :user-inputting="userInput"
-    v-if="!store.isPedalling() && store.examplePrompts.length > 0"
+    v-if="!store.isPedalling() && store.getExamplePrompts().length > 0"
   />
 
   <form action="#" ref="input-form">
@@ -200,7 +201,7 @@ function setPrompt(prompt: string) {
       autofocus
       type="text"
       v-model="store.textInput"
-      :placeholder="i18n(store.examplePrompts.length > 0 ? 'CHAT_PLACEHOLDER_PROMPTS' : 'CHAT_PLACEHOLDER')"
+      :placeholder="i18n(store.getExamplePrompts().length > 0 ? 'CHAT_PLACEHOLDER_PROMPTS' : 'CHAT_PLACEHOLDER')"
       @input="inputting"
       ref="chatInput"
     />

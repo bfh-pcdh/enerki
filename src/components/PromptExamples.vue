@@ -9,14 +9,14 @@
 
   document.addEventListener('keydown', function(event) {
     const key = Number(event.key);
-    if (!props.userInputting && event.key != ' ' && !isNaN(key) && key <= store.examplePrompts.length) {
+    if (!props.userInputting && event.key != ' ' && !isNaN(key) && key <= store.getExamplePrompts().length) {
       selectPrompt(key - 1);
     }
   }); 
 
 
   function selectPrompt(index: number) {
-    const prompt = store.examplePrompts[index];
+    const prompt = store.getExamplePrompts()[index];
    
     window.setTimeout(() => 
       emit('onSelectPrompt', prompt),
@@ -27,7 +27,7 @@
 
 <template>
   <ul>
-    <li v-for="prompt, i of store.examplePrompts" @click="selectPrompt(i)">
+    <li v-for="prompt, i of store.getExamplePrompts()" @click="selectPrompt(i)">
       <span class="prompt-number">
         {{ i + 1 }}
       </span>

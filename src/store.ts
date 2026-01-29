@@ -1,6 +1,7 @@
-import { reactive } from 'vue';
+import { reactive, watch } from 'vue';
 import { AntCallback, HeartRateService, PowerService } from './antService';
-import { Message } from './models';
+import { Message, QuizCard } from './models';
+import QuizService from './quizService';
 
 let activeSubscriptions = new Array<number>();
 
@@ -9,18 +10,51 @@ export enum LANG {
   FR = 'fr'
 };
 
-export const store = reactive({
+export enum STORE_KEY {
+  TOKEN = 'enerki-token',
+  TEMP = 'enerki-temp-'
+}; 
+
+interface Store {
+  power: PowerService,
+  heartRate: HeartRateService,
+  activeCard: QuizCard,
+  cardDrawn: boolean,
+  connected: boolean,
+  toasts: string[],
+  textInput: string,
+  connectedType: 'heartRate' | 'power' | undefined,
+  isDebug: boolean,
+  chatMessages: Message[],
+  lang: LANG,
+  getExamplePrompts: () => string[],
+  drawQuizCard: (n?: boolean) => void,
+  isPedalling: () => boolean,
+  connect: (t: 'heartRate' | 'power' | 'debug') => void,
+  resetUser: () => void,
+  startAndSubscribe: (t: number, cb: AntCallback, aU?: boolean) => number,
+  resetSubscriptions: () => void,
+  setTarget: (t: number) => void,
+  addToast: (t: string, to?: number) => void,
+  removeToast: (t: string) => boolean
+};
+
+const storeObj: Store = {
   power: new PowerService({debug: false}),
   heartRate: new HeartRateService(),
-  // quiz: new QuizService(),
   connected: false,
-  connectedType: undefined as 'heartRate' | 'power' | undefined,
+  activeCard: QuizService.drawRandomQuizCard(),
+  cardDrawn: false,
+  connectedType: undefined,
   toasts: new Array<string>(),
   textInput: '',
   isDebug: false,
   chatMessages: new Array<Message>(),
-  examplePrompts: new Array<string>(),
   lang: LANG.DE,
+  getExamplePrompts() {
+    if (!this.cardDrawn) return [];
+    return this.activeCard.prompts[this.lang];
+  },
   isPedalling() {
     const lastMessage = this.chatMessages[this.chatMessages.length -1];
     if (lastMessage) {
@@ -50,10 +84,23 @@ export const store = reactive({
    */
   resetUser() {
     this.chatMessages = [];
-    this.examplePrompts = [];
     this.toasts = [];
+    this.activeCard = QuizService.drawRandomQuizCard();
+    this.cardDrawn = false;
     this.textInput = '';
+    sessionStorage.clear();
     this.resetSubscriptions();
+  },
+  /**
+   * Draws a new Quizcard
+   */
+  drawQuizCard(newCard = false) {
+
+    if (newCard || !this.cardDrawn) {
+      const card = QuizService.drawRandomQuizCard();
+      this.activeCard = card;
+    }
+    this.cardDrawn = true;
   },
   /**
    * Starts a new measurement and subscribes to it.
@@ -114,7 +161,7 @@ export const store = reactive({
   /**
    * Removes a toast by text
    * @param text  the text of the toast to remove
-   * @returns     TRUe if the toast was found and removed
+   * @returns     TRUE if the toast was found and removed
    *              FALSE if the toast was not found
    */
   removeToast(text: string): boolean {
@@ -126,11 +173,39 @@ export const store = reactive({
       return false;
     }
   }
+}
+
+export const store = reactive(storeObj);
+
+type StoreKey = keyof typeof store;
+const storePropsToPersist: StoreKey[] = [
+  'activeCard',
+  'chatMessages',
+  'cardDrawn',
+  // 'textInput'
+]
+
+
+reloadFromStorage();
+
+storePropsToPersist.forEach((key) => {
+  watch(() => store[key], (m) => {
+    sessionStorage.setItem(STORE_KEY.TEMP + key, JSON.stringify(m));
+  }, {deep: true});
 });
 
-export const STORE_KEY = {
-  TOKEN: 'enerki-token'
-}; 
+function reloadFromStorage() {
+  storePropsToPersist.forEach((key) => {
+    const prop = sessionStorage.getItem(STORE_KEY.TEMP + key);
+    if (prop != undefined) {
+      try {
+        store[key] = JSON.parse(prop) as never; // it makes me cry to do this, but if it makes TS happy...
+      } catch(e) {
+        store[key] = prop as never;
+      }
+    }
+  });
+}
 
 export function persist<T>(key: string, value: T) {
   window.localStorage.setItem(
