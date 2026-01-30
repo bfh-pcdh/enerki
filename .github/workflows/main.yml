@@ -20,7 +20,6 @@ jobs:
 
       - name: Create .env file with secrets
         run: |
-          cat <<'EOF' >> ./env.ts
           echo "export const ENV = {" >> ./env.ts
           echo "  BASE_URL:   'https://api.openai.com'," >> ./env.ts
           echo "  BASE_URL:   '/v1/chat/completions'," >> ./env.ts
