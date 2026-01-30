@@ -18,6 +18,16 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Create .env file with secrets
+        run: |
+          cat <<'EOF' >> ./env.ts
+          echo "export const ENV = {" >> ./env.ts
+          echo "  BASE_URL:   'https://api.openai.com'," >> ./env.ts
+          echo "  BASE_URL:   '/v1/chat/completions'," >> ./env.ts
+          echo "  MODEL:      'gpt-4.1'," >> ./env.ts
+          echo "  TOKEN:      '${{ secrets.GPT_TOKEN }}'," >> ./env.ts
+          echo "}" >> ./env.ts
+
       - name: Build
         run: npm run build
 
