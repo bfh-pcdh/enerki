@@ -17,5 +17,5 @@ export const ENV = {
     BASE_URL:   'https://api.openai.com',
     ENDPOINT:   '/v1/chat/completions',        
     MODEL:      'gpt-4.1', // 'gpt-3.5-turbo',
-    TOKEN:      ''         // insert token here
+    TOKEN:      ''         // this is a token with only very limited access and budget
 }
