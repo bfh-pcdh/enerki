@@ -132,7 +132,7 @@
 
 <template>
   <header>
-    <img :src="require('@/assets/logo.png')" alt="Logo Berner Fachhochschule" class="logo" :title="'EnerKI Version: '+version" />
+    <img :src="require('@/assets/logo.png')" alt="Logo Berner Fachhochschule" class="logo" :title="'EnerKI Version: ' +version + '\nModel: ' + ENV.BASE_URL + ' > ' + ENV.MODEL" />
     <h1>enerKI</h1>
     <div class="header-buttons">
       <a v-for="b of getHeaderButtons()" @click="b.action" :title="b.title" class="header-button" :style="b.style">{{ b.icon }}</a>

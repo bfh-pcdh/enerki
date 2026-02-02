@@ -1,5 +1,4 @@
 # Anleitung: enerKI für den Gebrauch vorbereiten
-2025-10-15 heg2@bfh.ch
 
 1. Laptop starten und einloggen (Passwort siehe 1Password).
 2. Sicherstellen, dass der Laptop eine WLAN-Verbingung hat
@@ -24,3 +23,5 @@
 
 ### Problem: Ich muss ein Token eingeben, aber kenne keines
 - Melde dich beim enerKI-Team!
+
+2026-02-02 heg2@bfh.ch
