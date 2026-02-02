@@ -180,9 +180,8 @@ export const store = reactive(storeObj);
 type StoreKey = keyof typeof store;
 const storePropsToPersist: StoreKey[] = [
   'activeCard',
-  'chatMessages',
   'cardDrawn',
-  // 'textInput'
+  'textInput'
 ]
 
 
@@ -190,6 +189,10 @@ reloadFromStorage();
 
 storePropsToPersist.forEach((key) => {
   watch(() => store[key], (m) => {
+    if (m == '') return; // so we don't reset the textInput on send
+                         // if user hits send and we have to reload
+                         // the textInput is restored and the user can
+                         // just hit send again
     sessionStorage.setItem(STORE_KEY.TEMP + key, JSON.stringify(m));
   }, {deep: true});
 });
