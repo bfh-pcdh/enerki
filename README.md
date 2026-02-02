@@ -25,6 +25,9 @@ npm run build
 ```
 
 ## Changelog
+### 2026-02-02
+- Fixed problem where user input was reset when reloading page
+
 ### 2026-01-22 V0.7.1
 - Moved repo to Github
 - Fixed dependency vulnerabilities

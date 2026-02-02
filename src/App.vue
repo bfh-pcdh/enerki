@@ -8,8 +8,6 @@
   import { getPersisted, LANG, persist, store, STORE_KEY } from "./store";
   import PowerSimulator from './components/PowerSimulator.vue';
   import QuizCardModal from "./components/QuizCardModal.vue";
-  import QuizService from "./quizService";
-  import { QuizCard } from "./models";
   import { i18n } from "./assets/i18n";
 
   const version = require('../package.json').version;
@@ -20,7 +18,6 @@
 
   const percent = ref<number>(0);
 
-  const activeCard = ref<QuizCard | undefined>();
   const showCardModal = ref(false);
 
   const showSettings = ref(false);
@@ -40,13 +37,13 @@
     return [
       {
         icon: '🀙',
-        title: activeCard.value == undefined 
+        title: store.cardDrawn
           ? i18n('NEW_CARD')
           : i18n('SHOW_CARD'),
         action: showCard,
-        style: activeCard.value == undefined 
-          ? 'line-height: 1.8em;'
-          : 'text-shadow: #fac300 0px 0 3px; line-height: 1.8em;'
+        style: store.cardDrawn
+          ? 'text-shadow: #fac300 0px 0 3px; line-height: 1.8em;'
+          : 'line-height: 1.8em;'
       },
       {
         icon: '⟲',
@@ -102,7 +99,6 @@
      if (
       confirm(i18n('RESET_USER'))
     ) {
-      activeCard.value = undefined;
       store.resetUser();
     }
   }
@@ -121,10 +117,7 @@
    * Draws a new quiz card and sets the example prompts.
    */
   function showCard() {
-    if (activeCard.value == undefined) {
-      activeCard.value = QuizService.drawRandomQuizCard();
-      store.examplePrompts = activeCard.value.prompts[store.lang];
-    }
+    store.drawQuizCard();
     showCardModal.value = true;
   }
 
@@ -170,7 +163,7 @@
     </main>
 
     <ConnectModal v-if="!store.connected" @on-error="handleError" />
-    <QuizCardModal v-if="activeCard && showCardModal" :card="activeCard" @on-close="showCardModal = false"/>
+    <QuizCardModal v-if="store.activeCard && showCardModal" :card="store.activeCard" @on-close="showCardModal = false"/>
 
     <ul class="toast-list">
       <li

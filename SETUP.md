@@ -11,4 +11,20 @@
 9. Testen, ob alles funktioniert. Danach mit dem Button `⟲` für den/die ersten User*in zurücksetzen.
 10. Hometrainer einstellen (Höhe Lenker, Höhe Sattel, Widerstand des Schwungrades)
 
-2025-10-15 heg2@bfh.ch
+## Problemlösungen
+### Problem: Man tritt in die Pedale, aber enerki reagiert nicht
+- Sicherstellen, dass der ANT+-Empfänger mit dem Laptop verbunden ist (optimalerweise mit einem eigenen Adapter)
+- Sicherstellen, dass die Pedale aktiv sind (Lämpchen an der linken Pedale sollte leuchten). Um zu aktivieren: In die linke Pedale treten
+- Wenn dies sichergestellt ist, Seite neu laden ([cmd] + [r]). Auf "Powermeter verbinden" klicken und dann `ANT USB-m Stick – gekoppelt` auswählen und "verbinden" klicken.
+
+### Problem: enerKI generiert keine Antwort
+- Sicherstellen, dass eine Internetverbindung besteht
+- Sicherstellen, dass sich der Laptop im BFH-Netz befindet oder über Cisco AnyConnect mit dem Netzwerk verbunden ist
+
+### Problem: Es kommt eine rote Fehlermeldung "Es ist etwas schiefgegangen"
+- Klicke auf den Knoopf "Leider ist etwas schief gegangen" und gib ein gültiges Access-Token ein
+
+### Problem: Ich muss ein Access-Token eingeben, aber kenne keines
+- Melde dich beim enerKI-Team!
+
+2026-02-02 heg2@bfh.ch
