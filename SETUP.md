@@ -11,3 +11,16 @@
 8. Schaltfläche "Powermeter verbinden" auswählen. `ANT USB-m Stick gekoppelt` auswählen. Wenn keine kompatiblen Geräte gefunden wurden, zurück zu Schritt 5.
 9. Testen, ob alles funktioniert. Danach mit dem Button `⟲` für den/die ersten User*in zurücksetzen.
 10. Hometrainer einstellen (Höhe Lenker, Höhe Sattel, Widerstand des Schwungrades)
+
+## Problemlösungen
+### Problem: Man tritt in die Pedale, aber enerki reagiert nicht
+- Sicherstellen, dass der ANT+-Empfänger mit dem Laptop verbunden ist (optimalerweise mit einem eigenen Adapter)
+- Sicherstellen, dass die Pedale aktiv sind (Lämpchen an der linken Pedale sollte leuchten). Um zu aktivieren: In die linke Pedale treten
+- Wenn dies sichergestellt ist, Seite neu laden ([cmd] + [r]). Auf "Powermeter verbinden" klicken und dann `ANT USB-m Stick – gekoppelt` auswählen und "verbinden" klicken.
+
+### Problem: enerKI generiert keine Antwort
+- Sicherstellen, dass eine Internetverbindung besteht
+- Sicherstellen, dass sich der Laptop im BFH-Netz befindet oder über Cisco AnyConnect mit dem Netzwerk verbunden ist
+
+### Problem: Ich muss ein Token eingeben, aber kenne keines
+- Melde dich beim enerKI-Team!
