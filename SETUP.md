@@ -21,7 +21,10 @@
 - Sicherstellen, dass eine Internetverbindung besteht
 - Sicherstellen, dass sich der Laptop im BFH-Netz befindet oder über Cisco AnyConnect mit dem Netzwerk verbunden ist
 
-### Problem: Ich muss ein Token eingeben, aber kenne keines
+### Problem: Es kommt eine rote Fehlermeldung "Es ist etwas schiefgegangen"
+- Klicke auf den Knoopf "Leider ist etwas schief gegangen" und gib ein gültiges Access-Token ein
+
+### Problem: Ich muss ein Access-Token eingeben, aber kenne keines
 - Melde dich beim enerKI-Team!
 
 2026-02-02 heg2@bfh.ch
