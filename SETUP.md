@@ -2,11 +2,11 @@
 
 1. Laptop starten und einloggen (Passwort siehe 1Password).
 2. Sicherstellen, dass der Laptop eine WLAN-Verbingung hat
-3. Falls der Laptop nicht im BFH Netzwerk ist: Cisco AnyConnect im Dock auswählen und starten
-4. Mit BFH-Credentials bei Cisco AnyConnect verbinden (falls noch keine Verbindung eingegeben ist: `vpn.bfh.ch` benutzen)
+3. Falls der Laptop nicht im BFH Netzwerk ist: OpenVPN Connect im Dock auswählen und starten
+4. Mit BFH-Credentials bei OpenVPN Connect verbinden (falls noch keine Verbindung eingegeben ist: `vpn.bfh.ch` benutzen)
 5. Sicherstellen, dass das ANT+ Dongle am Laptop (bzw. Adapter) eingesteckt ist
 6. Am Hometrainer das linke Pedal drehen, bis es blinkt. Damit wacht der Watt-Sensor (befindet sich im linken Pedal) aus dem Standby auf.
-7. enerKI in Chrome starten (Shortcut auf dem Desktop), ansonsten [https://enerki-2ddc65.pages.ti.bfh.ch](https://enerki-2ddc65.pages.ti.bfh.ch) mit dem Chrome Browser aufrufen. Das Powermeter funktioniert nur mit Chrome, nicht mit Safari / Firefox / Edge oder anderen Browsern.
+7. enerKI in Chrome starten (Shortcut auf dem Desktop), ansonsten [https://bfh-pcdh.github.io/enerki/](https://bfh-pcdh.github.io/enerki/) mit dem Chrome Browser aufrufen. Das Powermeter funktioniert nur mit Chrome, nicht mit Safari / Firefox / Edge oder anderen Browsern.
 8. Schaltfläche "Powermeter verbinden" auswählen. `ANT USB-m Stick gekoppelt` auswählen. Wenn keine kompatiblen Geräte gefunden wurden, zurück zu Schritt 5.
 9. Testen, ob alles funktioniert. Danach mit dem Button `⟲` für den/die ersten User*in zurücksetzen.
 10. Hometrainer einstellen (Höhe Lenker, Höhe Sattel, Widerstand des Schwungrades)
@@ -19,7 +19,7 @@
 
 ### Problem: enerKI generiert keine Antwort
 - Sicherstellen, dass eine Internetverbindung besteht
-- Sicherstellen, dass sich der Laptop im BFH-Netz befindet oder über Cisco AnyConnect mit dem Netzwerk verbunden ist
+- Sicherstellen, dass sich der Laptop im BFH-Netz befindet oder über OpenVPN Connect mit dem Netzwerk verbunden ist
 
 ### Problem: Es kommt eine rote Fehlermeldung "Es ist etwas schiefgegangen"
 - Klicke auf den Knoopf "Leider ist etwas schief gegangen" und gib ein gültiges Access-Token ein
@@ -27,4 +27,4 @@
 ### Problem: Ich muss ein Access-Token eingeben, aber kenne keines
 - Melde dich beim enerKI-Team!
 
-2026-02-02 heg2@bfh.ch
+2026-09-04 heg2@bfh.ch

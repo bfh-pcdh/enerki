@@ -25,6 +25,9 @@ npm run build
 ```
 
 ## Changelog
+### 2026-09-04
+- Update [setup instructions](/SETUP.md)
+
 ### 2026-02-02
 - Fixed problem where user input was reset when reloading page
 
