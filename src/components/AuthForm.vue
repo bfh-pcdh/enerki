@@ -1,11 +1,14 @@
 <script setup lang="ts">
-import { i18n } from '@/assets/i18n';
-import { ref } from 'vue';
+  import { i18n } from '@/assets/i18n';
+  import { ref } from 'vue';
+  import { store } from "../store";
 
   const emit = defineEmits(['onToken', 'onError']);
 
   const token = ref('');
   const persist = ref(false);
+
+  console.log('store is', store)
 
   // TODO: very basic validation, update this later
   function isValid(token: string): Promise<boolean> {
@@ -37,7 +40,7 @@ import { ref } from 'vue';
 <template>
   <form action="#">
     <div class="token-box">
-      <input type="text" v-model="token" placeholder="Bitte gib dein BeeChat Token ein" style="width: 100%"></input>
+      <input type="text" v-model="token" :placeholder="i18n('ENTER_TOKEN') + store.connection.NAME" style="width: 100%"></input>
       <button @click="setToken" type="submit" :disabled="token.length == 0">
         {{ i18n('SAVE').toUpperCase() }}
       </button>

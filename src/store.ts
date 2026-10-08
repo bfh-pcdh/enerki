@@ -2,6 +2,7 @@ import { reactive, watch } from 'vue';
 import { AntCallback, HeartRateService, PowerService } from './antService';
 import { Message, QuizCard } from './models';
 import QuizService from './quizService';
+import { ENV } from '../env';
 
 let activeSubscriptions = new Array<number>();
 
@@ -15,6 +16,8 @@ export enum STORE_KEY {
   TEMP = 'enerki-temp-'
 }; 
 
+export type Connection = typeof ENV[0];
+
 interface Store {
   power: PowerService,
   heartRate: HeartRateService,
@@ -27,6 +30,7 @@ interface Store {
   isDebug: boolean,
   chatMessages: Message[],
   lang: LANG,
+  connection: Connection,
   getExamplePrompts: () => string[],
   drawQuizCard: (n?: boolean) => void,
   isPedalling: () => boolean,
@@ -35,6 +39,7 @@ interface Store {
   startAndSubscribe: (t: number, cb: AntCallback, aU?: boolean) => number,
   resetSubscriptions: () => void,
   setTarget: (t: number) => void,
+  setConnection: (c: Connection) => void,
   addToast: (t: string, to?: number) => void,
   removeToast: (t: string) => boolean
 };
@@ -51,6 +56,7 @@ const storeObj: Store = {
   isDebug: false,
   chatMessages: new Array<Message>(),
   lang: LANG.DE,
+  connection: {...ENV[0]},
   getExamplePrompts() {
     if (!this.cardDrawn) return [];
     return this.activeCard.prompts[this.lang];
@@ -172,6 +178,11 @@ const storeObj: Store = {
     } else {
       return false;
     }
+  },
+  setConnection(newConnection: Connection): void {
+    console.log('set connection', newConnection);
+    this.connection = newConnection;
+    console.log(this);
   }
 }
 
@@ -181,9 +192,9 @@ type StoreKey = keyof typeof store;
 const storePropsToPersist: StoreKey[] = [
   'activeCard',
   'cardDrawn',
-  'textInput'
-]
-
+  'textInput',
+  'connection'
+];
 
 reloadFromStorage();
 
@@ -198,6 +209,7 @@ storePropsToPersist.forEach((key) => {
 });
 
 function reloadFromStorage() {
+  console.log('reload from storage')
   storePropsToPersist.forEach((key) => {
     const prop = sessionStorage.getItem(STORE_KEY.TEMP + key);
     if (prop != undefined) {

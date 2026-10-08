@@ -15,6 +15,10 @@ const KEYS: {[key: string]: {de: string, fr: string}} = {
         de: 'Soll enerKI für eine·n neue·n Benutzer·in zurückgesetzt werden?',
         fr: 'Faut-il réinitialiser enerKI pour un·e utilisateur·rice ?'
     },
+    ENTER_TOKEN: {
+        de: 'Bitte gib das Token ein für: ',
+        fr: 'Veuillez saisir le token correspondant à : '
+    },
     NEW_CARD: {
         de: 'Neue Karte ziehen',
         fr: 'Tirer une nouvelle carte'
@@ -34,6 +38,10 @@ const KEYS: {[key: string]: {de: string, fr: string}} = {
     ERROR: {
         de: 'Leider ist etwas schief gegangen:',
         fr: 'Une erreur s’est produite :'
+    },
+    UNKNOWN_ERROR: {
+        de: 'Unbekannter Fehler',
+        fr: 'Erreur inconnue'
     },
     OK: {
         de: 'OK',
@@ -98,12 +106,12 @@ const KEYS: {[key: string]: {de: string, fr: string}} = {
     AUTH_CONFIRM: {
         de: '⚠️ Das Token wird unverschlüsselt gespeichert. Andere Websiten, die du mit diesem Browser besuchst, können das Token potenziell auslesen.' + 
             '\n\nMöchtest du es trotzdem speichern?',
-        fr: '⚠️ Le jeton sera stocké sans chiffrement. D’autres sites visités avec ce navigateur pourraient potentiellement le lire.' +
+        fr: '⚠️ Le token sera stocké sans chiffrement. D’autres sites visités avec ce navigateur pourraient potentiellement le lire.' +
             '\n\nVeux-tu quand même l’enregistrer ?'
     },
     AUTH_PERSIST: {
         de: 'Das Token auf diesem Computer speichern',
-        fr: 'Enregistrer le jeton sur cet ordinateur'
+        fr: 'Enregistrer le token sur cet ordinateur'
     },
     CHAT_PLACEHOLDER: {
         de: 'Gib hier deinen Text ein',
@@ -112,5 +120,17 @@ const KEYS: {[key: string]: {de: string, fr: string}} = {
     CHAT_PLACEHOLDER_PROMPTS: {
         de: 'Gib hier deinen Text ein oder wähle einen der Prompts oben aus',
         fr: 'Saisis ton texte ici ou choisis un des prompts ci-dessus'
+    },
+    SETTINGS: {
+        de: 'Einstellungen',
+        fr: 'Paramètres'
+    },
+    VERSION_LABEL: {
+        de: 'enerKI Version:',
+        fr: 'enerKI version :'
+    },
+    CLOSE: {
+        de: 'schliessen',
+        fr: 'fermer'
     }
 };

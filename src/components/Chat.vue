@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, ref, ShallowRef, useTemplateRef } from 'vue';
-import { ENV } from '../../env';
 import { type Message, USER_ROLE } from '@/models';
 import axios from 'axios';
 import markdownit from 'markdown-it';
@@ -82,7 +81,7 @@ function send() {
   store.chatMessages.push(message);
 
   const body = {
-    model: ENV.MODEL,
+    model: store.connection.MODEL,
     messages: [...store.chatMessages]
   }
   store.textInput = '';
@@ -120,7 +119,7 @@ function send() {
 
   const time = Date.now();
   axios.post(
-    ENV.BASE_URL + ENV.ENDPOINT,
+    store.connection.BASE_URL + store.connection.ENDPOINT,
     body,
     {
       headers: {
