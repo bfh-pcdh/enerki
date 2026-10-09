@@ -22,9 +22,14 @@
 - Sicherstellen, dass sich der Laptop im BFH-Netz befindet oder über OpenVPN Connect mit dem Netzwerk verbunden ist
 
 ### Problem: Es kommt eine rote Fehlermeldung "Es ist etwas schiefgegangen"
-- Klicke auf den Knoopf "Leider ist etwas schief gegangen" und gib ein gültiges Access-Token ein
+#### In der Fehlermeldung steht der ```status code 401```
+- Klicke auf den Knopf "zurücksetzen" und gib ein gültiges Access-Token ein
+#### Es steht ein anderer status code
+- Stelle sicher, dass eine Internetverbindung besteht und OpenVPN Connect verbunden ist (falls sich der Rechner nicht im BFH-Netz befindet)
+- Prüfe auf [https://bfh-pcdh.github.io/enerki/?settings=true](https://bfh-pcdh.github.io/enerki/?settings=true), ob das richtige Modell ausgewählt ist (und du das entsprechende Token eingegeben hast)
+- Falls du keine Lösung findest: Kopiere die Fehlermeldung und schicke sie an heg2@bfh.ch.
 
 ### Problem: Ich muss ein Access-Token eingeben, aber kenne keines
 - Melde dich beim enerKI-Team!
 
-2026-09-04 heg2@bfh.ch
+2027-10-09 heg2@bfh.ch

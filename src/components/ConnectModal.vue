@@ -23,7 +23,11 @@ function connect(type: 'heartRate' | 'power' | 'debug') {
         </div>
         <div class="modal-body">
           <p>{{ i18n('CONNECT_NOTCONNECTED') }}</p>
-          <p><a href="https://github.com/bfh-pcdh/enerki/blob/main/SETUP.md" target="_blank">{{ i18n('CONNECT_INSTRUCTIONS') }}</a></p>
+          <p>
+            <a href="https://github.com/bfh-pcdh/enerki/blob/main/SETUP.md" target="_blank">{{
+              i18n('CONNECT_INSTRUCTIONS')
+            }}</a>
+          </p>
           <div class="button-container">
             <!-- button 
               @click="connect('heartRate')"
@@ -31,17 +35,19 @@ function connect(type: 'heartRate' | 'power' | 'debug') {
               class="connect-button">
               Pulssensor verbinden
             </button-->
-            <button 
+            <button
               @click="connect('power')"
               class="connect-button"
               :disabled="!store.power.stickAvailable()"
-              :title="i18n('CONNECT_POWERMETER_TOOLTIP')">
+              :title="i18n('CONNECT_POWERMETER_TOOLTIP')"
+            >
               {{ i18n('CONNECT_POWERMETER') }}
             </button>
-            <button 
+            <button
               @click="connect('debug')"
               class="connect-button"
-              :title="i18n('CONNECT_DEBUG_TOOLTIP')">
+              :title="i18n('CONNECT_DEBUG_TOOLTIP')"
+            >
               {{ i18n('CONNECT_DEBUG') }}
             </button>
           </div>
@@ -55,7 +61,7 @@ function connect(type: 'heartRate' | 'power' | 'debug') {
 .background {
   backdrop-filter: blur(3px);
   -webkit-backdrop-filter: blur(3px);
-  background-color: rgba(255, 255, 255, .5);
+  background-color: rgba(255, 255, 255, 0.5);
   position: fixed;
   top: 0;
   left: 0;

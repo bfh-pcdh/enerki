@@ -11,8 +11,8 @@ import { i18n } from '@/assets/i18n';
 
 // define props
 const props = defineProps<{
-  token: string,
-  percent: number
+  token: string;
+  percent: number;
 }>();
 
 const md = markdownit({
@@ -22,7 +22,7 @@ const md = markdownit({
 });
 
 // define events
-const emit = defineEmits(['onAnswer','onError']);
+const emit = defineEmits(['onAnswer', 'onError']);
 
 const chat: ShallowRef = useTemplateRef('chat-list');
 
@@ -34,8 +34,14 @@ let usage = -1;
 let inputTimeout = -1;
 
 const loadingStyle = computed(() => {
-  return 'filter: blur(' + (10 - Math.round(loadingPercent.value / 10)) + 'px);opacity:' + (0.009 * loadingPercent.value + 0.1).toFixed(2)  + ';';
-})
+  return (
+    'filter: blur(' +
+    (10 - Math.round(loadingPercent.value / 10)) +
+    'px);opacity:' +
+    (0.009 * loadingPercent.value + 0.1).toFixed(2) +
+    ';'
+  );
+});
 
 /**
  * Estimates the energy usage for an answer, based on the number of output tokens. Samsi et al. estimated the energy usage with 3 - 4 Joule per token, which equals to ~0.001 Wh
@@ -44,7 +50,7 @@ const loadingStyle = computed(() => {
  * @returns         an estimation of energy (in Wh), based on the number of output tokens
  */
 function estimateEnergyUsage(tokens: number) {
-  return tokens * 3.5 / 3600; // 3.5 joules per token; 3600 J = 1 Wh
+  return (tokens * 3.5) / 3600; // 3.5 joules per token; 3600 J = 1 Wh
 }
 
 /**
@@ -83,7 +89,7 @@ function send() {
   const body = {
     model: store.connection.MODEL,
     messages: [...store.chatMessages]
-  }
+  };
   store.textInput = '';
 
   const answerMessage = {
@@ -100,53 +106,57 @@ function send() {
 
   chat.value.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'end' });
 
-  store.startAndSubscribe(
-    preEstimateUsage(),
-    (ant: AntSubscription) => {
-      answerMessage.percent = Math.min(ant.percent, 100);
-      loadingPercent.value = Math.min(ant.percent, 100);
+  store.startAndSubscribe(preEstimateUsage(), (ant: AntSubscription) => {
+    answerMessage.percent = Math.min(ant.percent, 100);
+    loadingPercent.value = Math.min(ant.percent, 100);
 
-      ToastService.progressToast(
-        answerMessage.percent,
-        answerMessage.content !== '...',
-        ant.value
-      );
-      if (ant.percent >= 100 && usage > 0) {
-        ToastService.energyToast(usage);
-      }
+    ToastService.progressToast(answerMessage.percent, answerMessage.content !== '...', ant.value);
+    if (ant.percent >= 100 && usage > 0) {
+      ToastService.energyToast(usage);
     }
-  );
+  });
 
   const time = Date.now();
-  axios.post(
-    store.connection.BASE_URL + store.connection.ENDPOINT,
-    body,
-    {
+  axios
+    .post(store.connection.BASE_URL + store.connection.ENDPOINT, body, {
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + props.token
-      },
-    }
-  ).then((result) => {
-    const duration = Math.round((Date.now() - time) / 1000);
-    usage = estimateEnergyUsage(result.data.usage.completion_tokens);
-    store.setTarget(usage);
+        Authorization: 'Bearer ' + props.token
+      }
+    })
+    .then((result) => {
+      const duration = Math.round((Date.now() - time) / 1000);
+      usage = estimateEnergyUsage(result.data.usage.completion_tokens);
+      store.setTarget(usage);
 
-    console.log('Energie verbraucht: ' + usage.toFixed(2) + ' Wh in ' + duration + ' Sekunden. \nDas benötigt eine Durchschnittsleistung von ' + Math.round(3600 * usage / duration) + ' Watt.');
+      console.log(
+        'Energie verbraucht: ' +
+          usage.toFixed(2) +
+          ' Wh in ' +
+          duration +
+          ' Sekunden. \nDas benötigt eine Durchschnittsleistung von ' +
+          Math.round((3600 * usage) / duration) +
+          ' Watt.'
+      );
 
-    answerMessage.content = (result.data.choices[0].message.content as string).replaceAll('ß', 'ss');
-    answerMessage.loading = false;
+      answerMessage.content = (result.data.choices[0].message.content as string).replaceAll(
+        'ß',
+        'ss'
+      );
+      answerMessage.loading = false;
 
-    // we need to do this, or vue won't detect the update...
-    store.chatMessages.pop();
-    store.chatMessages.push(answerMessage);
+      // we need to do this, or vue won't detect the update...
+      store.chatMessages.pop();
+      store.chatMessages.push(answerMessage);
 
-    chat.value.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    emit('onAnswer', answerMessage);
-  }).catch((e) => {
-    console.error(e);
-    emit('onError', JSON.stringify(e, null, 2));
-  });
+      chat.value.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      emit('onAnswer', answerMessage);
+    })
+    .catch((e) => {
+      console.error(e);
+      ToastService.abort();
+      emit('onError', JSON.stringify(e, null, 2));
+    });
 }
 
 /**
@@ -163,7 +173,7 @@ function inputting() {
 }
 
 function setPrompt(prompt: string) {
-  if (!store.chatMessages[store.chatMessages.length -1]?.loading) {
+  if (!store.chatMessages[store.chatMessages.length - 1]?.loading) {
     store.textInput = prompt;
     (chatInput.value as any)?.focus();
   }
@@ -200,11 +210,15 @@ function setPrompt(prompt: string) {
       autofocus
       type="text"
       v-model="store.textInput"
-      :placeholder="i18n(store.getExamplePrompts().length > 0 ? 'CHAT_PLACEHOLDER_PROMPTS' : 'CHAT_PLACEHOLDER')"
+      :placeholder="
+        i18n(store.getExamplePrompts().length > 0 ? 'CHAT_PLACEHOLDER_PROMPTS' : 'CHAT_PLACEHOLDER')
+      "
       @input="inputting"
       ref="chatInput"
     />
-    <button @click="send" type="submit" :disabled="store.isPedalling()">{{ i18n('SEND').toUpperCase() }}</button>
+    <button @click="send" type="submit" :disabled="store.isPedalling()">
+      {{ i18n('SEND').toUpperCase() }}
+    </button>
   </form>
 </template>
 
@@ -225,7 +239,9 @@ li:first-child {
   border-radius: 1em;
   width: 75%;
   margin-top: 0.5em;
-  transition: opacity 1.2s ease, filter 1.2s ease;
+  transition:
+    opacity 1.2s ease,
+    filter 1.2s ease;
 }
 .chat-user {
   background-color: #64788b;

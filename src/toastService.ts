@@ -204,6 +204,7 @@ export default class ToastService {
         lastToastExpired(true) && store.addToast(getRandom(reallyDone[store.lang]), 3000);
     }
     static progressToast(percent: number, loaded: boolean, currentWatts: number) {
+        if (this.done) return;
         if (currentWatts > 400 && !this.highPowerTimeout) {
             this.highPowerTimeout = true;
             // wait 20 seconds before we trigger this toast again
@@ -231,18 +232,22 @@ export default class ToastService {
                 this.done = true;
                 return lastToastExpired() && store.addToast(getRandom(done[store.lang]), 5000);
             } else if (percent > 80) {
-                return lastToastExpired() && store.addToast(getRandom(lastPercents[store.lang], Replacer.PERCENT, (100 - percent).toFixed(1)));
+                return lastToastExpired() && store.addToast(getRandom(lastPercents[store.lang], Replacer.PERCENT, (100 - percent).toFixed(0)));
             } else if (percent > 55) {
-                return lastToastExpired() && store.addToast(getRandom(highPercents[store.lang], Replacer.PERCENT, percent.toFixed(1)));
+                return lastToastExpired() && store.addToast(getRandom(highPercents[store.lang], Replacer.PERCENT, percent.toFixed(0)));
             } else if (percent > 45) {
-                return lastToastExpired() && store.addToast(getRandom(halfPercents[store.lang], Replacer.PERCENT, percent.toFixed(1)));
+                return lastToastExpired() && store.addToast(getRandom(halfPercents[store.lang], Replacer.PERCENT, percent.toFixed(0)));
             } else {
-                return lastToastExpired() && store.addToast(getRandom(lowPercents[store.lang], Replacer.PERCENT, percent.toFixed(1)));
+                return lastToastExpired() && store.addToast(getRandom(lowPercents[store.lang], Replacer.PERCENT, percent.toFixed(0)));
             } 
         }
     }
 
+    static abort() {
+        this.done = true;
+    }
+
     static energyToast(wh: number) {
-        store.addToast(getRandom(energyUsed[store.lang], Replacer.KCAL, getKiloCalsFromWatthour(wh)), 5000);
+        store.addToast(getRandom(energyUsed[store.lang], Replacer.KCAL, getKiloCalsFromWatthour(wh)), 10000);
     }
 }

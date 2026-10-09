@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { ref } from "vue";
-import { ENV } from "../env";
-import AuthForm from "./components/AuthForm.vue";
-import ConnectModal from "./components/ConnectModal.vue";
-import Settings from "./components/Settings.vue";
-import Chat from "./components/Chat.vue";
-import { getPersisted, LANG, persist, store, STORE_KEY } from "./store";
-import PowerSimulator from "./components/PowerSimulator.vue";
-import QuizCardModal from "./components/QuizCardModal.vue";
-import { i18n } from "./assets/i18n";
+import { ref } from 'vue';
+import { ENV } from '../env';
+import AuthForm from './components/AuthForm.vue';
+import ConnectModal from './components/ConnectModal.vue';
+import Settings from './components/Settings.vue';
+import Chat from './components/Chat.vue';
+import { getPersisted, LANG, persist, store, STORE_KEY } from './store';
+import PowerSimulator from './components/PowerSimulator.vue';
+import QuizCardModal from './components/QuizCardModal.vue';
+import { i18n } from './assets/i18n';
 
-const version = require("../package.json").version;
+const version = require('../package.json').version;
 
 const token = ref(getPersisted<string>(STORE_KEY.TOKEN) || ENV[0].TOKEN);
 
@@ -22,16 +22,16 @@ const showCardModal = ref(false);
 
 const showSettings = ref(false);
 
-document.addEventListener("keydown", function (event) {
-  if (showCardModal.value && event.key == "Enter") {
+document.addEventListener('keydown', function (event) {
+  if (showCardModal.value && event.key == 'Enter') {
     showCardModal.value = false;
-  } else if (event.key == "Enter" && store.textInput == "") {
+  } else if (event.key == 'Enter' && store.textInput == '') {
     showCard();
   }
 });
 
 // fast hack for displaying settings
-showSettings.value = window.location.search.includes("settings=true");
+showSettings.value = window.location.search.includes('settings=true');
 
 /**
  * Calculates the header buttons
@@ -39,30 +39,30 @@ showSettings.value = window.location.search.includes("settings=true");
 function getHeaderButtons() {
   return [
     {
-      icon: "🀙",
-      title: store.cardDrawn ? i18n("NEW_CARD") : i18n("SHOW_CARD"),
+      icon: '🀙',
+      title: store.cardDrawn ? i18n('NEW_CARD') : i18n('SHOW_CARD'),
       action: showCard,
       style: store.cardDrawn
-        ? "text-shadow: #fac300 0px 0 3px; line-height: 1.8em;"
-        : "line-height: 1.8em;",
+        ? 'text-shadow: #fac300 0px 0 3px; line-height: 1.8em;'
+        : 'line-height: 1.8em;'
     },
     {
-      icon: "⟲",
-      title: i18n("RESET"),
+      icon: '⟲',
+      title: i18n('RESET'),
       action: resetUser,
-      style: "",
+      style: ''
     },
     {
-      icon: store.lang === LANG.DE ? "🇩🇪" : "🇫🇷",
-      title: i18n("LANGUAGE"),
+      icon: store.lang === LANG.DE ? '🇩🇪' : '🇫🇷',
+      title: i18n('LANGUAGE'),
       action: toggleLanguage,
-      style: "filter: saturate(0)",
-    },
+      style: 'filter: saturate(0)'
+    }
     // {
-    //   icon: "⚙︎",
-    //   title: "Einstellungen",
+    //   icon: '⚙︎',
+    //   title: 'Einstellungen',
     //   action: () => (showSettings.value = !showSettings.value),
-    //   style: "",
+    //   style: '',
     // },
   ];
 }
@@ -97,7 +97,7 @@ function toggleLanguage() {
  * Resets the app to start with a new user
  */
 function resetUser() {
-  if (confirm(i18n("RESET_USER"))) {
+  if (confirm(i18n('RESET_USER'))) {
     store.resetUser();
   }
 }
@@ -106,7 +106,7 @@ function resetUser() {
  * Resets the whole app
  */
 function reset() {
-  resetUser();
+  store.resetUser();
   error.value = undefined;
   token.value = ENV[0].TOKEN;
 }
@@ -124,15 +124,23 @@ function showCard() {
  */
 function closeSettings() {
   showSettings.value = false;
-  window.location.search = "settings=" + showSettings.value;
+  window.location.search = 'settings=' + showSettings.value;
 }
 
 /**
  * Handles an error and displays it to the user
  * @param error   the error message to display to the user
  */
-function handleError(e: string = i18n("UNKNOWN_ERROR")) {
+function handleError(e: string = i18n('UNKNOWN_ERROR')) {
   error.value = e;
+}
+
+/**
+ * Calculates the css opacity for a given toast message
+ * @param i the position of the toast message
+ */
+function getToastOpacity(i: number): string {
+  return 'opacity: ' + (i + 1) / store.toasts.length;
 }
 </script>
 
@@ -171,9 +179,13 @@ function handleError(e: string = i18n("UNKNOWN_ERROR")) {
     <main v-else>
       <!-- display error message -->
       <div class="error" v-if="error">
-        <h2>{{ i18n("ERROR") }}</h2>
+        <h2>{{ i18n('ERROR') }}</h2>
         {{ error }}
-        <button @click="reset">{{ i18n("ERROR") }}</button>
+        <br />
+        <div class="error-buttons">
+          <button @click="reset">{{ i18n('RESET') }}</button>
+          <button @click="error = ''">{{ i18n('OK') }}</button>
+        </div>
       </div>
 
       <!-- chat window -->
@@ -181,7 +193,7 @@ function handleError(e: string = i18n("UNKNOWN_ERROR")) {
 
       <!-- window for power simulation / debug -->
       <PowerSimulator
-        v-if="store.connected && store.isPedalling()"
+        v-if="store.connected && store.isPedalling() && !error"
         :debug="store.isDebug"
         :watt="Math.round(store.power.getValues().value)"
       />
@@ -195,10 +207,7 @@ function handleError(e: string = i18n("UNKNOWN_ERROR")) {
     />
 
     <ul class="toast-list">
-      <li
-        v-for="(toast, i) of store.toasts"
-        :style="'opacity: ' + (i + 1) / store.toasts.length"
-      >
+      <li v-for="(toast, i) of store.toasts" :style="getToastOpacity(i)">
         <div class="alert alert-info" role="alert">
           {{ toast }}
         </div>
@@ -212,7 +221,6 @@ function handleError(e: string = i18n("UNKNOWN_ERROR")) {
   background-color: salmon;
   color: white;
   margin: 1em;
-  width: 100%;
   padding: 0.5em;
   border-radius: 0.5em;
 }
@@ -230,6 +238,14 @@ header h1 {
 .error h2 {
   font-size: 1.5em;
   font-weight: bold;
+}
+.error-buttons {
+  width: fit-content;
+  margin: 0 auto;
+  display: block;
+}
+.error button {
+  margin: 0.2em;
 }
 .header-buttons {
   width: 6em;
