@@ -9,7 +9,9 @@
     "lint": "eslint ./src --ext .js,.vue",
     "ignore-env": "git update-index --assume-unchanged env.ts",
     "lint:fix": "eslint ./src --ext .js,.vue --fix",
-    "format": "prettier 'src/**/*.{js,vue,css,md,json}' --write"
+    "format": "prettier 'src/**/*.{js,vue,css,md,json}' --write",
+    "chrome": "open -n -a \"Google Chrome\" --args --disable-web-security --user-data-dir=\"/tmp/chrome_dev_test\" http://localhost:4200/enerki/",
+    "start": "npm run dev & npm run chrome"
   },
   "dependencies": {
     "ant-plus-next": "^0.3.2",
