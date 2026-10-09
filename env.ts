@@ -2,7 +2,7 @@ export const ENV = [
   {
     NAME: 'BeeChat',
     BASE_URL: 'https://inference.mlmp.ti.bfh.ch',
-    ENDPOINT: '/api/chat/completions',
+    ENDPOINT: '/api/v1/chat/completions',
     MODEL: 'gpt-oss:120b',
     TOKEN: '' // insert your TOKEN here
   },
