@@ -1,87 +1,82 @@
 <script setup lang="ts">
-  import { i18n } from '@/assets/i18n';
-  import { ref } from 'vue';
-  import { ENV } from '../../env';
-  import { Connection, store } from '../store';
-  const PACKAGE = require('../../package.json');
-  const version = PACKAGE.version;
-  const emit = defineEmits(['onClose']);
+import { i18n } from '@/assets/i18n';
+import { ref } from 'vue';
+import { ENV } from '../../env';
+import { Connection, store } from '../store';
+const PACKAGE = require('../../package.json');
+const version = PACKAGE.version;
+const emit = defineEmits(['onClose']);
 
-  const settings: Connection[] = ENV;
-  let selected = ref<{ [key: string]: string }>(store.connection);
+const settings: Connection[] = ENV;
+let selected = ref<{ [key: string]: string }>(store.connection);
 
-  function close(): void {
-    emit('onClose');
-  }
+function close(): void {
+  emit('onClose');
+}
 
-  function select(c: Connection): void {
-    selected.value = c;
-    c && store.setConnection(c);
-  }
+function select(c: Connection): void {
+  selected.value = c;
+  c && store.setConnection(c);
+}
 
-  function isSelected(c: Connection): boolean {
-    return c.NAME === selected.value?.NAME;
-  }
+function isSelected(c: Connection): boolean {
+  return c.NAME === selected.value?.NAME;
+}
 
-  function getField(key: string) {
-    return selected.value[key];
-  }
-
+function getField(key: string) {
+  return selected.value[key];
+}
 </script>
 
-
 <template>
-    <h1>{{i18n("SETTINGS")}}</h1>
-    <p>{{i18n("VERSION_LABEL")}} {{ version }}</p> 
-    <div id="connections">
-      <ul>
-        <li v-for="connection of settings" @click="select(connection)">
-          <input type="radio" :checked="isSelected(connection)"> {{ connection.NAME }}
-        </li>
-      </ul>
-      <ul class="connection-info">
-        <li v-for="key of Object.keys(selected)">
-          {{ key }}: {{ getField(key) }}
-        </li>
-      </ul>
-    </div>
-    
+  <h1>{{ i18n('SETTINGS') }}</h1>
+  <p>{{ i18n('VERSION_LABEL') }} {{ version }}</p>
+  <div id="connections">
+    <ul>
+      <li v-for="connection of settings" @click="select(connection)">
+        <input type="radio" :checked="isSelected(connection)" /> {{ connection.NAME }}
+      </li>
+    </ul>
+    <ul class="connection-info">
+      <li v-for="key of Object.keys(selected)">{{ key }}: {{ getField(key) }}</li>
+    </ul>
+  </div>
 
-    <button @click="close">{{i18n("CLOSE")}} </button>
+  <button @click="close">{{ i18n('CLOSE') }}</button>
 </template>
 
 <style scoped>
-  h1 {
-    margin-top: 3em;
-    margin-left: 2em;
-  }
-  p {
-    margin-left: 5em;
-  }
-  ul {
-    list-style: none;
-    margin: 0 5em 1em;
-    padding-left: 0;
-    flex: 3;
-  }
-  li {
-    margin: 2px;
-    padding: 2px;
-    cursor: pointer;
-  }
-  #connections {
-    max-width: 800px;
-    display: flex;
-    gap: 1em;
-    flex-wrap: wrap;
-  }
-  .connection-info {
-    font-size: smaller;
-    flex: 5;
-  }
-  button {
-    margin: 0.5em auto;
-    width: 10em;
-    display: block;
-  }
+h1 {
+  margin-top: 3em;
+  margin-left: 2em;
+}
+p {
+  margin-left: 5em;
+}
+ul {
+  list-style: none;
+  margin: 0 5em 1em;
+  padding-left: 0;
+  flex: 3;
+}
+li {
+  margin: 2px;
+  padding: 2px;
+  cursor: pointer;
+}
+#connections {
+  max-width: 800px;
+  display: flex;
+  gap: 1em;
+  flex-wrap: wrap;
+}
+.connection-info {
+  font-size: smaller;
+  flex: 5;
+}
+button {
+  margin: 0.5em auto;
+  width: 10em;
+  display: block;
+}
 </style>

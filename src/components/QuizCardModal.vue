@@ -5,8 +5,8 @@ import { store } from '@/store';
 
 const emit = defineEmits(['onClose']);
 const props = defineProps<{
-  card: QuizCard
-}>(); 
+  card: QuizCard;
+}>();
 </script>
 
 <template>
@@ -15,13 +15,13 @@ const props = defineProps<{
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
-          <h1 class="modal-title">{{i18n('QUIZCARD_TITLE') + card.id}}</h1>
+          <h1 class="modal-title">{{ i18n('QUIZCARD_TITLE') + card.id }}</h1>
           <span class="close-button" @click="emit('onClose')">×</span>
         </div>
         <div class="modal-body">
-          <p class="additional">{{i18n('QUIZCARD_DESCRIPTION')}}</p>
+          <p class="additional">{{ i18n('QUIZCARD_DESCRIPTION') }}</p>
           <p class="question">{{ card.question[store.lang] }}</p>
-          <p class="additional">{{i18n('QUIZCARD_INSTRUCTION')}}</p>
+          <p class="additional">{{ i18n('QUIZCARD_INSTRUCTION') }}</p>
         </div>
       </div>
     </div>
@@ -32,7 +32,7 @@ const props = defineProps<{
 .background {
   backdrop-filter: blur(3px);
   -webkit-backdrop-filter: blur(3px);
-  background-color: rgba(255, 255, 255, .5);
+  background-color: rgba(255, 255, 255, 0.5);
   position: fixed;
   top: 0;
   left: 0;

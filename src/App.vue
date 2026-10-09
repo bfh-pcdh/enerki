@@ -1,4 +1,4 @@
-<script setup lang='ts'>
+<script setup lang="ts">
 import { ref } from 'vue';
 import { ENV } from '../env';
 import AuthForm from './components/AuthForm.vue';
@@ -44,20 +44,20 @@ function getHeaderButtons() {
       action: showCard,
       style: store.cardDrawn
         ? 'text-shadow: #fac300 0px 0 3px; line-height: 1.8em;'
-        : 'line-height: 1.8em;',
+        : 'line-height: 1.8em;'
     },
     {
       icon: '⟲',
       title: i18n('RESET'),
       action: resetUser,
-      style: '',
+      style: ''
     },
     {
       icon: store.lang === LANG.DE ? '🇩🇪' : '🇫🇷',
       title: i18n('LANGUAGE'),
       action: toggleLanguage,
-      style: 'filter: saturate(0)',
-    },
+      style: 'filter: saturate(0)'
+    }
     // {
     //   icon: '⚙︎',
     //   title: 'Einstellungen',
@@ -140,8 +140,7 @@ function handleError(e: string = i18n('UNKNOWN_ERROR')) {
  * @param i the position of the toast message
  */
 function getToastOpacity(i: number): string {
-  return 'opacity: ' + ((i + 1) / store.toasts.length);
-
+  return 'opacity: ' + (i + 1) / store.toasts.length;
 }
 </script>
 
@@ -180,12 +179,12 @@ function getToastOpacity(i: number): string {
     <main v-else>
       <!-- display error message -->
       <div class="error" v-if="error">
-        <h2>{{ i18n("ERROR") }}</h2>
+        <h2>{{ i18n('ERROR') }}</h2>
         {{ error }}
         <br />
         <div class="error-buttons">
-          <button @click="reset">{{ i18n("RESET") }}</button>
-          <button @click="error = ''">{{ i18n("OK") }}</button>
+          <button @click="reset">{{ i18n('RESET') }}</button>
+          <button @click="error = ''">{{ i18n('OK') }}</button>
         </div>
       </div>
 
@@ -208,10 +207,7 @@ function getToastOpacity(i: number): string {
     />
 
     <ul class="toast-list">
-      <li
-        v-for="(toast, i) of store.toasts"
-        :style="getToastOpacity(i)"
-      >
+      <li v-for="(toast, i) of store.toasts" :style="getToastOpacity(i)">
         <div class="alert alert-info" role="alert">
           {{ toast }}
         </div>
@@ -244,9 +240,9 @@ header h1 {
   font-weight: bold;
 }
 .error-buttons {
-    width: fit-content;
-    margin: 0 auto;
-    display: block;
+  width: fit-content;
+  margin: 0 auto;
+  display: block;
 }
 .error button {
   margin: 0.2em;
