@@ -25,6 +25,9 @@ npm run build
 ```
 
 ## Changelog
+### 2026-10-09 V0.8.1
+- Bugfixes and improve error popup
+
 ### 2026-10-07 V0.8.0
 - Add settings page (at /enerki/?settings=true)
 

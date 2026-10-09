@@ -1,5 +1,5 @@
-import { QuizCard } from "./models";
-import { QUIZ } from "./assets/quizcards";
+import { QuizCard } from './models';
+import { QUIZ } from './assets/quizcards';
 
 export default class QuizService {
     static lastQuizCard = -1;

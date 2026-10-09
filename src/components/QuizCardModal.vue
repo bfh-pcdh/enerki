@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { QuizCard } from "@/models";
-import { i18n } from "@/assets/i18n";
-import { store } from "@/store";
+import { QuizCard } from '@/models';
+import { i18n } from '@/assets/i18n';
+import { store } from '@/store';
 
-const emit = defineEmits(["onClose"]);
+const emit = defineEmits(['onClose']);
 const props = defineProps<{
   card: QuizCard
 }>(); 

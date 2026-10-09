@@ -145,6 +145,7 @@ function send() {
     emit('onAnswer', answerMessage);
   }).catch((e) => {
     console.error(e);
+    ToastService.abort();
     emit('onError', JSON.stringify(e, null, 2));
   });
 }
@@ -200,11 +201,19 @@ function setPrompt(prompt: string) {
       autofocus
       type="text"
       v-model="store.textInput"
-      :placeholder="i18n(store.getExamplePrompts().length > 0 ? 'CHAT_PLACEHOLDER_PROMPTS' : 'CHAT_PLACEHOLDER')"
+      :placeholder="
+        i18n(
+          store.getExamplePrompts().length > 0
+            ? 'CHAT_PLACEHOLDER_PROMPTS'
+            : 'CHAT_PLACEHOLDER'
+        )
+      "
       @input="inputting"
       ref="chatInput"
     />
-    <button @click="send" type="submit" :disabled="store.isPedalling()">{{ i18n('SEND').toUpperCase() }}</button>
+    <button @click="send" type="submit" :disabled="store.isPedalling()">
+      {{ i18n("SEND").toUpperCase() }}
+    </button>
   </form>
 </template>
 

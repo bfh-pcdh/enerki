@@ -1,8 +1,8 @@
 <script setup lang="ts">
   import { i18n } from '@/assets/i18n';
-  import { ref } from "vue";
-  import { ENV } from "../../env";
-  import { Connection, store } from "../store";
+  import { ref } from 'vue';
+  import { ENV } from '../../env';
+  import { Connection, store } from '../store';
   const PACKAGE = require('../../package.json');
   const version = PACKAGE.version;
   const emit = defineEmits(['onClose']);
@@ -33,16 +33,19 @@
 <template>
     <h1>{{i18n("SETTINGS")}}</h1>
     <p>{{i18n("VERSION_LABEL")}} {{ version }}</p> 
-    <ul>
-      <li v-for="connection of settings" @click="select(connection)" :class="{selected: isSelected(connection)}">
-        {{ connection.NAME }}
-      </li>
-    </ul>
-    <ul class="connection-info">
-      <li v-for="key of Object.keys(selected)">
-        {{ key }}: {{ getField(key) }}
-      </li>
-    </ul>
+    <div id="connections">
+      <ul>
+        <li v-for="connection of settings" @click="select(connection)">
+          <input type="radio" :checked="isSelected(connection)"> {{ connection.NAME }}
+        </li>
+      </ul>
+      <ul class="connection-info">
+        <li v-for="key of Object.keys(selected)">
+          {{ key }}: {{ getField(key) }}
+        </li>
+      </ul>
+    </div>
+    
 
     <button @click="close">{{i18n("CLOSE")}} </button>
 </template>
@@ -59,21 +62,26 @@
     list-style: none;
     margin: 0 5em 1em;
     padding-left: 0;
+    flex: 3;
   }
   li {
     margin: 2px;
     padding: 2px;
     cursor: pointer;
   }
+  #connections {
+    max-width: 800px;
+    display: flex;
+    gap: 1em;
+    flex-wrap: wrap;
+  }
   .connection-info {
     font-size: smaller;
-    margin-left: 8em;
-  }
-  .selected {
-    background-color:  #697d91;
-    color: #fac300
+    flex: 5;
   }
   button {
-    margin-left: 5em;
+    margin: 0.5em auto;
+    width: 10em;
+    display: block;
   }
 </style>

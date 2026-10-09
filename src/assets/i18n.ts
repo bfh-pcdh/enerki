@@ -28,8 +28,8 @@ const KEYS: {[key: string]: {de: string, fr: string}} = {
         fr: 'Afficher la carte à nouveau'
     },
     RESET: {
-        de: 'Zurücksetzen',
-        fr: 'Réinitialiser'
+        de: 'zurücksetzen',
+        fr: 'réinitialiser'
     },
     LANGUAGE: {
         de: 'Sprache', 
@@ -122,8 +122,8 @@ const KEYS: {[key: string]: {de: string, fr: string}} = {
         fr: 'Saisis ton texte ici ou choisis un des prompts ci-dessus'
     },
     SETTINGS: {
-        de: 'Einstellungen',
-        fr: 'Paramètres'
+        de: 'Einstellungen (beta)',
+        fr: 'Paramètres (beta)'
     },
     VERSION_LABEL: {
         de: 'enerKI Version:',
