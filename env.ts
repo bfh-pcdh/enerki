@@ -4,6 +4,7 @@ export const ENV = [
     BASE_URL: 'https://inference.proxy.ti.bfh.ch',
     ENDPOINT: '/api/v1/chat/completions',
     MODEL: 'gpt-oss:120b',
+    REASONING: 'low',
     TOKEN: '' // insert your TOKEN here
   },
   {
@@ -11,6 +12,7 @@ export const ENV = [
     BASE_URL: 'https://inference.mlmp.ti.bfh.ch',
     ENDPOINT: '/api/v1/chat/completions',
     MODEL: 'gpt-oss:120b',
+    REASONING: 'low',
     TOKEN: '' // insert your TOKEN here
   },
   {
@@ -18,6 +20,7 @@ export const ENV = [
     BASE_URL: 'http://localhost:1234',
     ENDPOINT: '/v1/chat/completions',
     MODEL: 'gpt-oss:120b',
+    REASONING: 'medium',
     TOKEN: '' // 'not_needed_for_localhost'
   },
   {
@@ -25,6 +28,7 @@ export const ENV = [
     BASE_URL: 'https://api.openai.com',
     ENDPOINT: '/v1/chat/completions',
     MODEL: 'gpt-5.6-luna', // 'gpt-3.5-turbo',
+    REASONING: 'medium',
     TOKEN: '' // insert token here
   }
 ];

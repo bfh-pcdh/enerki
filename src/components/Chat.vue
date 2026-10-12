@@ -101,7 +101,13 @@ function send() {
 
   const body = {
     model: store.connection.MODEL,
-    messages: [...store.chatMessages]
+    messages: [...store.chatMessages],
+    reasoning: {
+      effort: store.connection.REASONING
+    },
+    'background-tasks': {
+      follow_up_generation: false
+    },
   };
   store.textInput = '';
 
@@ -134,7 +140,8 @@ function send() {
     .post(store.connection.BASE_URL + store.connection.ENDPOINT, body, {
       headers: {
         'Content-Type': 'application/json',
-        Authorization: 'Bearer ' + props.token
+        Authorization: 'Bearer ' + props.token,
+        'Cache-Control': 'no-cache, no-store'
       }
     })
     .then((result) => {
