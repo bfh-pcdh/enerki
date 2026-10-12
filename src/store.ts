@@ -1,8 +1,9 @@
 import { reactive, watch } from 'vue';
 import { AntCallback, HeartRateService, PowerService } from './antService';
-import { Message, QuizCard } from './models';
+import { ExamplePrompt, Message, QuizCard, USER_ROLE } from './models';
 import QuizService from './quizService';
 import { ENV } from '../env';
+import { getSystemPrompt } from './assets/systemprompt';
 
 let activeSubscriptions = new Array<number>();
 
@@ -31,7 +32,7 @@ interface Store {
   chatMessages: Message[],
   lang: LANG,
   connection: Connection,
-  getExamplePrompts: () => string[],
+  getExamplePrompts: () => ExamplePrompt[],
   drawQuizCard: (n?: boolean) => void,
   isPedalling: () => boolean,
   connect: (t: 'heartRate' | 'power' | 'debug') => void,
@@ -39,6 +40,7 @@ interface Store {
   startAndSubscribe: (t: number, cb: AntCallback, aU?: boolean) => number,
   resetSubscriptions: () => void,
   setTarget: (t: number) => void,
+  getVisibleMessages: () => Message[],
   setConnection: (c: Connection) => void,
   addToast: (t: string, to?: number) => void,
   removeToast: (t: string) => boolean
@@ -54,12 +56,12 @@ const storeObj: Store = {
   toasts: new Array<string>(),
   textInput: '',
   isDebug: false,
-  chatMessages: new Array<Message>(),
+  chatMessages: [getSystemPrompt(LANG.DE)],
   lang: LANG.DE,
   connection: {...ENV[0]},
   getExamplePrompts() {
     if (!this.cardDrawn) return [];
-    return this.activeCard.prompts[this.lang];
+    return this.activeCard.prompts;
   },
   isPedalling() {
     const lastMessage = this.chatMessages[this.chatMessages.length -1];
@@ -89,13 +91,20 @@ const storeObj: Store = {
    * Resets the chat log and everything, when a new user is using the device
    */
   resetUser() {
-    this.chatMessages = [];
+    this.chatMessages = [getSystemPrompt(this.lang)];
     this.toasts = [];
     this.activeCard = QuizService.drawRandomQuizCard();
     this.cardDrawn = false;
     this.textInput = '';
     sessionStorage.clear();
     this.resetSubscriptions();
+  },
+  /**
+   * Returns the messages that should be visible to the user (e.g. without system prompt)
+   * @returns an Array of visible messages
+   */
+  getVisibleMessages() {
+    return this.chatMessages.filter(m => m.role != USER_ROLE.SYSTEM)
   },
   /**
    * Draws a new Quizcard
@@ -147,6 +156,7 @@ const storeObj: Store = {
    * @param target    the target value, in the same unit as the total value for the respective sensor
    */
   setTarget(target: number) {
+    console.log('set target to', target);
     if (!this.connectedType) {
       console.warn('No sensor connected yet!');
     } else {

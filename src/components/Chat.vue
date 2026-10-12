@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, ShallowRef, useTemplateRef } from 'vue';
-import { type Message, USER_ROLE } from '@/models';
+import { ExamplePrompt, type Message, USER_ROLE } from '@/models';
 import axios from 'axios';
 import markdownit from 'markdown-it';
 import { store } from '../store';
@@ -46,11 +46,22 @@ const loadingStyle = computed(() => {
 /**
  * Estimates the energy usage for an answer, based on the number of output tokens. Samsi et al. estimated the energy usage with 3 - 4 Joule per token, which equals to ~0.001 Wh
  * @see Paper       Samsi et al. (2023): From Words to Watts: Benchmarking the Energy Costs of Large Language Model Inference. https://doi.org/10.48550/arXiv.2310.03003
+ * @see Blogpost    gpt-oss uses around 8.3 Wh per 100 output token, which seems way too high https://huggingface.co/blog/sasha/gpt-oss-energy
+ * @see YouTube     https://www.youtube.com/watch?v=zjG9TkfWd0o&t=143s
  * @param tokens    number of output tokens of the answer
+ * @param tps       token per seconds generated, defaults to 70
  * @returns         an estimation of energy (in Wh), based on the number of output tokens
  */
-function estimateEnergyUsage(tokens: number) {
-  return (tokens * 3.5) / 3600; // 3.5 joules per token; 3600 J = 1 Wh
+function estimateEnergyUsage(tokens: number, tps = 70) {
+  // Mac Studio M3Max uses up to 480W. That is 0.1333 Wh per second in full load (480 / 3600). 
+  // however, he measures 120W: https://www.youtube.com/watch?v=zjG9TkfWd0o&t=143s TODO: own measurements
+  // we assume 180 Watt, just for fun
+  const whPerSecond = 180 / 3600;
+  // With gpt-oss:120b, it generates around 70 token/s. 
+  const whPerToken = whPerSecond / tps;
+  const estimate = tokens * whPerToken;
+  return estimate;
+  // old samsi et al estimate: return (tokens * 3.5) / 3600; // 3.5 joules per token; 3600 J = 1 Wh
 }
 
 /**
@@ -58,7 +69,9 @@ function estimateEnergyUsage(tokens: number) {
  * @returns         an estimation of energy (in Wh)
  */
 function preEstimateUsage() {
-  return 1;
+  return (usage > 1) 
+    ? usage 
+    : 1;
 }
 
 /**
@@ -68,7 +81,7 @@ function preEstimateUsage() {
  *                FALSE if there are more messages after it in the array
  */
 function isLastMessage(index: number): boolean {
-  return store.chatMessages.length - index === 1;
+  return store.getVisibleMessages().length - index === 1;
 }
 
 /**
@@ -126,7 +139,7 @@ function send() {
     })
     .then((result) => {
       const duration = Math.round((Date.now() - time) / 1000);
-      usage = estimateEnergyUsage(result.data.usage.completion_tokens);
+      usage = estimateEnergyUsage(result.data.usage.completion_tokens, result.data.usage.generation_tokens_per_second);
       store.setTarget(usage);
 
       console.log(
@@ -172,9 +185,11 @@ function inputting() {
   }, 1000);
 }
 
-function setPrompt(prompt: string) {
+function setPrompt(prompt: ExamplePrompt) {
   if (!store.chatMessages[store.chatMessages.length - 1]?.loading) {
-    store.textInput = prompt;
+    store.textInput = prompt[store.lang];
+    usage = prompt.estimateFactor;
+    store.setTarget(usage);
     (chatInput.value as any)?.focus();
   }
 }
@@ -183,7 +198,7 @@ function setPrompt(prompt: string) {
 <template>
   <ul ref="chat-list" class="chat-list">
     <li
-      v-for="(message, i) of store.chatMessages"
+      v-for="(message, i) of store.getVisibleMessages()"
       :class="'message-bubble chat-' + message.role"
       :style="
         message.percent != undefined && message.percent < 100 && isLastMessage(i)

@@ -33,7 +33,7 @@ function selectPrompt(index: number) {
         {{ i + 1 }}
       </span>
       <p>
-        {{ prompt }}
+        {{ prompt[store.lang] }}
       </p>
     </li>
   </ul>

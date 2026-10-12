@@ -1,13 +1,13 @@
 export const ENV = [
   {
-    NAME: 'BeeChat (für extern)',
+    NAME: 'BFH MLMP (für extern)',
     BASE_URL: 'https://inference.proxy.ti.bfh.ch',
     ENDPOINT: '/api/v1/chat/completions',
     MODEL: 'gpt-oss:120b',
     TOKEN: '' // insert your TOKEN here
   },
   {
-    NAME: 'BeeChat (für intern)',
+    NAME: 'BFH MLMP (für intern)',
     BASE_URL: 'https://inference.mlmp.ti.bfh.ch',
     ENDPOINT: '/api/v1/chat/completions',
     MODEL: 'gpt-oss:120b',
