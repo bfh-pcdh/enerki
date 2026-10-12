@@ -233,7 +233,7 @@ button[data-v-2bc3d388] {
   height: 4em;
   color: white;
 }
-`, "",{"version":3,"sources":["webpack://./src/components/Chat.vue"],"names":[],"mappings":";AAiOA;EACE,gBAAgB;EAChB,aAAa;EACb,gBAAgB;EAChB,YAAY;EACZ,iBAAiB;AACnB;AACA;EACE,eAAe;AACjB;AACA;EACE,gBAAgB;EAChB,mBAAmB;EACnB,kBAAkB;EAClB,UAAU;EACV,iBAAiB;EACjB;;oBAEkB;AACpB;AACA;EACE,yBAAyB;EACzB,cAAc;EACd,gBAAgB;AAClB;AACA;EACE,yBAAyB;EACzB,cAAc;EACd,iBAAiB;AACnB;AACA;EACE,aAAa;AACf;AACA;EACE,cAAc;EACd,WAAW;EACX,UAAU;EACV,iBAAiB;EACjB,kBAAkB;AACpB;AAEA;EACE,8BAA8B;EAC9B,2BAA2B;EAC3B,6BAA6B;EAC7B,0BAA0B;EAC1B,mBAAmB;EACnB,UAAU;AACZ;AAEA;EACE,4BAA4B;EAC5B,yBAAyB;EACzB,+BAA+B;EAC/B,4BAA4B;EAC5B,oBAAoB;EACpB,UAAU;AACZ;AAEA;EACE,WAAW;EACX,eAAe;EACf,cAAc;EACd,kBAAkB;EAClB,eAAe;AACjB;AAEA;EACE,eAAe;EACf,kBAAkB;AACpB;AACA;EACE,WAAW;EACX,YAAY;AACd","sourcesContent":["<script setup lang=\"ts\">\nimport { computed, ref, ShallowRef, useTemplateRef } from 'vue';\nimport { type Message, USER_ROLE } from '@/models';\nimport axios from 'axios';\nimport markdownit from 'markdown-it';\nimport { store } from '../store';\nimport { AntSubscription } from '@/antService';\nimport ToastService from '@/toastService';\nimport PromptExamples from './PromptExamples.vue';\nimport { i18n } from '@/assets/i18n';\n\n// define props\nconst props = defineProps<{\n  token: string;\n  percent: number;\n}>();\n\nconst md = markdownit({\n  html: true,\n  linkify: true,\n  typographer: true\n});\n\n// define events\nconst emit = defineEmits(['onAnswer', 'onError']);\n\nconst chat: ShallowRef = useTemplateRef('chat-list');\n\nconst loadingPercent = ref(0);\n\nconst userInput = ref(false);\nconst chatInput = ref(null);\nlet usage = -1;\nlet inputTimeout = -1;\n\nconst loadingStyle = computed(() => {\n  return (\n    'filter: blur(' +\n    (10 - Math.round(loadingPercent.value / 10)) +\n    'px);opacity:' +\n    (0.009 * loadingPercent.value + 0.1).toFixed(2) +\n    ';'\n  );\n});\n\n/**\n * Estimates the energy usage for an answer, based on the number of output tokens. Samsi et al. estimated the energy usage with 3 - 4 Joule per token, which equals to ~0.001 Wh\n * @see Paper       Samsi et al. (2023): From Words to Watts: Benchmarking the Energy Costs of Large Language Model Inference. https://doi.org/10.48550/arXiv.2310.03003\n * @param tokens    number of output tokens of the answer\n * @returns         an estimation of energy (in Wh), based on the number of output tokens\n */\nfunction estimateEnergyUsage(tokens: number) {\n  return (tokens * 3.5) / 3600; // 3.5 joules per token; 3600 J = 1 Wh\n}\n\n/**\n * Estimates the energy usage before knowing the answer\n * @returns         an estimation of energy (in Wh)\n */\nfunction preEstimateUsage() {\n  return 1;\n}\n\n/**\n * Checks if a message is currently the last\n * @param index   the index of the message\n * @returns       TRUE if the message is the last in the array\n *                FALSE if there are more messages after it in the array\n */\nfunction isLastMessage(index: number): boolean {\n  return store.chatMessages.length - index === 1;\n}\n\n/**\n * Sends a message to the model, with all previous messages as context\n */\nfunction send() {\n  if (store.textInput == '') return;\n\n  const message: Message = {\n    role: USER_ROLE.USER,\n    content: store.textInput,\n    loading: false\n  };\n  loadingPercent.value = 0;\n\n  store.chatMessages.push(message);\n\n  const body = {\n    model: store.connection.MODEL,\n    messages: [...store.chatMessages]\n  };\n  store.textInput = '';\n\n  const answerMessage = {\n    role: USER_ROLE.AI,\n    content: '...',\n    loading: true,\n    percent: 0\n  };\n\n  ToastService.startToast();\n\n  store.chatMessages.push(answerMessage);\n  usage = -1;\n\n  chat.value.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'end' });\n\n  store.startAndSubscribe(preEstimateUsage(), (ant: AntSubscription) => {\n    answerMessage.percent = Math.min(ant.percent, 100);\n    loadingPercent.value = Math.min(ant.percent, 100);\n\n    ToastService.progressToast(answerMessage.percent, answerMessage.content !== '...', ant.value);\n    if (ant.percent >= 100 && usage > 0) {\n      ToastService.energyToast(usage);\n    }\n  });\n\n  const time = Date.now();\n  axios\n    .post(store.connection.BASE_URL + store.connection.ENDPOINT, body, {\n      headers: {\n        'Content-Type': 'application/json',\n        Authorization: 'Bearer ' + props.token\n      }\n    })\n    .then((result) => {\n      const duration = Math.round((Date.now() - time) / 1000);\n      usage = estimateEnergyUsage(result.data.usage.completion_tokens);\n      store.setTarget(usage);\n\n      console.log(\n        'Energie verbraucht: ' +\n          usage.toFixed(2) +\n          ' Wh in ' +\n          duration +\n          ' Sekunden. \\nDas benötigt eine Durchschnittsleistung von ' +\n          Math.round((3600 * usage) / duration) +\n          ' Watt.'\n      );\n\n      answerMessage.content = (result.data.choices[0].message.content as string).replaceAll(\n        'ß',\n        'ss'\n      );\n      answerMessage.loading = false;\n\n      // we need to do this, or vue won't detect the update...\n      store.chatMessages.pop();\n      store.chatMessages.push(answerMessage);\n\n      chat.value.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'end' });\n      emit('onAnswer', answerMessage);\n    })\n    .catch((e) => {\n      console.error(e);\n      ToastService.abort();\n      emit('onError', JSON.stringify(e, null, 2));\n    });\n}\n\n/**\n * Sets a 1 second timeout in which we don't listen to hotkey inputs\n */\nfunction inputting() {\n  userInput.value = true;\n  if (inputTimeout > 0) {\n    window.clearTimeout(inputTimeout);\n  }\n  inputTimeout = window.setTimeout(() => {\n    userInput.value = false;\n  }, 1000);\n}\n\nfunction setPrompt(prompt: string) {\n  if (!store.chatMessages[store.chatMessages.length - 1]?.loading) {\n    store.textInput = prompt;\n    (chatInput.value as any)?.focus();\n  }\n}\n</script>\n\n<template>\n  <ul ref=\"chat-list\" class=\"chat-list\">\n    <li\n      v-for=\"(message, i) of store.chatMessages\"\n      :class=\"'message-bubble chat-' + message.role\"\n      :style=\"\n        message.percent != undefined && message.percent < 100 && isLastMessage(i)\n          ? loadingStyle\n          : ''\n      \"\n    >\n      <div v-if=\"message.loading\" class=\"spinner-border\" role=\"status\">\n        <span class=\"visually-hidden\">Loading...</span>\n      </div>\n      <div v-else v-html=\"md.render(message.content)\" />\n    </li>\n    <li style=\"height: 10em; color: white\"></li>\n  </ul>\n\n  <PromptExamples\n    @on-select-prompt=\"setPrompt\"\n    :user-inputting=\"userInput\"\n    v-if=\"!store.isPedalling() && store.getExamplePrompts().length > 0\"\n  />\n\n  <form action=\"#\" ref=\"input-form\">\n    <input\n      autofocus\n      type=\"text\"\n      v-model=\"store.textInput\"\n      :placeholder=\"\n        i18n(store.getExamplePrompts().length > 0 ? 'CHAT_PLACEHOLDER_PROMPTS' : 'CHAT_PLACEHOLDER')\n      \"\n      @input=\"inputting\"\n      ref=\"chatInput\"\n    />\n    <button @click=\"send\" type=\"submit\" :disabled=\"store.isPedalling()\">\n      {{ i18n('SEND').toUpperCase() }}\n    </button>\n  </form>\n</template>\n\n<style scoped>\nul.chat-list {\n  overflow: scroll;\n  height: 100vh;\n  margin-bottom: 0;\n  padding: 1em;\n  padding-top: 10em;\n}\nli:first-child {\n  margin-top: 3em;\n}\n.message-bubble {\n  list-style: none;\n  padding: 0.25em 1em;\n  border-radius: 1em;\n  width: 75%;\n  margin-top: 0.5em;\n  transition:\n    opacity 1.2s ease,\n    filter 1.2s ease;\n}\n.chat-user {\n  background-color: #64788b;\n  color: #eff1f3;\n  margin-left: 25%;\n}\n.chat-assistant {\n  background-color: #e0e4e8;\n  color: #4b647d;\n  margin-right: 25%;\n}\n.chat-developer {\n  display: none;\n}\n.spinner-border {\n  display: block;\n  height: 1em;\n  width: 1em;\n  margin-left: auto;\n  margin-right: auto;\n}\n\ninput {\n  border-bottom-left-radius: 1em;\n  border-top-left-radius: 1em;\n  border-bottom-right-radius: 0;\n  border-top-right-radius: 0;\n  padding-left: 0.5em;\n  width: 75%;\n}\n\nbutton {\n  border-bottom-left-radius: 0;\n  border-top-left-radius: 0;\n  border-bottom-right-radius: 1em;\n  border-top-right-radius: 1em;\n  padding-right: 0.5em;\n  width: 25%;\n}\n\n.usage {\n  width: 100%;\n  margin-top: 1em;\n  display: block;\n  text-align: center;\n  color: darkgray;\n}\n\n.spinner-border {\n  margin-top: 2em;\n  margin-bottom: 2em;\n}\n.scroll-target {\n  height: 4em;\n  color: white;\n}\n</style>\n"],"sourceRoot":""}]);
+`, "",{"version":3,"sources":["webpack://./src/components/Chat.vue"],"names":[],"mappings":";AAsPA;EACE,gBAAgB;EAChB,aAAa;EACb,gBAAgB;EAChB,YAAY;EACZ,iBAAiB;AACnB;AACA;EACE,eAAe;AACjB;AACA;EACE,gBAAgB;EAChB,mBAAmB;EACnB,kBAAkB;EAClB,UAAU;EACV,iBAAiB;EACjB;;oBAEkB;AACpB;AACA;EACE,yBAAyB;EACzB,cAAc;EACd,gBAAgB;AAClB;AACA;EACE,yBAAyB;EACzB,cAAc;EACd,iBAAiB;AACnB;AACA;EACE,aAAa;AACf;AACA;EACE,cAAc;EACd,WAAW;EACX,UAAU;EACV,iBAAiB;EACjB,kBAAkB;AACpB;AAEA;EACE,8BAA8B;EAC9B,2BAA2B;EAC3B,6BAA6B;EAC7B,0BAA0B;EAC1B,mBAAmB;EACnB,UAAU;AACZ;AAEA;EACE,4BAA4B;EAC5B,yBAAyB;EACzB,+BAA+B;EAC/B,4BAA4B;EAC5B,oBAAoB;EACpB,UAAU;AACZ;AAEA;EACE,WAAW;EACX,eAAe;EACf,cAAc;EACd,kBAAkB;EAClB,eAAe;AACjB;AAEA;EACE,eAAe;EACf,kBAAkB;AACpB;AACA;EACE,WAAW;EACX,YAAY;AACd","sourcesContent":["<script setup lang=\"ts\">\nimport { computed, ref, ShallowRef, useTemplateRef } from 'vue';\nimport { ExamplePrompt, type Message, USER_ROLE } from '@/models';\nimport axios from 'axios';\nimport markdownit from 'markdown-it';\nimport { store } from '../store';\nimport { AntSubscription } from '@/antService';\nimport ToastService from '@/toastService';\nimport PromptExamples from './PromptExamples.vue';\nimport { i18n } from '@/assets/i18n';\n\n// define props\nconst props = defineProps<{\n  token: string;\n  percent: number;\n}>();\n\nconst md = markdownit({\n  html: true,\n  linkify: true,\n  typographer: true\n});\n\n// define events\nconst emit = defineEmits(['onAnswer', 'onError']);\n\nconst chat: ShallowRef = useTemplateRef('chat-list');\n\nconst loadingPercent = ref(0);\n\nconst userInput = ref(false);\nconst chatInput = ref(null);\nlet usage = -1;\nlet inputTimeout = -1;\n\nconst loadingStyle = computed(() => {\n  return (\n    'filter: blur(' +\n    (10 - Math.round(loadingPercent.value / 10)) +\n    'px);opacity:' +\n    (0.009 * loadingPercent.value + 0.1).toFixed(2) +\n    ';'\n  );\n});\n\n/**\n * Estimates the energy usage for an answer, based on the number of output tokens. Samsi et al. estimated the energy usage with 3 - 4 Joule per token, which equals to ~0.001 Wh\n * @see Paper       Samsi et al. (2023): From Words to Watts: Benchmarking the Energy Costs of Large Language Model Inference. https://doi.org/10.48550/arXiv.2310.03003\n * @see Blogpost    gpt-oss uses around 8.3 Wh per 100 output token, which seems way too high https://huggingface.co/blog/sasha/gpt-oss-energy\n * @see YouTube     https://www.youtube.com/watch?v=zjG9TkfWd0o&t=143s\n * @param tokens    number of output tokens of the answer\n * @param tps       token per seconds generated, defaults to 70\n * @returns         an estimation of energy (in Wh), based on the number of output tokens\n */\nfunction estimateEnergyUsage(tokens: number, tps = 70) {\n  // Mac Studio M3Max uses up to 480W. That is 0.1333 Wh per second in full load (480 / 3600). \n  // however, he measures 120W: https://www.youtube.com/watch?v=zjG9TkfWd0o&t=143s TODO: own measurements\n  // we assume 180 Watt, just for fun\n  const whPerSecond = 180 / 3600;\n  // With gpt-oss:120b, it generates around 70 token/s. \n  const whPerToken = whPerSecond / tps;\n  const estimate = tokens * whPerToken;\n  return estimate;\n  // old samsi et al estimate: return (tokens * 3.5) / 3600; // 3.5 joules per token; 3600 J = 1 Wh\n}\n\n/**\n * Estimates the energy usage before knowing the answer\n * @returns         an estimation of energy (in Wh)\n */\nfunction preEstimateUsage() {\n  return (usage > 1) \n    ? usage \n    : 1;\n}\n\n/**\n * Checks if a message is currently the last\n * @param index   the index of the message\n * @returns       TRUE if the message is the last in the array\n *                FALSE if there are more messages after it in the array\n */\nfunction isLastMessage(index: number): boolean {\n  return store.getVisibleMessages().length - index === 1;\n}\n\n/**\n * Sends a message to the model, with all previous messages as context\n */\nfunction send() {\n  if (store.textInput == '') return;\n\n  const message: Message = {\n    role: USER_ROLE.USER,\n    content: store.textInput,\n    loading: false\n  };\n  loadingPercent.value = 0;\n\n  store.chatMessages.push(message);\n\n  const body = {\n    model: store.connection.MODEL,\n    messages: [...store.chatMessages],\n    reasoning: {\n      effort: store.connection.REASONING\n    },\n    'background-tasks': {\n      follow_up_generation: false\n    },\n  };\n  store.textInput = '';\n\n  const answerMessage = {\n    role: USER_ROLE.AI,\n    content: '...',\n    loading: true,\n    percent: 0\n  };\n\n  store.chatMessages.push(answerMessage);\n  usage = -1;\n\n  chat.value.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'end' });\n\n  const time = Date.now();\n  Promise.all([\n    ToastService.startToast().then(() => {\n      store.startAndSubscribe((usage === - 1) ? preEstimateUsage() : usage, (ant: AntSubscription) => {\n        answerMessage.percent = Math.min(ant.percent, 100);\n        loadingPercent.value = Math.min(ant.percent, 100);\n\n        ToastService.progressToast(answerMessage.percent, answerMessage.content !== '...', ant.value);\n        if (ant.percent >= 100 && usage > 0) {\n          ToastService.energyToast(usage);\n          usage = -1;\n        }\n      })\n    }),\n    axios.post(store.connection.BASE_URL + store.connection.ENDPOINT, body, {\n      headers: {\n        'Content-Type': 'application/json',\n        Authorization: 'Bearer ' + props.token,\n        'Cache-Control': 'no-cache, no-store'\n      }\n    }).then((result) => {\n      const duration = Math.round((Date.now() - time) / 1000);\n      usage = estimateEnergyUsage(result.data.usage.completion_tokens, result.data.usage.generation_tokens_per_second);\n      store.setTarget(usage);\n\n      console.log(\n        'Energie verbraucht: ' +\n          usage.toFixed(2) +\n          ' Wh in ' +\n          duration +\n          ' Sekunden. \\nDas benötigt eine Durchschnittsleistung von ' +\n          Math.round((3600 * usage) / duration) +\n          ' Watt.'\n      );\n\n      answerMessage.content = (result.data.choices[0].message.content as string).replaceAll(\n        'ß',\n        'ss'\n      );\n      answerMessage.loading = false;\n\n      // we need to do this, or vue won't detect the update...\n      store.chatMessages.pop();\n      store.chatMessages.push(answerMessage);\n\n      chat.value.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'end' });\n      emit('onAnswer', answerMessage);\n    }).catch((e) => {\n      console.error(e);\n      ToastService.abort();\n      emit('onError', JSON.stringify(e, null, 2));\n    })\n  ])\n}\n\n/**\n * Sets a 1 second timeout in which we don't listen to hotkey inputs\n */\nfunction inputting() {\n  userInput.value = true;\n  if (inputTimeout > 0) {\n    window.clearTimeout(inputTimeout);\n  }\n  inputTimeout = window.setTimeout(() => {\n    userInput.value = false;\n  }, 1000);\n}\n\nfunction setPrompt(prompt: ExamplePrompt) {\n  if (!store.chatMessages[store.chatMessages.length - 1]?.loading) {\n    store.textInput = prompt[store.lang];\n    usage = prompt.estimateFactor;\n    store.setTarget(usage);\n    (chatInput.value as any)?.focus();\n  }\n}\n</script>\n\n<template>\n  <ul ref=\"chat-list\" class=\"chat-list\">\n    <li\n      v-for=\"(message, i) of store.getVisibleMessages()\"\n      :class=\"'message-bubble chat-' + message.role\"\n      :style=\"\n        message.percent != undefined && message.percent < 100 && isLastMessage(i)\n          ? loadingStyle\n          : ''\n      \"\n    >\n      <div v-if=\"message.loading\" class=\"spinner-border\" role=\"status\">\n        <span class=\"visually-hidden\">Loading...</span>\n      </div>\n      <div v-else v-html=\"md.render(message.content)\" />\n    </li>\n    <li style=\"height: 10em; color: white\"></li>\n  </ul>\n\n  <PromptExamples\n    @on-select-prompt=\"setPrompt\"\n    :user-inputting=\"userInput\"\n    v-if=\"!store.isPedalling() && store.getExamplePrompts().length > 0\"\n  />\n\n  <form action=\"#\" ref=\"input-form\">\n    <input\n      autofocus\n      type=\"text\"\n      v-model=\"store.textInput\"\n      :placeholder=\"\n        i18n(store.getExamplePrompts().length > 0 ? 'CHAT_PLACEHOLDER_PROMPTS' : 'CHAT_PLACEHOLDER')\n      \"\n      @input=\"inputting\"\n      ref=\"chatInput\"\n    />\n    <button @click=\"send\" type=\"submit\" :disabled=\"store.isPedalling()\">\n      {{ i18n('SEND').toUpperCase() }}\n    </button>\n  </form>\n</template>\n\n<style scoped>\nul.chat-list {\n  overflow: scroll;\n  height: 100vh;\n  margin-bottom: 0;\n  padding: 1em;\n  padding-top: 10em;\n}\nli:first-child {\n  margin-top: 3em;\n}\n.message-bubble {\n  list-style: none;\n  padding: 0.25em 1em;\n  border-radius: 1em;\n  width: 75%;\n  margin-top: 0.5em;\n  transition:\n    opacity 1.2s ease,\n    filter 1.2s ease;\n}\n.chat-user {\n  background-color: #64788b;\n  color: #eff1f3;\n  margin-left: 25%;\n}\n.chat-assistant {\n  background-color: #e0e4e8;\n  color: #4b647d;\n  margin-right: 25%;\n}\n.chat-developer {\n  display: none;\n}\n.spinner-border {\n  display: block;\n  height: 1em;\n  width: 1em;\n  margin-left: auto;\n  margin-right: auto;\n}\n\ninput {\n  border-bottom-left-radius: 1em;\n  border-top-left-radius: 1em;\n  border-bottom-right-radius: 0;\n  border-top-right-radius: 0;\n  padding-left: 0.5em;\n  width: 75%;\n}\n\nbutton {\n  border-bottom-left-radius: 0;\n  border-top-left-radius: 0;\n  border-bottom-right-radius: 1em;\n  border-top-right-radius: 1em;\n  padding-right: 0.5em;\n  width: 25%;\n}\n\n.usage {\n  width: 100%;\n  margin-top: 1em;\n  display: block;\n  text-align: center;\n  color: darkgray;\n}\n\n.spinner-border {\n  margin-top: 2em;\n  margin-bottom: 2em;\n}\n.scroll-target {\n  height: 4em;\n  color: white;\n}\n</style>\n"],"sourceRoot":""}]);
 // Exports
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
 
@@ -328,6 +328,7 @@ ___CSS_LOADER_EXPORT___.push([module.id, `
   bottom: 5em;
   width: 12em;
   border-radius: 0.5em;
+  width: fit-content;
 }
 .watts[data-v-743f672f] {
   width: 100%;
@@ -346,8 +347,9 @@ h3[data-v-743f672f] {
   font-size: 0.7em;
   text-align: center;
   margin-top: 0.5em;
+  padding: 0 0.5em
 }
-`, "",{"version":3,"sources":["webpack://./src/components/PowerSimulator.vue"],"names":[],"mappings":";AAoDA;EACE,kBAAkB;EAClB,UAAU;EACV,WAAW;EACX,WAAW;EACX,oBAAoB;AACtB;AACA;EACE,WAAW;EACX,kBAAkB;EAClB,cAAc;EACd,gBAAgB;EAChB,gBAAgB;EAChB,cAAc;AAChB;AACA;EACE,UAAU;EACV,UAAU;AACZ;AACA;EACE,WAAW;EACX,gBAAgB;EAChB,kBAAkB;EAClB,iBAAiB;AACnB","sourcesContent":["<script setup lang=\"ts\">\nimport { store } from '@/store';\nimport { ref, watch } from 'vue';\nimport { i18n } from '@/assets/i18n';\n\nconst MIN_WATT = 0;\nconst MAX_WATT = 500;\n\nconst props = defineProps({\n  debug: Boolean,\n  watt: Number\n});\n\nconst simulatedWatt = ref(MIN_WATT);\n\nwatch(simulatedWatt, () => store.power.setDebugWatt(simulatedWatt.value));\n\nfunction getBackgroundColor(): string {\n  const calcWatt = (props.debug ? simulatedWatt.value : props.watt) || 0;\n  const clamped = Math.max(0, Math.min(MAX_WATT, calcWatt));\n\n  const green = { r: 182, g: 242, b: 195 };\n  const yellow = { r: 255, g: 255, b: 102 };\n  const red = { r: 139, g: 0, b: 0 };\n\n  let start, end, t;\n\n  if (clamped <= MAX_WATT / 2) {\n    start = green;\n    end = yellow;\n    t = clamped / (MAX_WATT / 2);\n  } else {\n    start = yellow;\n    end = red;\n    t = (clamped - MAX_WATT / 2) / (MAX_WATT / 2);\n  }\n\n  return `background-color: rgba(${Math.round(start.r + (end.r - start.r) * t)}, ${Math.round(\n    start.g + (end.g - start.g) * t\n  )}, ${Math.round(start.b + (end.b - start.b) * t)}, 0.5)`;\n}\n</script>\n\n<template>\n  <div class=\"power\" :style=\"getBackgroundColor()\">\n    <h3>{{ i18n('POWERSIM_LABEL') }}</h3>\n    <span class=\"watts\">{{ watt + ' ' + i18n('POWERSIM_WATT') }}</span>\n    <input type=\"range\" v-if=\"debug\" v-model=\"simulatedWatt\" :min=\"MIN_WATT\" :max=\"MAX_WATT\" />\n  </div>\n</template>\n\n<style scoped>\n.power {\n  position: absolute;\n  right: 2em;\n  bottom: 5em;\n  width: 12em;\n  border-radius: 0.5em;\n}\n.watts {\n  width: 100%;\n  text-align: center;\n  display: block;\n  font-size: 1.5em;\n  font-weight: 700;\n  padding: 0.2em;\n}\ninput {\n  width: 90%;\n  margin: 5%;\n}\nh3 {\n  width: 100%;\n  font-size: 0.7em;\n  text-align: center;\n  margin-top: 0.5em;\n}\n</style>\n"],"sourceRoot":""}]);
+`, "",{"version":3,"sources":["webpack://./src/components/PowerSimulator.vue"],"names":[],"mappings":";AAoDA;EACE,kBAAkB;EAClB,UAAU;EACV,WAAW;EACX,WAAW;EACX,oBAAoB;EACpB,kBAAkB;AACpB;AACA;EACE,WAAW;EACX,kBAAkB;EAClB,cAAc;EACd,gBAAgB;EAChB,gBAAgB;EAChB,cAAc;AAChB;AACA;EACE,UAAU;EACV,UAAU;AACZ;AACA;EACE,WAAW;EACX,gBAAgB;EAChB,kBAAkB;EAClB,iBAAiB;EACjB;AACF","sourcesContent":["<script setup lang=\"ts\">\nimport { store } from '@/store';\nimport { ref, watch } from 'vue';\nimport { i18n } from '@/assets/i18n';\n\nconst MIN_WATT = 0;\nconst MAX_WATT = 500;\n\nconst props = defineProps({\n  debug: Boolean,\n  watt: Number\n});\n\nconst simulatedWatt = ref(MIN_WATT);\n\nwatch(simulatedWatt, () => store.power.setDebugWatt(simulatedWatt.value));\n\nfunction getBackgroundColor(): string {\n  const calcWatt = (props.debug ? simulatedWatt.value : props.watt) || 0;\n  const clamped = Math.max(0, Math.min(MAX_WATT, calcWatt));\n\n  const green = { r: 182, g: 242, b: 195 };\n  const yellow = { r: 255, g: 255, b: 102 };\n  const red = { r: 139, g: 0, b: 0 };\n\n  let start, end, t;\n\n  if (clamped <= MAX_WATT / 2) {\n    start = green;\n    end = yellow;\n    t = clamped / (MAX_WATT / 2);\n  } else {\n    start = yellow;\n    end = red;\n    t = (clamped - MAX_WATT / 2) / (MAX_WATT / 2);\n  }\n\n  return `background-color: rgba(${Math.round(start.r + (end.r - start.r) * t)}, ${Math.round(\n    start.g + (end.g - start.g) * t\n  )}, ${Math.round(start.b + (end.b - start.b) * t)}, 0.5)`;\n}\n</script>\n\n<template>\n  <div class=\"power\" :style=\"getBackgroundColor()\" v-if=\"debug || (watt && watt > 0)\">\n    <h3>{{ i18n('POWERSIM_LABEL') }}</h3>\n    <span class=\"watts\">{{ watt + ' ' + i18n('POWERSIM_WATT') }}</span>\n    <input type=\"range\" v-if=\"debug\" v-model=\"simulatedWatt\" :min=\"MIN_WATT\" :max=\"MAX_WATT\" />\n  </div>\n</template>\n\n<style scoped>\n.power {\n  position: absolute;\n  right: 2em;\n  bottom: 5em;\n  width: 12em;\n  border-radius: 0.5em;\n  width: fit-content;\n}\n.watts {\n  width: 100%;\n  text-align: center;\n  display: block;\n  font-size: 1.5em;\n  font-weight: 700;\n  padding: 0.2em;\n}\ninput {\n  width: 90%;\n  margin: 5%;\n}\nh3 {\n  width: 100%;\n  font-size: 0.7em;\n  text-align: center;\n  margin-top: 0.5em;\n  padding: 0 0.5em\n}\n</style>\n"],"sourceRoot":""}]);
 // Exports
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
 
@@ -421,7 +423,7 @@ p[data-v-510f157d] {
   font-size: 1.7em;
   z-index: 10;
 }
-`, "",{"version":3,"sources":["webpack://./src/components/PromptExamples.vue"],"names":[],"mappings":";AA0CA;EACE,qBAAqB;EACrB,aAAa;EACb,mBAAmB;EACnB,kBAAkB;EAClB,aAAa;EACb,cAAc;EACd,2BAA2B;EAC3B,0BAA0B;EAC1B,kCAAkC;EAClC,0CAA0C;AAC5C;AACA;EACE,qBAAqB;EACrB,eAAe;EACf,yBAAyB;EACzB,qBAAqB;EACrB,eAAe;EACf,gBAAgB;EAChB,UAAU;EACV,aAAa;EACb,cAAc;AAChB;AACA;EACE,yBAAyB;AAC3B;AACA;EACE,cAAc;EACd,cAAc;EACd,cAAc;EACd,kBAAkB;EAClB,UAAU;EACV,WAAW;EACX,cAAc;EACd,aAAa;EACb,kBAAkB;EAClB,kBAAkB;EAClB,yBAAyB;AAC3B;AACA;EACE,gBAAgB;EAChB,mBAAmB;EACnB,kBAAkB;EAClB,gBAAgB;EAChB,WAAW;AACb","sourcesContent":["<script setup lang=\"ts\">\nimport { store } from '@/store';\n\nconst props = defineProps({\n  userInputting: Boolean\n});\n\nconst emit = defineEmits(['onSelectPrompt']);\n\ndocument.addEventListener('keydown', function (event) {\n  const key = Number(event.key);\n  if (\n    !props.userInputting &&\n    event.key != ' ' &&\n    !isNaN(key) &&\n    key <= store.getExamplePrompts().length\n  ) {\n    selectPrompt(key - 1);\n  }\n});\n\nfunction selectPrompt(index: number) {\n  const prompt = store.getExamplePrompts()[index];\n\n  window.setTimeout(() => emit('onSelectPrompt', prompt), 50);\n}\n</script>\n\n<template>\n  <ul>\n    <li v-for=\"(prompt, i) of store.getExamplePrompts()\" @click=\"selectPrompt(i)\">\n      <span class=\"prompt-number\">\n        {{ i + 1 }}\n      </span>\n      <p>\n        {{ prompt }}\n      </p>\n    </li>\n  </ul>\n</template>\n\n<style scoped>\nul {\n  list-style-type: none;\n  display: flex;\n  flex-direction: row;\n  position: absolute;\n  bottom: 2.9em;\n  padding: 0.5em;\n  background-color: aliceblue;\n  backdrop-filter: blur(3px);\n  -webkit-backdrop-filter: blur(3px);\n  background-color: rgba(255, 255, 255, 0.1);\n}\nli {\n  display: inline-block;\n  cursor: pointer;\n  background-color: #eff1f3;\n  border-radius: 0.2rem;\n  padding: 0.4rem;\n  font-size: 0.5em;\n  width: 30%;\n  margin: 0 1em;\n  color: #4b647d;\n}\nli:hover {\n  background-color: #e0e4e8;\n}\n.prompt-number {\n  font-size: 2em;\n  color: #c1c9d1;\n  display: block;\n  position: relative;\n  top: -1rem;\n  right: 1rem;\n  height: 1.5rem;\n  width: 1.5rem;\n  text-align: center;\n  border-radius: 50%;\n  background-color: #e0e4e8;\n}\np {\n  margin-bottom: 0;\n  margin-top: -1.5rem;\n  position: relative;\n  font-size: 1.7em;\n  z-index: 10;\n}\n</style>\n"],"sourceRoot":""}]);
+`, "",{"version":3,"sources":["webpack://./src/components/PromptExamples.vue"],"names":[],"mappings":";AA0CA;EACE,qBAAqB;EACrB,aAAa;EACb,mBAAmB;EACnB,kBAAkB;EAClB,aAAa;EACb,cAAc;EACd,2BAA2B;EAC3B,0BAA0B;EAC1B,kCAAkC;EAClC,0CAA0C;AAC5C;AACA;EACE,qBAAqB;EACrB,eAAe;EACf,yBAAyB;EACzB,qBAAqB;EACrB,eAAe;EACf,gBAAgB;EAChB,UAAU;EACV,aAAa;EACb,cAAc;AAChB;AACA;EACE,yBAAyB;AAC3B;AACA;EACE,cAAc;EACd,cAAc;EACd,cAAc;EACd,kBAAkB;EAClB,UAAU;EACV,WAAW;EACX,cAAc;EACd,aAAa;EACb,kBAAkB;EAClB,kBAAkB;EAClB,yBAAyB;AAC3B;AACA;EACE,gBAAgB;EAChB,mBAAmB;EACnB,kBAAkB;EAClB,gBAAgB;EAChB,WAAW;AACb","sourcesContent":["<script setup lang=\"ts\">\nimport { store } from '@/store';\n\nconst props = defineProps({\n  userInputting: Boolean\n});\n\nconst emit = defineEmits(['onSelectPrompt']);\n\ndocument.addEventListener('keydown', function (event) {\n  const key = Number(event.key);\n  if (\n    !props.userInputting &&\n    event.key != ' ' &&\n    !isNaN(key) &&\n    key <= store.getExamplePrompts().length\n  ) {\n    selectPrompt(key - 1);\n  }\n});\n\nfunction selectPrompt(index: number) {\n  const prompt = store.getExamplePrompts()[index];\n\n  window.setTimeout(() => emit('onSelectPrompt', prompt), 50);\n}\n</script>\n\n<template>\n  <ul>\n    <li v-for=\"(prompt, i) of store.getExamplePrompts()\" @click=\"selectPrompt(i)\">\n      <span class=\"prompt-number\">\n        {{ i + 1 }}\n      </span>\n      <p>\n        {{ prompt[store.lang] }}\n      </p>\n    </li>\n  </ul>\n</template>\n\n<style scoped>\nul {\n  list-style-type: none;\n  display: flex;\n  flex-direction: row;\n  position: absolute;\n  bottom: 2.9em;\n  padding: 0.5em;\n  background-color: aliceblue;\n  backdrop-filter: blur(3px);\n  -webkit-backdrop-filter: blur(3px);\n  background-color: rgba(255, 255, 255, 0.1);\n}\nli {\n  display: inline-block;\n  cursor: pointer;\n  background-color: #eff1f3;\n  border-radius: 0.2rem;\n  padding: 0.4rem;\n  font-size: 0.5em;\n  width: 30%;\n  margin: 0 1em;\n  color: #4b647d;\n}\nli:hover {\n  background-color: #e0e4e8;\n}\n.prompt-number {\n  font-size: 2em;\n  color: #c1c9d1;\n  display: block;\n  position: relative;\n  top: -1rem;\n  right: 1rem;\n  height: 1.5rem;\n  width: 1.5rem;\n  text-align: center;\n  border-radius: 50%;\n  background-color: #e0e4e8;\n}\np {\n  margin-bottom: 0;\n  margin-top: -1.5rem;\n  position: relative;\n  font-size: 1.7em;\n  z-index: 10;\n}\n</style>\n"],"sourceRoot":""}]);
 // Exports
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
 
@@ -577,10 +579,19 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 const ENV = [
     {
-        NAME: 'BeeChat',
+        NAME: 'BFH MLMP (für extern)',
+        BASE_URL: 'https://inference.proxy.ti.bfh.ch',
+        ENDPOINT: '/api/v1/chat/completions',
+        MODEL: 'gpt-oss:120b',
+        REASONING: 'low',
+        TOKEN: '' // insert your TOKEN here
+    },
+    {
+        NAME: 'BFH MLMP (für intern)',
         BASE_URL: 'https://inference.mlmp.ti.bfh.ch',
         ENDPOINT: '/api/v1/chat/completions',
         MODEL: 'gpt-oss:120b',
+        REASONING: 'low',
         TOKEN: '' // insert your TOKEN here
     },
     {
@@ -588,6 +599,7 @@ const ENV = [
         BASE_URL: 'http://localhost:1234',
         ENDPOINT: '/v1/chat/completions',
         MODEL: 'gpt-oss:120b',
+        REASONING: 'medium',
         TOKEN: '' // 'not_needed_for_localhost'
     },
     {
@@ -595,6 +607,7 @@ const ENV = [
         BASE_URL: 'https://api.openai.com',
         ENDPOINT: '/v1/chat/completions',
         MODEL: 'gpt-5.6-luna', // 'gpt-3.5-turbo',
+        REASONING: 'medium',
         TOKEN: '' // insert token here
     }
 ];
@@ -884,18 +897,31 @@ __webpack_require__.r(__webpack_exports__);
         /**
          * Estimates the energy usage for an answer, based on the number of output tokens. Samsi et al. estimated the energy usage with 3 - 4 Joule per token, which equals to ~0.001 Wh
          * @see Paper       Samsi et al. (2023): From Words to Watts: Benchmarking the Energy Costs of Large Language Model Inference. https://doi.org/10.48550/arXiv.2310.03003
+         * @see Blogpost    gpt-oss uses around 8.3 Wh per 100 output token, which seems way too high https://huggingface.co/blog/sasha/gpt-oss-energy
+         * @see YouTube     https://www.youtube.com/watch?v=zjG9TkfWd0o&t=143s
          * @param tokens    number of output tokens of the answer
+         * @param tps       token per seconds generated, defaults to 70
          * @returns         an estimation of energy (in Wh), based on the number of output tokens
          */
-        function estimateEnergyUsage(tokens) {
-            return (tokens * 3.5) / 3600; // 3.5 joules per token; 3600 J = 1 Wh
+        function estimateEnergyUsage(tokens, tps = 70) {
+            // Mac Studio M3Max uses up to 480W. That is 0.1333 Wh per second in full load (480 / 3600). 
+            // however, he measures 120W: https://www.youtube.com/watch?v=zjG9TkfWd0o&t=143s TODO: own measurements
+            // we assume 180 Watt, just for fun
+            const whPerSecond = 180 / 3600;
+            // With gpt-oss:120b, it generates around 70 token/s. 
+            const whPerToken = whPerSecond / tps;
+            const estimate = tokens * whPerToken;
+            return estimate;
+            // old samsi et al estimate: return (tokens * 3.5) / 3600; // 3.5 joules per token; 3600 J = 1 Wh
         }
         /**
          * Estimates the energy usage before knowing the answer
          * @returns         an estimation of energy (in Wh)
          */
         function preEstimateUsage() {
-            return 1;
+            return (usage > 1)
+                ? usage
+                : 1;
         }
         /**
          * Checks if a message is currently the last
@@ -904,7 +930,7 @@ __webpack_require__.r(__webpack_exports__);
          *                FALSE if there are more messages after it in the array
          */
         function isLastMessage(index) {
-            return _store__WEBPACK_IMPORTED_MODULE_4__.store.chatMessages.length - index === 1;
+            return _store__WEBPACK_IMPORTED_MODULE_4__.store.getVisibleMessages().length - index === 1;
         }
         /**
          * Sends a message to the model, with all previous messages as context
@@ -921,7 +947,13 @@ __webpack_require__.r(__webpack_exports__);
             _store__WEBPACK_IMPORTED_MODULE_4__.store.chatMessages.push(message);
             const body = {
                 model: _store__WEBPACK_IMPORTED_MODULE_4__.store.connection.MODEL,
-                messages: [..._store__WEBPACK_IMPORTED_MODULE_4__.store.chatMessages]
+                messages: [..._store__WEBPACK_IMPORTED_MODULE_4__.store.chatMessages],
+                reasoning: {
+                    effort: _store__WEBPACK_IMPORTED_MODULE_4__.store.connection.REASONING
+                },
+                'background-tasks': {
+                    follow_up_generation: false
+                },
             };
             _store__WEBPACK_IMPORTED_MODULE_4__.store.textInput = '';
             const answerMessage = {
@@ -930,50 +962,52 @@ __webpack_require__.r(__webpack_exports__);
                 loading: true,
                 percent: 0
             };
-            _toastService__WEBPACK_IMPORTED_MODULE_5__["default"].startToast();
             _store__WEBPACK_IMPORTED_MODULE_4__.store.chatMessages.push(answerMessage);
             usage = -1;
             chat.value.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-            _store__WEBPACK_IMPORTED_MODULE_4__.store.startAndSubscribe(preEstimateUsage(), (ant) => {
-                answerMessage.percent = Math.min(ant.percent, 100);
-                loadingPercent.value = Math.min(ant.percent, 100);
-                _toastService__WEBPACK_IMPORTED_MODULE_5__["default"].progressToast(answerMessage.percent, answerMessage.content !== '...', ant.value);
-                if (ant.percent >= 100 && usage > 0) {
-                    _toastService__WEBPACK_IMPORTED_MODULE_5__["default"].energyToast(usage);
-                }
-            });
             const time = Date.now();
-            axios__WEBPACK_IMPORTED_MODULE_2__["default"]
-                .post(_store__WEBPACK_IMPORTED_MODULE_4__.store.connection.BASE_URL + _store__WEBPACK_IMPORTED_MODULE_4__.store.connection.ENDPOINT, body, {
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: 'Bearer ' + props.token
-                }
-            })
-                .then((result) => {
-                const duration = Math.round((Date.now() - time) / 1000);
-                usage = estimateEnergyUsage(result.data.usage.completion_tokens);
-                _store__WEBPACK_IMPORTED_MODULE_4__.store.setTarget(usage);
-                console.log('Energie verbraucht: ' +
-                    usage.toFixed(2) +
-                    ' Wh in ' +
-                    duration +
-                    ' Sekunden. \nDas benötigt eine Durchschnittsleistung von ' +
-                    Math.round((3600 * usage) / duration) +
-                    ' Watt.');
-                answerMessage.content = result.data.choices[0].message.content.replaceAll('ß', 'ss');
-                answerMessage.loading = false;
-                // we need to do this, or vue won't detect the update...
-                _store__WEBPACK_IMPORTED_MODULE_4__.store.chatMessages.pop();
-                _store__WEBPACK_IMPORTED_MODULE_4__.store.chatMessages.push(answerMessage);
-                chat.value.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-                emit('onAnswer', answerMessage);
-            })
-                .catch((e) => {
-                console.error(e);
-                _toastService__WEBPACK_IMPORTED_MODULE_5__["default"].abort();
-                emit('onError', JSON.stringify(e, null, 2));
-            });
+            Promise.all([
+                _toastService__WEBPACK_IMPORTED_MODULE_5__["default"].startToast().then(() => {
+                    _store__WEBPACK_IMPORTED_MODULE_4__.store.startAndSubscribe((usage === -1) ? preEstimateUsage() : usage, (ant) => {
+                        answerMessage.percent = Math.min(ant.percent, 100);
+                        loadingPercent.value = Math.min(ant.percent, 100);
+                        _toastService__WEBPACK_IMPORTED_MODULE_5__["default"].progressToast(answerMessage.percent, answerMessage.content !== '...', ant.value);
+                        if (ant.percent >= 100 && usage > 0) {
+                            _toastService__WEBPACK_IMPORTED_MODULE_5__["default"].energyToast(usage);
+                            usage = -1;
+                        }
+                    });
+                }),
+                axios__WEBPACK_IMPORTED_MODULE_2__["default"].post(_store__WEBPACK_IMPORTED_MODULE_4__.store.connection.BASE_URL + _store__WEBPACK_IMPORTED_MODULE_4__.store.connection.ENDPOINT, body, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: 'Bearer ' + props.token,
+                        'Cache-Control': 'no-cache, no-store'
+                    }
+                }).then((result) => {
+                    const duration = Math.round((Date.now() - time) / 1000);
+                    usage = estimateEnergyUsage(result.data.usage.completion_tokens, result.data.usage.generation_tokens_per_second);
+                    _store__WEBPACK_IMPORTED_MODULE_4__.store.setTarget(usage);
+                    console.log('Energie verbraucht: ' +
+                        usage.toFixed(2) +
+                        ' Wh in ' +
+                        duration +
+                        ' Sekunden. \nDas benötigt eine Durchschnittsleistung von ' +
+                        Math.round((3600 * usage) / duration) +
+                        ' Watt.');
+                    answerMessage.content = result.data.choices[0].message.content.replaceAll('ß', 'ss');
+                    answerMessage.loading = false;
+                    // we need to do this, or vue won't detect the update...
+                    _store__WEBPACK_IMPORTED_MODULE_4__.store.chatMessages.pop();
+                    _store__WEBPACK_IMPORTED_MODULE_4__.store.chatMessages.push(answerMessage);
+                    chat.value.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                    emit('onAnswer', answerMessage);
+                }).catch((e) => {
+                    console.error(e);
+                    _toastService__WEBPACK_IMPORTED_MODULE_5__["default"].abort();
+                    emit('onError', JSON.stringify(e, null, 2));
+                })
+            ]);
         }
         /**
          * Sets a 1 second timeout in which we don't listen to hotkey inputs
@@ -989,7 +1023,9 @@ __webpack_require__.r(__webpack_exports__);
         }
         function setPrompt(prompt) {
             if (!_store__WEBPACK_IMPORTED_MODULE_4__.store.chatMessages[_store__WEBPACK_IMPORTED_MODULE_4__.store.chatMessages.length - 1]?.loading) {
-                _store__WEBPACK_IMPORTED_MODULE_4__.store.textInput = prompt;
+                _store__WEBPACK_IMPORTED_MODULE_4__.store.textInput = prompt[_store__WEBPACK_IMPORTED_MODULE_4__.store.lang];
+                usage = prompt.estimateFactor;
+                _store__WEBPACK_IMPORTED_MODULE_4__.store.setTarget(usage);
                 chatInput.value?.focus();
             }
         }
@@ -1446,7 +1482,7 @@ const _hoisted_6 = ["disabled"];
 function render(_ctx, _cache, $props, $setup, $data, $options) {
     return ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, [
         (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("ul", _hoisted_1, [
-            ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.renderList)($setup.store.chatMessages, (message, i) => {
+            ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.renderList)($setup.store.getVisibleMessages(), (message, i) => {
                 return ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("li", {
                     class: (0,vue__WEBPACK_IMPORTED_MODULE_0__.normalizeClass)('message-bubble chat-' + message.role),
                     style: (0,vue__WEBPACK_IMPORTED_MODULE_0__.normalizeStyle)(message.percent != undefined && message.percent < 100 && $setup.isLastMessage(i)
@@ -1577,24 +1613,27 @@ __webpack_require__.r(__webpack_exports__);
 
 const _hoisted_1 = { class: "watts" };
 function render(_ctx, _cache, $props, $setup, $data, $options) {
-    return ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", {
-        class: "power",
-        style: (0,vue__WEBPACK_IMPORTED_MODULE_0__.normalizeStyle)($setup.getBackgroundColor())
-    }, [
-        (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("h3", null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($setup.i18n('POWERSIM_LABEL')), 1 /* TEXT */),
-        (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", _hoisted_1, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($props.watt + ' ' + $setup.i18n('POWERSIM_WATT')), 1 /* TEXT */),
-        ($props.debug)
-            ? (0,vue__WEBPACK_IMPORTED_MODULE_0__.withDirectives)(((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("input", {
-                key: 0,
-                type: "range",
-                "onUpdate:modelValue": _cache[0] || (_cache[0] = ($event) => (($setup.simulatedWatt) = $event)),
-                min: $setup.MIN_WATT,
-                max: $setup.MAX_WATT
-            }, null, 512 /* NEED_PATCH */)), [
-                [vue__WEBPACK_IMPORTED_MODULE_0__.vModelText, $setup.simulatedWatt]
-            ])
-            : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)
-    ], 4 /* STYLE */));
+    return ($props.debug || ($props.watt && $props.watt > 0))
+        ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", {
+            key: 0,
+            class: "power",
+            style: (0,vue__WEBPACK_IMPORTED_MODULE_0__.normalizeStyle)($setup.getBackgroundColor())
+        }, [
+            (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("h3", null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($setup.i18n('POWERSIM_LABEL')), 1 /* TEXT */),
+            (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", _hoisted_1, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($props.watt + ' ' + $setup.i18n('POWERSIM_WATT')), 1 /* TEXT */),
+            ($props.debug)
+                ? (0,vue__WEBPACK_IMPORTED_MODULE_0__.withDirectives)(((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("input", {
+                    key: 0,
+                    type: "range",
+                    "onUpdate:modelValue": _cache[0] || (_cache[0] = ($event) => (($setup.simulatedWatt) = $event)),
+                    min: $setup.MIN_WATT,
+                    max: $setup.MAX_WATT
+                }, null, 512 /* NEED_PATCH */)), [
+                    [vue__WEBPACK_IMPORTED_MODULE_0__.vModelText, $setup.simulatedWatt]
+                ])
+                : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)
+        ], 4 /* STYLE */))
+        : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true);
 }
 
 
@@ -1622,7 +1661,7 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
                 onClick: ($event) => ($setup.selectPrompt(i))
             }, [
                 (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", _hoisted_2, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)(i + 1), 1 /* TEXT */),
-                (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("p", null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)(prompt), 1 /* TEXT */)
+                (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("p", null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)(prompt[$setup.store.lang]), 1 /* TEXT */)
             ], 8 /* PROPS */, _hoisted_1));
         }), 256 /* UNKEYED_FRAGMENT */))
     ]));
@@ -2181,6 +2220,18 @@ const KEYS = {
     CLOSE: {
         de: 'schliessen',
         fr: 'fermer'
+    },
+    READY: {
+        de: 'Auf die Plätze…',
+        fr: 'À vos marques …'
+    },
+    STEADY: {
+        de: 'fertig…',
+        fr: 'Prêts ?'
+    },
+    GO: {
+        de: 'LOS!',
+        fr: 'PARTEZ !'
     }
 };
 
@@ -2205,18 +2256,23 @@ const QUIZ = [
             de: 'Wie viel Energie verbraucht ein ChatGPT-Prompt im Durchschnitt?',
             fr: 'Combien d’énergie consomme en moyenne une requête ChatGPT ?'
         },
-        prompts: {
-            de: [
-                'Kurze Antwort: Wie viel Energie verbraucht ein ChatGPT-Prompt im Durchschnitt?',
-                'Ausführliche Antwort: Wie viel Energie verbraucht ein ChatGPT-Prompt im Durchschnitt?',
-                'Verbraucht ein ChatGPT-Prompt so viel Energie wie eine LED-Lampe in einer Sekunde, ein Smartphone in zehn Sekunden oder ein Laptop in einer Minute?'
-            ],
-            fr: [
-                'Réponse courte : Combien d’énergie consomme en moyenne une requête ChatGPT ?',
-                'Réponse détaillée : Combien d’énergie consomme en moyenne une requête ChatGPT ?',
-                'Une requête ChatGPT consomme-t-elle autant d’énergie qu’une ampoule LED en une seconde, qu’un smartphone en dix secondes ou qu’un ordinateur portable en une minute ?'
-            ]
-        }
+        prompts: [
+            {
+                de: 'Kurze Antwort: Wie viel Energie verbraucht ein ChatGPT-Prompt im Durchschnitt?',
+                fr: 'Réponse courte : Combien d’énergie consomme en moyenne une requête ChatGPT ?',
+                estimateFactor: 1
+            },
+            {
+                de: 'Ausführliche Antwort: Wie viel Energie verbraucht ein ChatGPT-Prompt im Durchschnitt?',
+                fr: 'Réponse détaillée : Combien d’énergie consomme en moyenne une requête ChatGPT ?',
+                estimateFactor: 3
+            },
+            {
+                de: 'Verbraucht ein ChatGPT-Prompt so viel Energie wie eine LED-Lampe in einer Sekunde, ein Smartphone in zehn Sekunden oder ein Laptop in einer Minute?',
+                fr: 'Une requête ChatGPT consomme-t-elle autant d’énergie qu’une ampoule LED en une seconde, qu’un smartphone en dix secondes ou qu’un ordinateur portable en une minute ?',
+                estimateFactor: 1
+            },
+        ]
     },
     {
         id: '2',
@@ -2224,18 +2280,23 @@ const QUIZ = [
             de: 'Wieviel CO₂ verursacht eine Google-Suche?',
             fr: 'Combien de CO₂ génère une recherche Google ?'
         },
-        prompts: {
-            de: [
-                'Wie viel CO₂ entsteht bei einer durchschnittlichen Google-Suche?',
-                'Was erzeugt mehr CO₂: Eine Frage durch Google zu beantworten, oder mit einem KI-Modell? Erstelle eine Tabelle mit den wichtigsten Einfluss-Faktoren.',
-                'Was erzeugt mehr CO₂: Eine Frage durch Google zu beantworten, oder mit einem KI-Modell? Halte die Antwort kurz.'
-            ],
-            fr: [
-                'Combien de CO₂ est généré par une recherche Google moyenne ?',
-                'Qu’est-ce qui génère plus de CO₂ : répondre à une question via Google ou via un modèle d’IA ? Crée un tableau avec les principaux facteurs d’influence.',
-                'Qu’est-ce qui génère plus de CO₂ : répondre à une question via Google ou via un modèle d’IA ? Donne une réponse courte.'
-            ]
-        }
+        prompts: [
+            {
+                de: 'Wie viel CO₂ entsteht bei einer durchschnittlichen Google-Suche?',
+                fr: 'Combien de CO₂ est généré par une recherche Google moyenne ?',
+                estimateFactor: 1
+            },
+            {
+                de: 'Was erzeugt mehr CO₂: Eine Frage durch Google zu beantworten, oder mit einem KI-Modell? Erstelle eine Tabelle mit den wichtigsten Einfluss-Faktoren.',
+                fr: 'Qu’est-ce qui génère plus de CO₂ : répondre à une question via Google ou via un modèle d’IA ? Crée un tableau avec les principaux facteurs d’influence.',
+                estimateFactor: 3
+            },
+            {
+                de: 'Was erzeugt mehr CO₂: Eine Frage durch Google zu beantworten, oder mit einem KI-Modell? Halte die Antwort kurz.',
+                fr: 'Qu’est-ce qui génère plus de CO₂ : répondre à une question via Google ou via un modèle d’IA ? Donne une réponse courte.',
+                estimateFactor: 1
+            }
+        ]
     },
     {
         id: '3',
@@ -2243,18 +2304,23 @@ const QUIZ = [
             de: 'Wie wirkt sich die steigende Nutzung energieintensiver digitaler Technologien langfristig auf die Gesundheit aus?',
             fr: 'Quel est l’impact à long terme de l’utilisation croissante des technologies numériques énergivores sur la santé ?'
         },
-        prompts: {
-            de: [
-                'Neben dem ökologischen Fussabdruck: Welches Gesundheitsrisiko ist mit exzessiver digitaler Nutzung verbunden?',
-                'Neben dem ökologischen Fussabdruck: Welches Gesundheitsrisiko ist mit exzessiver digitaler Nutzung verbunden? Mache mir eine ausführliche Analyse.',
-                'Neben dem ökologischen Fussabdruck: Welches Gesundheitsrisiko ist mit exzessiver digitaler Nutzung verbunden? Gib mir eine möglichst kurze Antwort.'
-            ],
-            fr: [
-                'En dehors de l’empreinte écologique : quel risque pour la santé est lié à une utilisation excessive du numérique ?',
-                'En dehors de l’empreinte écologique : quel risque pour la santé est lié à une utilisation excessive du numérique ? Fais une analyse détaillée.',
-                'En dehors de l’empreinte écologique : quel risque pour la santé est lié à une utilisation excessive du numérique ? Donne une réponse courte.'
-            ]
-        }
+        prompts: [
+            {
+                de: 'Neben dem ökologischen Fussabdruck: Welches Gesundheitsrisiko ist mit exzessiver digitaler Nutzung verbunden?',
+                fr: 'En dehors de l’empreinte écologique : quel risque pour la santé est lié à une utilisation excessive du numérique ?',
+                estimateFactor: 1
+            },
+            {
+                de: 'Neben dem ökologischen Fussabdruck: Welches Gesundheitsrisiko ist mit exzessiver digitaler Nutzung verbunden? Mache mir eine ausführliche Analyse.',
+                fr: 'En dehors de l’empreinte écologique : quel risque pour la santé est lié à une utilisation excessive du numérique ? Fais une analyse détaillée.',
+                estimateFactor: 3
+            },
+            {
+                de: 'Neben dem ökologischen Fussabdruck: Welches Gesundheitsrisiko ist mit exzessiver digitaler Nutzung verbunden? Gib mir eine möglichst kurze Antwort.',
+                fr: 'En dehors de l’empreinte écologique : quel risque pour la santé est lié à une utilisation excessive du numérique ? Donne une réponse courte.',
+                estimateFactor: 1
+            }
+        ]
     },
     {
         id: '4',
@@ -2262,18 +2328,23 @@ const QUIZ = [
             de: 'Um wie viel Grad hat sich die durchschnittliche Erdtemperatur seit der vorindustriellen Zeit erhöht?',
             fr: 'De combien de degrés la température moyenne de la Terre a-t-elle augmenté depuis l’époque préindustrielle ?'
         },
-        prompts: {
-            de: [
-                'Um wie viel Grad hat sich die durchschnittliche Erdtemperatur seit der vorindustriellen Zeit erhöht?',
-                'Um wie viel Grad hat sich die durchschnittliche Erdtemperatur seit der vorindustriellen Zeit erhöht? Mache mir eine ausführliche Analyse.',
-                'Um wie viel Grad hat sich die durchschnittliche Erdtemperatur seit der vorindustriellen Zeit erhöht? Gib mir eine möglichst kurze Antwort.'
-            ],
-            fr: [
-                'De combien de degrés la température moyenne de la Terre a-t-elle augmenté depuis l’époque préindustrielle ?',
-                'De combien de degrés la température moyenne de la Terre a-t-elle augmenté depuis l’époque préindustrielle ? Fais une analyse détaillée.',
-                'De combien de degrés la température moyenne de la Terre a-t-elle augmenté depuis l’époque préindustrielle ? Donne une réponse courte.'
-            ]
-        }
+        prompts: [
+            {
+                de: 'Um wie viel Grad hat sich die durchschnittliche Erdtemperatur seit der vorindustriellen Zeit erhöht?',
+                fr: 'De combien de degrés la température moyenne de la Terre a-t-elle augmenté depuis l’époque préindustrielle ?',
+                estimateFactor: 1
+            },
+            {
+                de: 'Um wie viel Grad hat sich die durchschnittliche Erdtemperatur seit der vorindustriellen Zeit erhöht? Mache mir eine ausführliche Analyse.',
+                fr: 'De combien de degrés la température moyenne de la Terre a-t-elle augmenté depuis l’époque préindustrielle ? Fais une analyse détaillée.',
+                estimateFactor: 4
+            },
+            {
+                de: 'Um wie viel Grad hat sich die durchschnittliche Erdtemperatur seit der vorindustriellen Zeit erhöht? Gib mir eine möglichst kurze Antwort.',
+                fr: 'De combien de degrés la température moyenne de la Terre a-t-elle augmenté depuis l’époque préindustrielle ? Donne une réponse courte.',
+                estimateFactor: 1
+            }
+        ]
     },
     {
         id: '5',
@@ -2281,18 +2352,23 @@ const QUIZ = [
             de: 'Was ist laut der WHO die grösste Gesundheitsbedrohung für die Menschheit im 21. Jahrhundert?',
             fr: 'Selon l’OMS, quelle est la plus grande menace pour la santé de l’humanité au XXIe siècle ?'
         },
-        prompts: {
-            de: [
-                'Was ist laut der WHO die grösste Gesundheitsbedrohung für die Menschheit im 21. Jahrhundert?',
-                'Was ist laut der WHO die grösste Gesundheitsbedrohung für die Menschheit im 21. Jahrhundert? Mache mir eine ausführliche Analyse.',
-                'Was ist laut der WHO die grösste Gesundheitsbedrohung für die Menschheit im 21. Jahrhundert? Gib mir eine möglichst kurze Antwort.'
-            ],
-            fr: [
-                'Selon l’OMS, quelle est la plus grande menace pour la santé de l’humanité au XXIe siècle ?',
-                'Selon l’OMS, quelle est la plus grande menace pour la santé de l’humanité au XXIe siècle ? Fais une analyse détaillée.',
-                'Selon l’OMS, quelle est la plus grande menace pour la santé de l’humanité au XXIe siècle ? Donne une réponse courte.'
-            ]
-        }
+        prompts: [
+            {
+                de: 'Was ist laut der WHO die grösste Gesundheitsbedrohung für die Menschheit im 21. Jahrhundert?',
+                fr: 'Selon l’OMS, quelle est la plus grande menace pour la santé de l’humanité au XXIe siècle ?',
+                estimateFactor: 1
+            },
+            {
+                de: 'Was ist laut der WHO die grösste Gesundheitsbedrohung für die Menschheit im 21. Jahrhundert? Mache mir eine ausführliche Analyse.',
+                fr: 'Selon l’OMS, quelle est la plus grande menace pour la santé de l’humanité au XXIe siècle ? Fais une analyse détaillée.',
+                estimateFactor: 5
+            },
+            {
+                de: 'Was ist laut der WHO die grösste Gesundheitsbedrohung für die Menschheit im 21. Jahrhundert? Gib mir eine möglichst kurze Antwort.',
+                fr: 'Selon l’OMS, quelle est la plus grande menace pour la santé de l’humanité au XXIe siècle ? Donne une réponse courte.',
+                estimateFactor: 1
+            }
+        ]
     },
     {
         id: '6',
@@ -2300,18 +2376,23 @@ const QUIZ = [
             de: 'Welche Transportmittel sollen laut WHO in Städten priorisiert werden?',
             fr: 'Quels moyens de transport doivent être prioritaires dans les villes selon l’OMS ?'
         },
-        prompts: {
-            de: [
-                'Welche Transportmittel sollen laut WHO in Städten priorisiert werden?',
-                'Welche Transportmittel sollen laut WHO in Städten priorisiert werden? Mache mir eine ausführliche Analyse.',
-                'Welche Transportmittel sollen laut WHO in Städten priorisiert werden? Gib mir eine möglichst kurze Antwort.'
-            ],
-            fr: [
-                'Quels moyens de transport doivent être prioritaires dans les villes selon l’OMS ?',
-                'Quels moyens de transport doivent être prioritaires dans les villes selon l’OMS ? Fais une analyse détaillée.',
-                'Quels moyens de transport doivent être prioritaires dans les villes selon l’OMS ? Donne une réponse courte.'
-            ]
-        }
+        prompts: [
+            {
+                de: 'Welche Transportmittel sollen laut WHO in Städten priorisiert werden?',
+                fr: 'Quels moyens de transport doivent être prioritaires dans les villes selon l’OMS ?',
+                estimateFactor: 1
+            },
+            {
+                de: 'Welche Transportmittel sollen laut WHO in Städten priorisiert werden? Mache mir eine ausführliche Analyse.',
+                fr: 'Quels moyens de transport doivent être prioritaires dans les villes selon l’OMS ? Fais une analyse détaillée.',
+                estimateFactor: 5
+            },
+            {
+                de: 'Welche Transportmittel sollen laut WHO in Städten priorisiert werden? Gib mir eine möglichst kurze Antwort.',
+                fr: 'Quels moyens de transport doivent être prioritaires dans les villes selon l’OMS ? Donne une réponse courte.',
+                estimateFactor: 1
+            }
+        ]
     },
     {
         id: '7',
@@ -2319,20 +2400,119 @@ const QUIZ = [
             de: 'Schätze, wie viel Prozent der Menschen atmen laut WHO-Daten ungesunde Aussenluft ein, die grösstenteils durch die Verbrennung fossiler Brennstoffe verursacht wird?',
             fr: 'Estimez quel pourcentage de personnes respirent un air extérieur malsain, principalement causé par la combustion de combustibles fossiles, selon les données de l’OMS ?'
         },
-        prompts: {
-            de: [
-                'Wie viel Prozent der Menschen atmen laut WHO-Daten ungesunde Aussenluft ein, die grösstenteils durch die Verbrennung fossiler Brennstoffe verursacht wird?',
-                'Wie viel Prozent der Menschen atmen laut WHO-Daten ungesunde Aussenluft ein, die grösstenteils durch die Verbrennung fossiler Brennstoffe verursacht wird? Mache mir eine ausführliche Analyse.',
-                'Wie viel Prozent der Menschen atmen laut WHO-Daten ungesunde Aussenluft ein, die grösstenteils durch die Verbrennung fossiler Brennstoffe verursacht wird? Gib mir eine möglichst kurze Antwort.'
-            ],
-            fr: [
-                'Quel pourcentage de personnes respirent un air extérieur malsain, principalement causé par la combustion de combustibles fossiles, selon les données de l’OMS ?',
-                'Quel pourcentage de personnes respirent un air extérieur malsain, principalement causé par la combustion de combustibles fossiles, selon les données de l’OMS ? Fais une analyse détaillée.',
-                'Quel pourcentage de personnes respirent un air extérieur malsain, principalement causé par la combustion de combustibles fossiles, selon les données de l’OMS ? Donne une réponse courte.'
-            ]
-        }
+        prompts: [
+            {
+                de: 'Wie viel Prozent der Menschen atmen laut WHO-Daten ungesunde Aussenluft ein, die grösstenteils durch die Verbrennung fossiler Brennstoffe verursacht wird?',
+                fr: 'Quel pourcentage de personnes respirent un air extérieur malsain, principalement causé par la combustion de combustibles fossiles, selon les données de l’OMS ?',
+                estimateFactor: 1
+            },
+            {
+                de: 'Wie viel Prozent der Menschen atmen laut WHO-Daten ungesunde Aussenluft ein, die grösstenteils durch die Verbrennung fossiler Brennstoffe verursacht wird? Mache mir eine ausführliche Analyse.',
+                fr: 'Quel pourcentage de personnes respirent un air extérieur malsain, principalement causé par la combustion de combustibles fossiles, selon les données de l’OMS ? Fais une analyse détaillée.',
+                estimateFactor: 4
+            },
+            {
+                de: 'Wie viel Prozent der Menschen atmen laut WHO-Daten ungesunde Aussenluft ein, die grösstenteils durch die Verbrennung fossiler Brennstoffe verursacht wird? Gib mir eine möglichst kurze Antwort.',
+                fr: 'Quel pourcentage de personnes respirent un air extérieur malsain, principalement causé par la combustion de combustibles fossiles, selon les données de l’OMS ? Donne une réponse courte.',
+                estimateFactor: 1
+            }
+        ]
     }
 ];
+
+
+/***/ },
+
+/***/ "./src/assets/systemprompt.ts"
+/*!************************************!*\
+  !*** ./src/assets/systemprompt.ts ***!
+  \************************************/
+(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   getSystemPrompt: () => (/* binding */ getSystemPrompt)
+/* harmony export */ });
+/* harmony import */ var _models__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @/models */ "./src/models.ts");
+
+function getSystemPrompt(l) {
+    return SYSTEM_PROMPT;
+}
+const SYSTEM_PROMPT = {
+    role: _models__WEBPACK_IMPORTED_MODULE_0__.USER_ROLE.SYSTEM,
+    content: `
+    Beantworte die Fragen nicht allzu ausführlich, ausser du wirst explizit darum gebeten.
+    Wenn du zum Thema Medizininformatik-Studium oder Studium in Biel gefragt wirst, beachte folgende Informationen:
+    # Bachelor of Science Medizininformatik Berner Fachhochschule BFH
+    Sie wollen die digitale Zukunft des Gesundheitswesens mitgestalten? In diesem Studium lernen Sie, wie mithilfe der Medizininformatik mehr Sicherheit, Effizienz und Behandlungsqualität für Patient*innen entsteht.
+    Der schweizweit einzigartige Bachelor kombiniert medizinisches Prozesswissen, Informatik und Managementkompetenzen und macht Sie zur sehr gesuchten Fachperson. Sie studieren praxisnah mittels Projektarbeiten in Voll- oder Teilzeit, teilweise im Hybrid- und Online-Unterricht.
+    
+    ## Steckbrief
+    - Titel/Abschluss: Bachelor of Science in Medizininformatik (BSc)
+    - Vertiefungen
+      - Advanced Data Processing
+      - Design Thinking
+    - Studienform
+      - Vollzeit (6 Semester)
+      - Teilzeit oder Praxisintegriertes Bachelor-Studium PiBS (8 Semester)
+    - Studienbeginn: September (KW 38)
+    - Anmeldefrist: 31. Juli
+    - Anzahl ECTS: 180 ECTS
+    - Unterrichtssprache: Deutsch
+    - Studienort: Biel
+    - Departement: Technik und Informatik
+    - Kontakt: Prof. Michael Lehmann, Leiter Medizininformatik, +41 32 321 64 36, michael.lehmann@bfh.ch
+    - URL: https://www.bfh.ch/de/studium/bachelor/medizininformatik/
+    
+    ## Studienschwerpunkte
+    Die datenbasierte Medizin und Anwenderfreundlichkeit von Smart Applikationen in Spitälern, Praxen oder Privathaushalten sind zwei unserer Schwerpunkte. Die Grundlagen dazu: Medizin, Informatik, Design und Prozesse.
+    ### Das gewinnen Sie mit diesem Studium
+    Sie designen für unser Gesundheitssystem zukunftsweisende IT- und Digitalisierungslösungen und bauen und implementieren Prototypen. Sie studieren praxisnah und schweizweit exklusiv im einzigartigen Living-Lab, das alle Stationen des Gesundheitswesens beinhaltet.
+    Ihre zukünftige berufliche Tätigkeit wird sich in Projektleiterteams oder im Management und der Entwicklung medizinischer Applikationen bewegen.
+    Dabei sind Ihre Arbeitgeber Spitäler, Industrie, Behörden und Beratungsbüros.
+    ### Die Vertiefungen
+    Gestalten Sie Ihr Studium nach Ihren Interessen und Ihren zeitlichen Möglichkeiten in Teil-, Voll- oder als Praxisintegriertes Studium.
+
+    #### Advanced Data Processing
+    Mit Fokus auf spezifischer Mathematik für Data Science, Business Intelligence (BI), Deep Learning und mHealth erlernen Sie die Methoden des «Data Engineerings» von der Datenbeschaffung, Aufbereitung hin zur Datenauswertung. 
+    ##### Inhalte
+    - Definieren und bearbeiten eines spezifischen mHealth-Anwendungsfalls
+    - Analysieren der Daten mit Data-Science-Methoden
+    - Medizinische Daten verstehen
+    
+    #### Design Thinking
+    Mit Fokus auf Systems Engineering, Business Engineering und agile Projektmethoden erarbeiten Sie, wie eine teamorientierte strukturierte Zerlegung, Planung und Durchführung von komplexen ICT-Grossprojekten erfolgt. Ausserdem erhalten Sie einen vertieften Einblick in Themen des User Centered Designs, in professionelle und innovative Projektführung und in das agile Applikations-Management.
+    ##### Inhalte
+    - Medizinische Prozesse designen
+    - Kreativitätsmethoden kennenlernen
+    - Modernes und agiles Projektmanagement
+    - Designen von Detaillösungen im Rahmen des Gesamtbildes
+    
+    ## Berufsperspektiven
+    Als Bachelor in Medizininformatik designen Sie medizinische Software und ICT-Architekturen, sind verantwortlich für Betrieb und Weiterentwicklung von med. Applikationen oder der Umsetzung von Integrationsprojekten verschiedenster Spitalsoftware.
+    Sie sind mit den medizinischen Prozessen vertraut und verbinden diese mit Ihren IT-, Digitalisierungs- und Managementkompetenzen in Projekt- und Entwicklungsleitung & Führungsfunktionen in Spitälern, in der Industrie, auf Behördenseite, bei Versicherungen und in der Forschung. Sie profitieren auch dank dem integrierten Forschungsinstitut vom grossen BFH-Netzwerk.
+    ### Bereit für anspruchsvolle Fach- und Führungsaufgaben?
+    Wir bieten Ihnen einen sehr hohen Praxisbezug durch Projektarbeiten und Ihre Bachelor-Thesis in Zusammenarbeit mit Industriepartnern.
+    Unsere Absolvent*innen arbeiten in folgenden Tätigkeitsfeldern:
+    - Medizininformatiker*in in Gesundheitsinstitutionen
+     Application Manager Medizininformatik
+     - Applikationsentwickler*in Medizininformatik
+     - Projektleiter*in Consulting IT Healthcare
+     ### Weiterführende Studienmöglichkeiten
+     Mit dem Abschluss als Bachelor of Science in Medizininformatik schaffen Sie die Grundlage für ein weiterführendes Master-Studium an der BFH. Ihre Möglichkeiten:
+     - MSc in Engineering: Profil Medical Engineering: Als Master of Science in Engineering mit Vertiefung Medical Engineering verbessern Sie mit Ihrem vertieften Wissen in Medizintechnik die Lebensqualität vieler Patient*innen.
+     - MSc in Engineering: Profil Business Engineering: Als Master of Science in Engineering mit Vertiefung Business Engineering konzipieren, entwickeln und realisieren Sie Produkte und Dienstleistungen.
+     - MSc in Engineering: Profil Computer Science: Als Master of Science in Engineering mit Vertiefung Computer Science entwickeln Sie in enger Zusammenarbeit mit Endanwender*innen und Stakeholdern innovative ICT-Systeme und -Architekturen.
+     
+     ## Studiendauer + Studieninhalte
+     Wählen Sie die Studienform, die Ihren beruflichen und persönlichen Bedürfnissen entspricht. Diesen Bachelor unterrichten wir in Deutsch mit den Vertiefungen Advanced Data Processing und Design Thinking.
+     ### Vollzeitstudium oder Teilzeitstudium
+     - Vollzeitstudium: Sie studieren in Biel und erlangen den Bachelor-Abschluss nach der minimalen Studienzeit von 6 Semestern.
+     - Teilzeitstudium: Das Teilzeitstudium dauert 8 Semester. Der Unterricht findet jeweils am Mittwochnachmittag (i.d.R. ab 14:20 Uhr) sowie ganztägig am Donnerstag und Freitag in Biel statt. Parallel zum Studium können Sie auch eine Berufstätigkeit ausüben.
+     ### Praxisintegriertes Bachelor-Studium PiBS
+     Falls Sie über eine eidgenössische oder eidgenössisch anerkannte gymnasiale Maturität, aber keine berufliche Erfahrung verfügen, können Sie das Bachelor-Studium mit einem gleichzeitigen Berufspraktikum im Modell Praxisintegrierten Bachelor-Studium (PiBS) kombinieren. Das PiBS dauert vier Jahre. Der Praxisanteil beträgt 40% und setzt sich zusammen aus dem Praktikum im Unternehmen, den Projektarbeiten und der Bachelorarbeit. Die Struktur des Studiums ist identisch mit dem Teilzeitstudium.`
+};
 
 
 /***/ },
@@ -2375,7 +2555,9 @@ var USER_ROLE;
     USER_ROLE["USER"] = "user";
     USER_ROLE["AI"] = "assistant";
     USER_ROLE["DEV"] = "developer";
+    USER_ROLE["SYSTEM"] = "system";
 })(USER_ROLE || (USER_ROLE = {}));
+;
 ;
 ;
 ;
@@ -2431,8 +2613,12 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var vue__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! vue */ "./node_modules/vue/dist/vue.runtime.esm-bundler.js");
 /* harmony import */ var _antService__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./antService */ "./src/antService.ts");
-/* harmony import */ var _quizService__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./quizService */ "./src/quizService.ts");
-/* harmony import */ var _env__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../env */ "./env.ts");
+/* harmony import */ var _models__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./models */ "./src/models.ts");
+/* harmony import */ var _quizService__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./quizService */ "./src/quizService.ts");
+/* harmony import */ var _env__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../env */ "./env.ts");
+/* harmony import */ var _assets_systemprompt__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./assets/systemprompt */ "./src/assets/systemprompt.ts");
+
+
 
 
 
@@ -2455,19 +2641,19 @@ const storeObj = {
     power: new _antService__WEBPACK_IMPORTED_MODULE_1__.PowerService({ debug: false }),
     heartRate: new _antService__WEBPACK_IMPORTED_MODULE_1__.HeartRateService(),
     connected: false,
-    activeCard: _quizService__WEBPACK_IMPORTED_MODULE_2__["default"].drawRandomQuizCard(),
+    activeCard: _quizService__WEBPACK_IMPORTED_MODULE_3__["default"].drawRandomQuizCard(),
     cardDrawn: false,
     connectedType: undefined,
     toasts: new Array(),
     textInput: '',
     isDebug: false,
-    chatMessages: new Array(),
+    chatMessages: [(0,_assets_systemprompt__WEBPACK_IMPORTED_MODULE_5__.getSystemPrompt)(LANG.DE)],
     lang: LANG.DE,
-    connection: { ..._env__WEBPACK_IMPORTED_MODULE_3__.ENV[0] },
+    connection: { ..._env__WEBPACK_IMPORTED_MODULE_4__.ENV[0] },
     getExamplePrompts() {
         if (!this.cardDrawn)
             return [];
-        return this.activeCard.prompts[this.lang];
+        return this.activeCard.prompts;
     },
     isPedalling() {
         const lastMessage = this.chatMessages[this.chatMessages.length - 1];
@@ -2498,20 +2684,27 @@ const storeObj = {
      * Resets the chat log and everything, when a new user is using the device
      */
     resetUser() {
-        this.chatMessages = [];
+        this.chatMessages = [(0,_assets_systemprompt__WEBPACK_IMPORTED_MODULE_5__.getSystemPrompt)(this.lang)];
         this.toasts = [];
-        this.activeCard = _quizService__WEBPACK_IMPORTED_MODULE_2__["default"].drawRandomQuizCard();
+        this.activeCard = _quizService__WEBPACK_IMPORTED_MODULE_3__["default"].drawRandomQuizCard();
         this.cardDrawn = false;
         this.textInput = '';
         sessionStorage.clear();
         this.resetSubscriptions();
     },
     /**
+     * Returns the messages that should be visible to the user (e.g. without system prompt)
+     * @returns an Array of visible messages
+     */
+    getVisibleMessages() {
+        return this.chatMessages.filter(m => m.role != _models__WEBPACK_IMPORTED_MODULE_2__.USER_ROLE.SYSTEM);
+    },
+    /**
      * Draws a new Quizcard
      */
     drawQuizCard(newCard = false) {
         if (newCard || !this.cardDrawn) {
-            const card = _quizService__WEBPACK_IMPORTED_MODULE_2__["default"].drawRandomQuizCard();
+            const card = _quizService__WEBPACK_IMPORTED_MODULE_3__["default"].drawRandomQuizCard();
             this.activeCard = card;
         }
         this.cardDrawn = true;
@@ -2557,6 +2750,7 @@ const storeObj = {
      * @param target    the target value, in the same unit as the total value for the respective sensor
      */
     setTarget(target) {
+        console.log('set target to', target);
         if (!this.connectedType) {
             console.warn('No sensor connected yet!');
         }
@@ -2616,7 +2810,6 @@ storePropsToPersist.forEach((key) => {
     }, { deep: true });
 });
 function reloadFromStorage() {
-    console.log('reload from storage');
     storePropsToPersist.forEach((key) => {
         const prop = sessionStorage.getItem(STORE_KEY.TEMP + key);
         if (prop != undefined) {
@@ -2663,7 +2856,9 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ ToastService)
 /* harmony export */ });
-/* harmony import */ var _store__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./store */ "./src/store.ts");
+/* harmony import */ var _assets_i18n__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./assets/i18n */ "./src/assets/i18n.ts");
+/* harmony import */ var _store__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./store */ "./src/store.ts");
+
 
 var Replacer;
 (function (Replacer) {
@@ -2677,11 +2872,11 @@ const MINIMAL_TIME_BETWEEN_TOASTS = 2000;
 const start = {
     de: [
         'Gute Frage! Nun gilt es aktiv zu werden: Tritt in die Pedale, um die Energie für die KI zu erzeugen!',
-        'Los gehts! Tritt in die Pedale und erzeuge die Energie für deine KI-Anfrage!'
+        'Tritt in die Pedale und erzeuge die Energie für deine KI-Anfrage!'
     ],
     fr: [
         'Bonne question ! Il est temps de passer à l’action : pédale pour générer l’énergie nécessaire à l’IA !',
-        'C’est parti ! Pédale pour produire l’énergie de ta requête IA !'
+        'Pédale pour produire l’énergie de ta requête IA !'
     ]
 };
 const startDebug = {
@@ -2843,12 +3038,23 @@ class ToastService {
     static lowPowerTimeout = false;
     static notLoadedTimeout = false;
     static done = false;
-    static startToast() {
-        this.done = false;
-        lastToastExpired() && _store__WEBPACK_IMPORTED_MODULE_0__.store.addToast(getRandom(_store__WEBPACK_IMPORTED_MODULE_0__.store.isDebug ? startDebug[_store__WEBPACK_IMPORTED_MODULE_0__.store.lang] : start[_store__WEBPACK_IMPORTED_MODULE_0__.store.lang]), 3000);
+    static async startToast() {
+        return new Promise((resolve) => {
+            lastToastExpired() && _store__WEBPACK_IMPORTED_MODULE_1__.store.addToast(getRandom(_store__WEBPACK_IMPORTED_MODULE_1__.store.isDebug ? startDebug[_store__WEBPACK_IMPORTED_MODULE_1__.store.lang] : start[_store__WEBPACK_IMPORTED_MODULE_1__.store.lang]), 3000);
+            this.done = false;
+            const interval = 2000;
+            ['READY', 'STEADY', 'GO'].forEach((key, i) => {
+                setTimeout(() => {
+                    _store__WEBPACK_IMPORTED_MODULE_1__.store.addToast((0,_assets_i18n__WEBPACK_IMPORTED_MODULE_0__.i18n)(key), interval - 50);
+                }, (i + 1) * interval);
+            });
+            setTimeout(() => {
+                return resolve();
+            }, (3 * interval));
+        });
     }
     static stillPedalingToast() {
-        lastToastExpired(true) && _store__WEBPACK_IMPORTED_MODULE_0__.store.addToast(getRandom(reallyDone[_store__WEBPACK_IMPORTED_MODULE_0__.store.lang]), 3000);
+        lastToastExpired(true) && _store__WEBPACK_IMPORTED_MODULE_1__.store.addToast(getRandom(reallyDone[_store__WEBPACK_IMPORTED_MODULE_1__.store.lang]), 3000);
     }
     static progressToast(percent, loaded, currentWatts) {
         if (this.done)
@@ -2857,44 +3063,44 @@ class ToastService {
             this.highPowerTimeout = true;
             // wait 20 seconds before we trigger this toast again
             window.setTimeout(() => this.highPowerTimeout = false, 20000);
-            return lastToastExpired() && _store__WEBPACK_IMPORTED_MODULE_0__.store.addToast(getRandom(highPower[_store__WEBPACK_IMPORTED_MODULE_0__.store.lang], Replacer.WATT, currentWatts.toString()), 3000);
+            return lastToastExpired() && _store__WEBPACK_IMPORTED_MODULE_1__.store.addToast(getRandom(highPower[_store__WEBPACK_IMPORTED_MODULE_1__.store.lang], Replacer.WATT, currentWatts.toString()), 3000);
         }
         else if (currentWatts < 10) {
             if (!this.lowPowerTimeout) {
                 this.lowPowerTimeout = true;
                 // wait 10 seconds before we trigger this toast again
                 window.setTimeout(() => this.lowPowerTimeout = false, 10000);
-                return lastToastExpired() && _store__WEBPACK_IMPORTED_MODULE_0__.store.addToast(getRandom(getStarted[_store__WEBPACK_IMPORTED_MODULE_0__.store.lang]), 5000);
+                return lastToastExpired() && _store__WEBPACK_IMPORTED_MODULE_1__.store.addToast(getRandom(getStarted[_store__WEBPACK_IMPORTED_MODULE_1__.store.lang]), 5000);
             }
         }
         else if (!loaded) {
             if (percent >= 100) {
                 // user completed before response from AI arrived
-                return lastToastExpired() && _store__WEBPACK_IMPORTED_MODULE_0__.store.addToast(getRandom(tooFast[_store__WEBPACK_IMPORTED_MODULE_0__.store.lang]), 5000);
+                return lastToastExpired() && _store__WEBPACK_IMPORTED_MODULE_1__.store.addToast(getRandom(tooFast[_store__WEBPACK_IMPORTED_MODULE_1__.store.lang]), 5000);
             }
             else if (!this.notLoadedTimeout) {
                 this.notLoadedTimeout = true;
                 // wait 6 seconds before we trigger this toast again
                 window.setTimeout(() => this.notLoadedTimeout = false, 6000);
-                return lastToastExpired() && _store__WEBPACK_IMPORTED_MODULE_0__.store.addToast(getRandom(notLoaded[_store__WEBPACK_IMPORTED_MODULE_0__.store.lang], Replacer.WATT, currentWatts.toString()), 3000);
+                return lastToastExpired() && _store__WEBPACK_IMPORTED_MODULE_1__.store.addToast(getRandom(notLoaded[_store__WEBPACK_IMPORTED_MODULE_1__.store.lang], Replacer.WATT, currentWatts.toString()), 3000);
             }
         }
         else {
             if (percent == 100 && !this.done) {
                 this.done = true;
-                return lastToastExpired() && _store__WEBPACK_IMPORTED_MODULE_0__.store.addToast(getRandom(done[_store__WEBPACK_IMPORTED_MODULE_0__.store.lang]), 5000);
+                return lastToastExpired() && _store__WEBPACK_IMPORTED_MODULE_1__.store.addToast(getRandom(done[_store__WEBPACK_IMPORTED_MODULE_1__.store.lang]), 5000);
             }
             else if (percent > 80) {
-                return lastToastExpired() && _store__WEBPACK_IMPORTED_MODULE_0__.store.addToast(getRandom(lastPercents[_store__WEBPACK_IMPORTED_MODULE_0__.store.lang], Replacer.PERCENT, (100 - percent).toFixed(0)));
+                return lastToastExpired() && _store__WEBPACK_IMPORTED_MODULE_1__.store.addToast(getRandom(lastPercents[_store__WEBPACK_IMPORTED_MODULE_1__.store.lang], Replacer.PERCENT, (100 - percent).toFixed(0)));
             }
             else if (percent > 55) {
-                return lastToastExpired() && _store__WEBPACK_IMPORTED_MODULE_0__.store.addToast(getRandom(highPercents[_store__WEBPACK_IMPORTED_MODULE_0__.store.lang], Replacer.PERCENT, percent.toFixed(0)));
+                return lastToastExpired() && _store__WEBPACK_IMPORTED_MODULE_1__.store.addToast(getRandom(highPercents[_store__WEBPACK_IMPORTED_MODULE_1__.store.lang], Replacer.PERCENT, percent.toFixed(0)));
             }
             else if (percent > 45) {
-                return lastToastExpired() && _store__WEBPACK_IMPORTED_MODULE_0__.store.addToast(getRandom(halfPercents[_store__WEBPACK_IMPORTED_MODULE_0__.store.lang], Replacer.PERCENT, percent.toFixed(0)));
+                return lastToastExpired() && _store__WEBPACK_IMPORTED_MODULE_1__.store.addToast(getRandom(halfPercents[_store__WEBPACK_IMPORTED_MODULE_1__.store.lang], Replacer.PERCENT, percent.toFixed(0)));
             }
             else {
-                return lastToastExpired() && _store__WEBPACK_IMPORTED_MODULE_0__.store.addToast(getRandom(lowPercents[_store__WEBPACK_IMPORTED_MODULE_0__.store.lang], Replacer.PERCENT, percent.toFixed(0)));
+                return lastToastExpired() && _store__WEBPACK_IMPORTED_MODULE_1__.store.addToast(getRandom(lowPercents[_store__WEBPACK_IMPORTED_MODULE_1__.store.lang], Replacer.PERCENT, percent.toFixed(0)));
             }
         }
     }
@@ -2902,7 +3108,7 @@ class ToastService {
         this.done = true;
     }
     static energyToast(wh) {
-        _store__WEBPACK_IMPORTED_MODULE_0__.store.addToast(getRandom(energyUsed[_store__WEBPACK_IMPORTED_MODULE_0__.store.lang], Replacer.KCAL, getKiloCalsFromWatthour(wh)), 10000);
+        _store__WEBPACK_IMPORTED_MODULE_1__.store.addToast(getRandom(energyUsed[_store__WEBPACK_IMPORTED_MODULE_1__.store.lang], Replacer.KCAL, getKiloCalsFromWatthour(wh)), 10000);
     }
 }
 
@@ -3970,7 +4176,7 @@ module.exports = __webpack_require__.p + "assets/images/logo.5d5014ba3e4201b16dd
 (module) {
 
 "use strict";
-module.exports = /*#__PURE__*/JSON.parse('{"name":"enerki","version":"0.8.1","private":true,"license":"MIT","scripts":{"dev":"webpack serve --config webpack.config.js","build":"webpack --config webpack.config.js","lint":"eslint ./src --ext .js,.vue","ignore-env":"git update-index --assume-unchanged env.ts","lint:fix":"eslint ./src --ext .js,.vue --fix","format":"prettier \'src/**/*.{js,vue,css,md,json}\' --write","chrome":"open -n -a \\"Google Chrome\\" --args --disable-web-security --user-data-dir=\\"/tmp/chrome_dev_test\\" http://localhost:4200/enerki/","start":"npm run dev & npm run chrome"},"dependencies":{"ant-plus-next":"^0.4.0","axios":"^1.11.0","bootstrap":"^5.3.7","file-loader":"^6.2.0","markdown-it":"^15.0.2","vue":"^3.4.26"},"devDependencies":{"@babel/core":"^7.24.5","@babel/preset-env":"^7.24.5","@types/markdown-it":"^14.2.0","@types/node":"^26.6.4","@vue/compiler-sfc":"^3.5.18","babel-loader":"^10.0.0","css-loader":"^7.1.2","globals":"^16.0.0","html-webpack-plugin":"^5.6.8","prettier":"^3.9.9","ts-loader":"^9.5.2","typescript":"^5.8.3","vue-loader":"^17.4.2","vue-style-loader":"^4.1.3","vue-tsc":"^3.0.3","webpack":"^5.91.0","webpack-bundle-analyzer":"^5.4.0","webpack-cli":"^7.2.3","webpack-dev-server":"^6.0.0"}}');
+module.exports = /*#__PURE__*/JSON.parse('{"name":"enerki","version":"0.8.2","private":true,"license":"MIT","scripts":{"dev":"webpack serve --config webpack.config.js","build":"webpack --config webpack.config.js","lint":"eslint ./src --ext .js,.vue","ignore-env":"git update-index --assume-unchanged env.ts","lint:fix":"eslint ./src --ext .js,.vue --fix","format":"prettier \'src/**/*.{js,vue,css,md,json}\' --write","chrome":"open -n -a \\"Google Chrome\\" --args --disable-web-security --user-data-dir=\\"/tmp/chrome_dev_test\\" http://localhost:4200/enerki/","start":"npm run dev & npm run chrome"},"dependencies":{"ant-plus-next":"^0.4.0","axios":"^1.11.0","bootstrap":"^5.3.7","file-loader":"^6.2.0","markdown-it":"^15.0.2","vue":"^3.4.26"},"devDependencies":{"@babel/core":"^7.24.5","@babel/preset-env":"^7.24.5","@types/markdown-it":"^14.2.0","@types/node":"^26.6.4","@vue/compiler-sfc":"^3.5.18","babel-loader":"^10.0.0","css-loader":"^7.1.2","globals":"^16.0.0","html-webpack-plugin":"^5.6.8","prettier":"^3.9.9","ts-loader":"^9.5.2","typescript":"^5.8.3","vue-loader":"^17.4.2","vue-style-loader":"^4.1.3","vue-tsc":"^3.0.3","webpack":"^5.91.0","webpack-bundle-analyzer":"^5.4.0","webpack-cli":"^7.2.3","webpack-dev-server":"^6.0.0"}}');
 
 /***/ }
 
