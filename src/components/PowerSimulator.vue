@@ -42,7 +42,7 @@ function getBackgroundColor(): string {
 </script>
 
 <template>
-  <div class="power" :style="getBackgroundColor()">
+  <div class="power" :style="getBackgroundColor()" v-if="debug || (watt && watt > 0)">
     <h3>{{ i18n('POWERSIM_LABEL') }}</h3>
     <span class="watts">{{ watt + ' ' + i18n('POWERSIM_WATT') }}</span>
     <input type="range" v-if="debug" v-model="simulatedWatt" :min="MIN_WATT" :max="MAX_WATT" />
@@ -56,6 +56,7 @@ function getBackgroundColor(): string {
   bottom: 5em;
   width: 12em;
   border-radius: 0.5em;
+  width: fit-content;
 }
 .watts {
   width: 100%;
@@ -74,5 +75,6 @@ h3 {
   font-size: 0.7em;
   text-align: center;
   margin-top: 0.5em;
+  padding: 0 0.5em
 }
 </style>

@@ -132,5 +132,17 @@ const KEYS: {[key: string]: {de: string, fr: string}} = {
     CLOSE: {
         de: 'schliessen',
         fr: 'fermer'
+    },
+    READY: {
+        de: 'Auf die Plätze…',
+        fr: 'À vos marques …'
+    },
+    STEADY: {
+        de: 'fertig…',
+        fr: 'Prêts ?'
+    }, 
+    GO: {
+        de: 'LOS!',
+        fr: 'PARTEZ !'
     }
 };

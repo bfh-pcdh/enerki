@@ -25,6 +25,13 @@ npm run build
 ```
 
 ## Changelog
+### 2026-10-12 V0.8.2
+- Adjustments for gpt-oss:120b as a model on BFHs MLMP inference server: 
+    - re-estimate power usage
+    - add countdown to start to give LLM a head start
+    - use proxy endpoint per default, so we don't need a VPN connection
+    - system prompt for information about BFH medinf
+
 ### 2026-10-09 V0.8.1
 - Bugfixes and improve error popup
 
