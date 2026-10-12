@@ -118,33 +118,32 @@ function send() {
     percent: 0
   };
 
-  ToastService.startToast();
-
   store.chatMessages.push(answerMessage);
   usage = -1;
 
   chat.value.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'end' });
 
-  store.startAndSubscribe(preEstimateUsage(), (ant: AntSubscription) => {
-    answerMessage.percent = Math.min(ant.percent, 100);
-    loadingPercent.value = Math.min(ant.percent, 100);
-
-    ToastService.progressToast(answerMessage.percent, answerMessage.content !== '...', ant.value);
-    if (ant.percent >= 100 && usage > 0) {
-      ToastService.energyToast(usage);
-    }
-  });
-
   const time = Date.now();
-  axios
-    .post(store.connection.BASE_URL + store.connection.ENDPOINT, body, {
+  Promise.all([
+    ToastService.startToast().then(() => {
+      store.startAndSubscribe((usage === - 1) ? preEstimateUsage() : usage, (ant: AntSubscription) => {
+        answerMessage.percent = Math.min(ant.percent, 100);
+        loadingPercent.value = Math.min(ant.percent, 100);
+
+        ToastService.progressToast(answerMessage.percent, answerMessage.content !== '...', ant.value);
+        if (ant.percent >= 100 && usage > 0) {
+          ToastService.energyToast(usage);
+          usage = -1;
+        }
+      })
+    }),
+    axios.post(store.connection.BASE_URL + store.connection.ENDPOINT, body, {
       headers: {
         'Content-Type': 'application/json',
         Authorization: 'Bearer ' + props.token,
         'Cache-Control': 'no-cache, no-store'
       }
-    })
-    .then((result) => {
+    }).then((result) => {
       const duration = Math.round((Date.now() - time) / 1000);
       usage = estimateEnergyUsage(result.data.usage.completion_tokens, result.data.usage.generation_tokens_per_second);
       store.setTarget(usage);
@@ -171,12 +170,12 @@ function send() {
 
       chat.value.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'end' });
       emit('onAnswer', answerMessage);
-    })
-    .catch((e) => {
+    }).catch((e) => {
       console.error(e);
       ToastService.abort();
       emit('onError', JSON.stringify(e, null, 2));
-    });
+    })
+  ])
 }
 
 /**

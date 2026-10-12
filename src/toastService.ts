@@ -1,3 +1,4 @@
+import { i18n } from "./assets/i18n";
 import { store } from "./store";
 
 enum Replacer {
@@ -12,11 +13,11 @@ const MINIMAL_TIME_BETWEEN_TOASTS = 2000;
 const start = {
     de: [
         'Gute Frage! Nun gilt es aktiv zu werden: Tritt in die Pedale, um die Energie für die KI zu erzeugen!',
-        'Los gehts! Tritt in die Pedale und erzeuge die Energie für deine KI-Anfrage!'
+        'Tritt in die Pedale und erzeuge die Energie für deine KI-Anfrage!'
     ],
     fr: [
         'Bonne question ! Il est temps de passer à l’action : pédale pour générer l’énergie nécessaire à l’IA !',
-        'C’est parti ! Pédale pour produire l’énergie de ta requête IA !'
+        'Pédale pour produire l’énergie de ta requête IA !'
     ]
 };
 
@@ -196,9 +197,21 @@ export default class ToastService {
     static lowPowerTimeout = false;
     static notLoadedTimeout = false;
     static done = false;
-    static startToast() {
-        this.done = false;
-        lastToastExpired() && store.addToast(getRandom(store.isDebug ? startDebug[store.lang] : start[store.lang]), 3000);
+    static async startToast(): Promise<void> {
+        return new Promise((resolve) => {
+            lastToastExpired() && store.addToast(getRandom(store.isDebug ? startDebug[store.lang] : start[store.lang]), 3000);
+            this.done = false;
+            const interval = 2000;
+            ['READY', 'STEADY', 'GO'].forEach((key, i) => {
+                setTimeout(() => {
+                    store.addToast(i18n(key), interval - 50);
+                }, (i + 1) * interval);
+            });
+
+            setTimeout(() => {
+                return resolve();
+            }, (3 * interval));
+        });
     }
     static stillPedalingToast() {
         lastToastExpired(true) && store.addToast(getRandom(reallyDone[store.lang]), 3000);

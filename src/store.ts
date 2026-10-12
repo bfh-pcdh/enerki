@@ -219,7 +219,6 @@ storePropsToPersist.forEach((key) => {
 });
 
 function reloadFromStorage() {
-  console.log('reload from storage')
   storePropsToPersist.forEach((key) => {
     const prop = sessionStorage.getItem(STORE_KEY.TEMP + key);
     if (prop != undefined) {
