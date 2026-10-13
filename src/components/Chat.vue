@@ -241,9 +241,9 @@ function setPrompt(prompt: ExamplePrompt) {
       <div v-if="message.loading" class="spinner-border" role="status">
         <span class="visually-hidden">Loading...</span>
       </div>
-      <div v-else v-html="md.render(message.content)" />
+      <div v-else v-html="md.render(message.content)"/>
     </li>
-    <li style="height: 10em; color: white"></li>
+    <li style="height: 10em; color: white; box-shadow: 0 0 0 white"></li>
   </ul>
 
   <PromptExamples
@@ -252,7 +252,7 @@ function setPrompt(prompt: ExamplePrompt) {
     v-if="!store.isPedalling() && store.getExamplePrompts().length > 0"
   />
 
-  <form action="#" ref="input-form">
+  <form action="#" ref="input-form" id="input-form">
     <input
       autofocus
       type="text"
@@ -263,8 +263,8 @@ function setPrompt(prompt: ExamplePrompt) {
       @input="inputting"
       ref="chatInput"
     />
-    <button @click="send" type="submit" :disabled="store.isPedalling()">
-      {{ i18n('SEND').toUpperCase() }}
+    <button @click="send" type="submit" :disabled="store.isPedalling()" :class="{disabled: store.isPedalling()}">
+      ⬆︎
     </button>
   </form>
 </template>
@@ -314,21 +314,46 @@ li:first-child {
 }
 
 input {
-  border-bottom-left-radius: 1em;
-  border-top-left-radius: 1em;
-  border-bottom-right-radius: 0;
-  border-top-right-radius: 0;
-  padding-left: 0.5em;
-  width: 75%;
+  border: 0;
+  flex: 1;
+  margin: 0.2em 1em ;
+}
+
+input:focus {
+  outline-width: 0;
+  outline: none
+}
+
+#input-form {
+  box-shadow: 0px 0px 10px lightgray;
+  display: flex;
+  height: 2.4em;
+  border-bottom-left-radius: 1.2em;
+  border-top-left-radius: 1.2em;
+  border-bottom-right-radius: 1.2em;
+  border-top-right-radius: 1.2em;
 }
 
 button {
-  border-bottom-left-radius: 0;
-  border-top-left-radius: 0;
+  border-bottom-left-radius: 1em;
+  border-top-left-radius: 1em;
   border-bottom-right-radius: 1em;
   border-top-right-radius: 1em;
-  padding-right: 0.5em;
-  width: 25%;
+  background-color: #F5BE41;
+  color: white;
+  margin: 0.2em;
+  border: 0px;
+  height: 2em;
+  width: 2em;
+}
+
+button:hover {
+  background-color: #f9b310;
+  color: #697d91;
+}
+
+button .disabled {
+  background-color: #d9cdff;
 }
 
 .usage {
