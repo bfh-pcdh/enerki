@@ -8,8 +8,8 @@ export function getSystemPrompt(l: LANG): Message {
 const SYSTEM_PROMPT: Message = {
   role: USER_ROLE.SYSTEM,
   content: `
-    Beantworte die Fragen nicht allzu ausführlich, ausser du wirst explizit darum gebeten.
-    Vermeide LaTeX-Formeln, die werden in der Anzeige nicht unterstützt.
+    Beantworte die Fragen nicht allzu ausführlich, ausser du wirst explizit darum gebeten. Du bist mit dem User per du.
+    Vermeide LaTeX-Formeln, diese werden in der Anzeige nicht unterstützt.
     Wenn du zum Thema Medizininformatik-Studium oder Studium in Biel gefragt wirst, beachte folgende Informationen:
     # Bachelor of Science Medizininformatik Berner Fachhochschule BFH
     Sie wollen die digitale Zukunft des Gesundheitswesens mitgestalten? In diesem Studium lernen Sie, wie mithilfe der Medizininformatik mehr Sicherheit, Effizienz und Behandlungsqualität für Patient*innen entsteht.
