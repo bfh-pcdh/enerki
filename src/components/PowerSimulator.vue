@@ -75,6 +75,6 @@ h3 {
   font-size: 0.7em;
   text-align: center;
   margin-top: 0.5em;
-  padding: 0 0.5em
+  padding: 0 0.5em;
 }
 </style>

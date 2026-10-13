@@ -53,11 +53,11 @@ const loadingStyle = computed(() => {
  * @returns         an estimation of energy (in Wh), based on the number of output tokens
  */
 function estimateEnergyUsage(tokens: number, tps = 70) {
-  // Mac Studio M3Max uses up to 480W. That is 0.1333 Wh per second in full load (480 / 3600). 
+  // Mac Studio M3Max uses up to 480W. That is 0.1333 Wh per second in full load (480 / 3600).
   // however, he measures 120W: https://www.youtube.com/watch?v=zjG9TkfWd0o&t=143s TODO: own measurements
-  // we assume 180 Watt, just for fun
-  const whPerSecond = 180 / 3600;
-  // With gpt-oss:120b, it generates around 70 token/s. 
+  // we use the Watt per Token stored in ENV setup
+  const whPerSecond = Number(store.connection.WATT_PER_TOKEN) / 3600;
+  // With gpt-oss:120b, it generates around 70 token/s.
   const whPerToken = whPerSecond / tps;
   const estimate = tokens * whPerToken;
   return estimate;
@@ -69,9 +69,7 @@ function estimateEnergyUsage(tokens: number, tps = 70) {
  * @returns         an estimation of energy (in Wh)
  */
 function preEstimateUsage() {
-  return (usage > 1) 
-    ? usage 
-    : 1;
+  return usage > 1 ? usage : 1;
 }
 
 /**
@@ -99,7 +97,18 @@ function send() {
 
   store.chatMessages.push(message);
 
-  const body = {
+  type API_BODY = {
+    model: string;
+    messages: Message[];
+    reasoning?: {
+      effort: string;
+    };
+    'background-tasks'?: {
+      follow_up_generation: boolean;
+    };
+  };
+
+  const body: API_BODY = {
     model: store.connection.MODEL,
     messages: [...store.chatMessages],
     reasoning: {
@@ -107,8 +116,15 @@ function send() {
     },
     'background-tasks': {
       follow_up_generation: false
-    },
+    }
   };
+
+  // chatGPT does not like these params
+  if (!store.connection.REASONING) {
+    delete body.reasoning;
+    delete body['background-tasks'];
+  }
+
   store.textInput = '';
 
   const answerMessage = {
@@ -126,56 +142,66 @@ function send() {
   const time = Date.now();
   Promise.all([
     ToastService.startToast().then(() => {
-      store.startAndSubscribe((usage === - 1) ? preEstimateUsage() : usage, (ant: AntSubscription) => {
+      store.startAndSubscribe(usage === -1 ? preEstimateUsage() : usage, (ant: AntSubscription) => {
         answerMessage.percent = Math.min(ant.percent, 100);
         loadingPercent.value = Math.min(ant.percent, 100);
 
-        ToastService.progressToast(answerMessage.percent, answerMessage.content !== '...', ant.value);
+        ToastService.progressToast(
+          answerMessage.percent,
+          answerMessage.content !== '...',
+          ant.value
+        );
         if (ant.percent >= 100 && usage > 0) {
           ToastService.energyToast(usage);
           usage = -1;
         }
-      })
+      });
     }),
-    axios.post(store.connection.BASE_URL + store.connection.ENDPOINT, body, {
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: 'Bearer ' + props.token,
-        'Cache-Control': 'no-cache, no-store'
-      }
-    }).then((result) => {
-      const duration = Math.round((Date.now() - time) / 1000);
-      usage = estimateEnergyUsage(result.data.usage.completion_tokens, result.data.usage.generation_tokens_per_second);
-      store.setTarget(usage);
+    axios
+      .post(store.connection.BASE_URL + store.connection.ENDPOINT, body, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + props.token,
+          'Cache-Control': 'no-cache, no-store'
+        }
+      })
+      .then((result) => {
+        const duration = Math.round((Date.now() - time) / 1000);
+        usage = estimateEnergyUsage(
+          result.data.usage.completion_tokens,
+          result.data.usage.generation_tokens_per_second
+        );
+        store.setTarget(usage);
 
-      console.log(
-        'Energie verbraucht: ' +
-          usage.toFixed(2) +
-          ' Wh in ' +
-          duration +
-          ' Sekunden. \nDas benötigt eine Durchschnittsleistung von ' +
-          Math.round((3600 * usage) / duration) +
-          ' Watt.'
-      );
+        console.log(
+          'Energie verbraucht: ' +
+            usage.toFixed(2) +
+            ' Wh in ' +
+            duration +
+            ' Sekunden. \nDas benötigt eine Durchschnittsleistung von ' +
+            Math.round((3600 * usage) / duration) +
+            ' Watt.'
+        );
 
-      answerMessage.content = (result.data.choices[0].message.content as string).replaceAll(
-        'ß',
-        'ss'
-      );
-      answerMessage.loading = false;
+        answerMessage.content = (result.data.choices[0].message.content as string).replaceAll(
+          'ß',
+          'ss'
+        );
+        answerMessage.loading = false;
 
-      // we need to do this, or vue won't detect the update...
-      store.chatMessages.pop();
-      store.chatMessages.push(answerMessage);
+        // we need to do this, or vue won't detect the update...
+        store.chatMessages.pop();
+        store.chatMessages.push(answerMessage);
 
-      chat.value.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-      emit('onAnswer', answerMessage);
-    }).catch((e) => {
-      console.error(e);
-      ToastService.abort();
-      emit('onError', JSON.stringify(e, null, 2));
-    })
-  ])
+        chat.value.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        emit('onAnswer', answerMessage);
+      })
+      .catch((e) => {
+        console.error(e);
+        ToastService.abort();
+        emit('onError', JSON.stringify(e, null, 2));
+      })
+  ]);
 }
 
 /**
@@ -274,9 +300,11 @@ li:first-child {
   color: #4b647d;
   margin-right: 25%;
 }
-.chat-developer {
+.chat-developer,
+.chat-system {
   display: none;
 }
+
 .spinner-border {
   display: block;
   height: 1em;
