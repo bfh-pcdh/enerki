@@ -25,6 +25,10 @@ npm run build
 ```
 
 ## Changelog
+### 2026-10-26 V0.8.3
+- Hotfix for new MLMP endpoint urls
+- removed 3 vulnerabilities from dependencies
+
 ### 2026-10-12 V0.8.2
 - Adjustments for gpt-oss:120b as a model on BFHs MLMP inference server: 
     - re-estimate power usage

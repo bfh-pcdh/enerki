@@ -2,7 +2,7 @@ export const ENV = [
   {
     NAME: 'BFH MLMP (für extern)',
     BASE_URL: 'https://inference.proxy.ti.bfh.ch',
-    ENDPOINT: '/api/v1/chat/completions',
+    ENDPOINT: '/v1/chat/completions',
     MODEL: 'gpt-oss:120b',
     REASONING: 'low',
     WATT_PER_TOKEN: '180',
@@ -11,7 +11,7 @@ export const ENV = [
   {
     NAME: 'BFH MLMP gemma (für extern)',
     BASE_URL: 'https://inference.proxy.ti.bfh.ch',
-    ENDPOINT: '/api/v1/chat/completions',
+    ENDPOINT: '/v1/chat/completions',
     MODEL: 'gemma-4-26b',
     REASONING: 'low',
     WATT_PER_TOKEN: '180',
@@ -20,7 +20,7 @@ export const ENV = [
   {
     NAME: 'BFH MLMP (für intern)',
     BASE_URL: 'https://inference.mlmp.ti.bfh.ch',
-    ENDPOINT: '/api/v1/chat/completions',
+    ENDPOINT: '/v1/chat/completions',
     MODEL: 'gpt-oss:120b',
     REASONING: 'low',
     WATT_PER_TOKEN: '180',
