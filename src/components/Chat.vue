@@ -241,7 +241,7 @@ function setPrompt(prompt: ExamplePrompt) {
       <div v-if="message.loading" class="spinner-border" role="status">
         <span class="visually-hidden">Loading...</span>
       </div>
-      <div v-else v-html="md.render(message.content)"/>
+      <div v-else v-html="md.render(message.content)" />
     </li>
     <li style="height: 10em; color: white; box-shadow: 0 0 0 white"></li>
   </ul>
@@ -249,7 +249,9 @@ function setPrompt(prompt: ExamplePrompt) {
   <PromptExamples
     @on-select-prompt="setPrompt"
     :user-inputting="userInput"
-    v-if="!store.isPedalling() && store.getExamplePrompts().length > 0 && store.examplePromptsVisible"
+    v-if="
+      !store.isPedalling() && store.getExamplePrompts().length > 0 && store.examplePromptsVisible
+    "
   />
 
   <form action="#" ref="input-form" id="input-form">
@@ -263,7 +265,12 @@ function setPrompt(prompt: ExamplePrompt) {
       @input="inputting"
       ref="chatInput"
     />
-    <button @click="send" type="submit" :disabled="store.isPedalling()" :class="{disabled: store.isPedalling()}">
+    <button
+      @click="send"
+      type="submit"
+      :disabled="store.isPedalling()"
+      :class="{ disabled: store.isPedalling() }"
+    >
       <div v-if="store.isPedalling()" class="spinner-border" role="status">
         <span class="visually-hidden">...</span>
       </div>
@@ -322,12 +329,12 @@ li:first-child {
 input {
   border: 0;
   flex: 1;
-  margin: 0.2em 1em ;
+  margin: 0.2em 1em;
 }
 
 input:focus {
   outline-width: 0;
-  outline: none
+  outline: none;
 }
 
 #input-form {
@@ -345,7 +352,7 @@ button {
   border-top-left-radius: 1em;
   border-bottom-right-radius: 1em;
   border-top-right-radius: 1em;
-  background-color: #F5BE41;
+  background-color: #f5be41;
   color: white;
   margin: 0.2em;
   border: 0px;
@@ -359,7 +366,7 @@ button:hover {
 }
 
 button.disabled {
-  color:  #697d91;
+  color: #697d91;
   opacity: 0.75;
   background-color: lightgray;
 }
@@ -369,7 +376,6 @@ button .spinner-border {
   width: 1.3em;
   height: 1.3em;
 }
-
 
 .usage {
   width: 100%;

@@ -213,7 +213,7 @@ function getToastOpacity(i: number): string {
           {{ toast }}
         </div>
       </li-->
-      <li v-if="store.toasts.length > 0" >
+      <li v-if="store.toasts.length > 0">
         <div class="alert alert-info" role="alert">
           {{ store.toasts.at(-1) }}
         </div>
