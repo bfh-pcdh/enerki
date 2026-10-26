@@ -41,6 +41,7 @@ const props = defineProps<{
   z-index: 15 !important;
 }
 .modal {
+  box-shadow: 0px 0px 15px lightgray;
   display: contents;
   border-color: #4b647d;
 }

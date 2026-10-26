@@ -264,7 +264,10 @@ function setPrompt(prompt: ExamplePrompt) {
       ref="chatInput"
     />
     <button @click="send" type="submit" :disabled="store.isPedalling()" :class="{disabled: store.isPedalling()}">
-      ⬆︎
+      <div v-if="store.isPedalling()" class="spinner-border" role="status">
+        <span class="visually-hidden">...</span>
+      </div>
+      <span v-else>⬆︎</span>
     </button>
   </form>
 </template>
@@ -281,6 +284,7 @@ li:first-child {
   margin-top: 3em;
 }
 .message-bubble {
+  box-shadow: 0px 0px 5px lightgray;
   list-style: none;
   padding: 0.25em 1em;
   border-radius: 1em;
@@ -352,9 +356,18 @@ button:hover {
   color: #697d91;
 }
 
-button .disabled {
-  background-color: #d9cdff;
+button.disabled {
+  color:  #697d91;
+  opacity: 0.75;
+  background-color: lightgray;
 }
+
+button .spinner-border {
+  margin: 0 !important;
+  width: 1.3em;
+  height: 1.3em;
+}
+
 
 .usage {
   width: 100%;

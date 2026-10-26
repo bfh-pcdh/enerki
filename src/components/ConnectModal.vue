@@ -61,7 +61,7 @@ function connect(type: 'heartRate' | 'power' | 'debug') {
 .background {
   backdrop-filter: blur(3px);
   -webkit-backdrop-filter: blur(3px);
-  background-color: rgba(255, 255, 255, 0.5);
+  background-color: rgba(128, 128, 128, 0.5);
   position: fixed;
   top: 0;
   left: 0;
@@ -75,6 +75,14 @@ function connect(type: 'heartRate' | 'power' | 'debug') {
   margin-top: 2em;
   margin-left: auto;
   margin-right: auto;
+}
+button {
+  border: 0;
+  padding: 0.5em;
+  border-radius: 0.3em;
+}
+button:hover {
+  background-color: #f9b310;
 }
 .modal {
   display: contents;

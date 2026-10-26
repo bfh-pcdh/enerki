@@ -45,15 +45,12 @@ ul {
   display: flex;
   flex-direction: row;
   position: absolute;
-  bottom: 2.9em;
+  bottom: 4em;
   padding: 0.5em;
-  background-color: aliceblue;
-  backdrop-filter: blur(3px);
-  -webkit-backdrop-filter: blur(3px);
-  background-color: rgba(255, 255, 255, 0.1);
 }
 li {
   display: inline-block;
+  box-shadow: 0px 0px 5px lightgray;
   cursor: pointer;
   background-color: #eff1f3;
   border-radius: 0.2rem;

@@ -53,7 +53,7 @@ function getBackgroundColor(): string {
 .power {
   position: absolute;
   right: 2em;
-  bottom: 5em;
+  bottom: 6em;
   width: 12em;
   border-radius: 0.5em;
   width: fit-content;
@@ -69,6 +69,9 @@ function getBackgroundColor(): string {
 input {
   width: 90%;
   margin: 5%;
+  height: 2px;
+  margin-bottom: 1em;
+  accent-color: black;
 }
 h3 {
   width: 100%;
