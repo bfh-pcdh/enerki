@@ -116,6 +116,7 @@ function reset() {
  */
 function showCard() {
   store.drawQuizCard();
+  store.setExamplePromptsVisible(true);
   showCardModal.value = true;
 }
 

@@ -249,7 +249,7 @@ function setPrompt(prompt: ExamplePrompt) {
   <PromptExamples
     @on-select-prompt="setPrompt"
     :user-inputting="userInput"
-    v-if="!store.isPedalling() && store.getExamplePrompts().length > 0"
+    v-if="!store.isPedalling() && store.getExamplePrompts().length > 0 && store.examplePromptsVisible"
   />
 
   <form action="#" ref="input-form" id="input-form">
@@ -289,7 +289,7 @@ li:first-child {
   padding: 0.25em 1em;
   border-radius: 1em;
   width: 75%;
-  margin-top: 0.5em;
+  margin-top: 1em;
   transition:
     opacity 1.2s ease,
     filter 1.2s ease;
