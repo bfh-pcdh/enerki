@@ -582,7 +582,7 @@ const ENV = [
     {
         NAME: 'BFH MLMP (für extern)',
         BASE_URL: 'https://inference.proxy.ti.bfh.ch',
-        ENDPOINT: '/api/v1/chat/completions',
+        ENDPOINT: '/v1/chat/completions',
         MODEL: 'gpt-oss:120b',
         REASONING: 'low',
         WATT_PER_TOKEN: '180',
@@ -591,7 +591,7 @@ const ENV = [
     {
         NAME: 'BFH MLMP gemma (für extern)',
         BASE_URL: 'https://inference.proxy.ti.bfh.ch',
-        ENDPOINT: '/api/v1/chat/completions',
+        ENDPOINT: '/v1/chat/completions',
         MODEL: 'gemma-4-26b',
         REASONING: 'low',
         WATT_PER_TOKEN: '180',
@@ -600,7 +600,7 @@ const ENV = [
     {
         NAME: 'BFH MLMP (für intern)',
         BASE_URL: 'https://inference.mlmp.ti.bfh.ch',
-        ENDPOINT: '/api/v1/chat/completions',
+        ENDPOINT: '/v1/chat/completions',
         MODEL: 'gpt-oss:120b',
         REASONING: 'low',
         WATT_PER_TOKEN: '180',
@@ -4197,7 +4197,7 @@ module.exports = __webpack_require__.p + "assets/images/logo.5d5014ba3e4201b16dd
 (module) {
 
 "use strict";
-module.exports = /*#__PURE__*/JSON.parse('{"name":"enerki","version":"0.8.2","private":true,"license":"MIT","scripts":{"dev":"webpack serve --config webpack.config.js","build":"webpack --config webpack.config.js","lint":"eslint ./src --ext .js,.vue","ignore-env":"git update-index --assume-unchanged env.ts","lint:fix":"eslint ./src --ext .js,.vue --fix","format":"prettier \'src/**/*.{js,vue,css,md,json}\' --write","chrome":"open -n -a \\"Google Chrome\\" --args --disable-web-security --user-data-dir=\\"/tmp/chrome_dev_test\\" http://localhost:4200/enerki/","start":"npm run dev & npm run chrome"},"dependencies":{"ant-plus-next":"^0.4.0","axios":"^1.11.0","bootstrap":"^5.3.7","file-loader":"^6.2.0","markdown-it":"^15.0.2","vue":"^3.4.26"},"devDependencies":{"@babel/core":"^7.24.5","@babel/preset-env":"^7.24.5","@types/markdown-it":"^14.2.0","@types/node":"^26.6.4","@vue/compiler-sfc":"^3.5.18","babel-loader":"^10.0.0","css-loader":"^7.1.2","globals":"^16.0.0","html-webpack-plugin":"^5.6.8","prettier":"^3.9.9","ts-loader":"^9.5.2","typescript":"^5.8.3","vue-loader":"^17.4.2","vue-style-loader":"^4.1.3","vue-tsc":"^3.0.3","webpack":"^5.91.0","webpack-bundle-analyzer":"^5.4.0","webpack-cli":"^7.2.3","webpack-dev-server":"^6.0.0"}}');
+module.exports = /*#__PURE__*/JSON.parse('{"name":"enerki","version":"0.8.3","private":true,"license":"MIT","scripts":{"dev":"webpack serve --config webpack.config.js","build":"webpack --config webpack.config.js","lint":"eslint ./src --ext .js,.vue","ignore-env":"git update-index --assume-unchanged env.ts","lint:fix":"eslint ./src --ext .js,.vue --fix","format":"prettier \'src/**/*.{js,vue,css,md,json}\' --write","chrome":"open -n -a \\"Google Chrome\\" --args --disable-web-security --user-data-dir=\\"/tmp/chrome_dev_test\\" http://localhost:4200/enerki/","start":"npm run dev & npm run chrome"},"dependencies":{"ant-plus-next":"^0.4.0","axios":"^1.11.0","bootstrap":"^5.3.7","file-loader":"^6.2.0","markdown-it":"^15.0.2","vue":"^3.4.26"},"devDependencies":{"@babel/core":"^7.24.5","@babel/preset-env":"^7.24.5","@types/markdown-it":"^14.2.0","@types/node":"^26.6.4","@vue/compiler-sfc":"^3.5.18","babel-loader":"^10.0.0","css-loader":"^7.1.2","globals":"^16.0.0","html-webpack-plugin":"^5.6.8","prettier":"^3.9.9","ts-loader":"^9.5.2","typescript":"^5.8.3","vue-loader":"^17.4.2","vue-style-loader":"^4.1.3","vue-tsc":"^3.0.3","webpack":"^5.91.0","webpack-bundle-analyzer":"^5.4.0","webpack-cli":"^7.2.3","webpack-dev-server":"^6.0.0"}}');
 
 /***/ }
 
