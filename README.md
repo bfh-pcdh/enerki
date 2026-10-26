@@ -25,8 +25,9 @@ npm run build
 ```
 
 ## Changelog
-### 2026-10-26 V0.8.3
-- Hotfix for new MLMP endpoint urls
+### 2026-10-26 V0.9.0
+- freshen up the design
+- fix for new MLMP endpoint urls
 - removed 3 vulnerabilities from dependencies
 
 ### 2026-10-12 V0.8.2

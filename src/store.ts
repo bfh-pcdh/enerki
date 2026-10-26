@@ -27,6 +27,7 @@ interface Store {
   connected: boolean,
   toasts: string[],
   textInput: string,
+  examplePromptsVisible: boolean,
   connectedType: 'heartRate' | 'power' | undefined,
   isDebug: boolean,
   chatMessages: Message[],
@@ -40,6 +41,7 @@ interface Store {
   startAndSubscribe: (t: number, cb: AntCallback, aU?: boolean) => number,
   resetSubscriptions: () => void,
   setTarget: (t: number) => void,
+  setExamplePromptsVisible: (v: boolean) => void,
   getVisibleMessages: () => Message[],
   setConnection: (c: Connection) => void,
   addToast: (t: string, to?: number) => void,
@@ -55,10 +57,14 @@ const storeObj: Store = {
   connectedType: undefined,
   toasts: new Array<string>(),
   textInput: '',
+  examplePromptsVisible: true,
   isDebug: false,
   chatMessages: [getSystemPrompt(LANG.DE)],
   lang: LANG.DE,
   connection: {...ENV[0]},
+  setExamplePromptsVisible(v) {
+    this.examplePromptsVisible = v;
+  },
   getExamplePrompts() {
     if (!this.cardDrawn) return [];
     return this.activeCard.prompts;

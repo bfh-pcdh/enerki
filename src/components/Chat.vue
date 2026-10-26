@@ -241,18 +241,18 @@ function setPrompt(prompt: ExamplePrompt) {
       <div v-if="message.loading" class="spinner-border" role="status">
         <span class="visually-hidden">Loading...</span>
       </div>
-      <div v-else v-html="md.render(message.content)" />
+      <div v-else v-html="md.render(message.content)"/>
     </li>
-    <li style="height: 10em; color: white"></li>
+    <li style="height: 10em; color: white; box-shadow: 0 0 0 white"></li>
   </ul>
 
   <PromptExamples
     @on-select-prompt="setPrompt"
     :user-inputting="userInput"
-    v-if="!store.isPedalling() && store.getExamplePrompts().length > 0"
+    v-if="!store.isPedalling() && store.getExamplePrompts().length > 0 && store.examplePromptsVisible"
   />
 
-  <form action="#" ref="input-form">
+  <form action="#" ref="input-form" id="input-form">
     <input
       autofocus
       type="text"
@@ -263,8 +263,11 @@ function setPrompt(prompt: ExamplePrompt) {
       @input="inputting"
       ref="chatInput"
     />
-    <button @click="send" type="submit" :disabled="store.isPedalling()">
-      {{ i18n('SEND').toUpperCase() }}
+    <button @click="send" type="submit" :disabled="store.isPedalling()" :class="{disabled: store.isPedalling()}">
+      <div v-if="store.isPedalling()" class="spinner-border" role="status">
+        <span class="visually-hidden">...</span>
+      </div>
+      <span v-else>⬆︎</span>
     </button>
   </form>
 </template>
@@ -281,11 +284,12 @@ li:first-child {
   margin-top: 3em;
 }
 .message-bubble {
+  box-shadow: 2px 2px 5px lightgray;
   list-style: none;
   padding: 0.25em 1em;
   border-radius: 1em;
   width: 75%;
-  margin-top: 0.5em;
+  margin-top: 1em;
   transition:
     opacity 1.2s ease,
     filter 1.2s ease;
@@ -294,11 +298,13 @@ li:first-child {
   background-color: #64788b;
   color: #eff1f3;
   margin-left: 25%;
+  border-bottom-right-radius: 0.5em;
 }
 .chat-assistant {
   background-color: #e0e4e8;
   color: #4b647d;
   margin-right: 25%;
+  border-bottom-left-radius: 0.5em;
 }
 .chat-developer,
 .chat-system {
@@ -314,22 +320,56 @@ li:first-child {
 }
 
 input {
-  border-bottom-left-radius: 1em;
-  border-top-left-radius: 1em;
-  border-bottom-right-radius: 0;
-  border-top-right-radius: 0;
-  padding-left: 0.5em;
-  width: 75%;
+  border: 0;
+  flex: 1;
+  margin: 0.2em 1em ;
+}
+
+input:focus {
+  outline-width: 0;
+  outline: none
+}
+
+#input-form {
+  box-shadow: 0px 0px 10px lightgray;
+  display: flex;
+  height: 2.4em;
+  border-bottom-left-radius: 1.2em;
+  border-top-left-radius: 1.2em;
+  border-bottom-right-radius: 1.2em;
+  border-top-right-radius: 1.2em;
 }
 
 button {
-  border-bottom-left-radius: 0;
-  border-top-left-radius: 0;
+  border-bottom-left-radius: 1em;
+  border-top-left-radius: 1em;
   border-bottom-right-radius: 1em;
   border-top-right-radius: 1em;
-  padding-right: 0.5em;
-  width: 25%;
+  background-color: #F5BE41;
+  color: white;
+  margin: 0.2em;
+  border: 0px;
+  height: 2em;
+  width: 2em;
 }
+
+button:hover {
+  background-color: #f9b310;
+  color: #697d91;
+}
+
+button.disabled {
+  color:  #697d91;
+  opacity: 0.75;
+  background-color: lightgray;
+}
+
+button .spinner-border {
+  margin: 0 !important;
+  width: 1.3em;
+  height: 1.3em;
+}
+
 
 .usage {
   width: 100%;

@@ -116,6 +116,7 @@ function reset() {
  */
 function showCard() {
   store.drawQuizCard();
+  store.setExamplePromptsVisible(true);
   showCardModal.value = true;
 }
 
@@ -207,9 +208,14 @@ function getToastOpacity(i: number): string {
     />
 
     <ul class="toast-list">
-      <li v-for="(toast, i) of store.toasts" :style="getToastOpacity(i)">
+      <!--li v-for="(toast, i) of store.toasts" :style="getToastOpacity(i)">
         <div class="alert alert-info" role="alert">
           {{ toast }}
+        </div>
+      </li-->
+      <li v-if="store.toasts.length > 0" >
+        <div class="alert alert-info" role="alert">
+          {{ store.toasts.at(-1) }}
         </div>
       </li>
     </ul>
@@ -223,6 +229,9 @@ function getToastOpacity(i: number): string {
   margin: 1em;
   padding: 0.5em;
   border-radius: 0.5em;
+}
+.alert {
+  box-shadow: 0 0 20px lightgray;
 }
 header {
   color: #697d91;

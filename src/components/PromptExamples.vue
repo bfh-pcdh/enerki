@@ -36,6 +36,7 @@ function selectPrompt(index: number) {
         {{ prompt[store.lang] }}
       </p>
     </li>
+    <span class="close-button" @click="store.setExamplePromptsVisible(false)">×</span>
   </ul>
 </template>
 
@@ -45,15 +46,34 @@ ul {
   display: flex;
   flex-direction: row;
   position: absolute;
-  bottom: 2.9em;
+  bottom: 4em;
+  margin-right: 2em;
   padding: 0.5em;
-  background-color: aliceblue;
+}
+ul:hover {
   backdrop-filter: blur(3px);
   -webkit-backdrop-filter: blur(3px);
-  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  background-color: rgba(161, 161, 161, 0.1);
+}
+.close-button {
+  color: white;
+  position: fixed;
+  right: 0.5em;
+  text-align: center;
+  line-height: 1.2em;
+  border-radius: 0.6em;
+  height: 1.2em;
+  width: 1.2em;
+  cursor: pointer;
+}
+.close-button:hover {
+  background-color: white;
+  color: lightgray;
 }
 li {
   display: inline-block;
+  box-shadow: 0px 0px 5px lightgray;
   cursor: pointer;
   background-color: #eff1f3;
   border-radius: 0.2rem;
