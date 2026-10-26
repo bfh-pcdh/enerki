@@ -57,6 +57,7 @@ function getBackgroundColor(): string {
   width: 12em;
   border-radius: 0.5em;
   width: fit-content;
+  box-shadow: 0 0 10px lightgray;
 }
 .watts {
   width: 100%;
