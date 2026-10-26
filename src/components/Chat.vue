@@ -284,7 +284,7 @@ li:first-child {
   margin-top: 3em;
 }
 .message-bubble {
-  box-shadow: 0px 0px 5px lightgray;
+  box-shadow: 2px 2px 5px lightgray;
   list-style: none;
   padding: 0.25em 1em;
   border-radius: 1em;
@@ -298,11 +298,13 @@ li:first-child {
   background-color: #64788b;
   color: #eff1f3;
   margin-left: 25%;
+  border-bottom-right-radius: 0.5em;
 }
 .chat-assistant {
   background-color: #e0e4e8;
   color: #4b647d;
   margin-right: 25%;
+  border-bottom-left-radius: 0.5em;
 }
 .chat-developer,
 .chat-system {
