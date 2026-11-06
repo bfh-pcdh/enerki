@@ -53,10 +53,10 @@ const loadingStyle = computed(() => {
  * @returns         an estimation of energy (in Wh), based on the number of output tokens
  */
 function estimateEnergyUsage(tokens: number, tps = 70) {
-  // Mac Studio M3Max uses up to 480W. That is 0.1333 Wh per second in full load (480 / 3600).
+  // Mac Studio M3Utra uses up to 480W. That is 0.1333 Wh per second in full load (480 / 3600).
   // however, he measures 120W: https://www.youtube.com/watch?v=zjG9TkfWd0o&t=143s TODO: own measurements
   // we use the Watt per Token stored in ENV setup
-  const whPerSecond = Number(store.connection.WATT_PER_TOKEN) / 3600;
+  const whPerSecond = Number(store.connection.WATT_CONSUMPTION) / 3600;
   // With gpt-oss:120b, it generates around 70 token/s.
   const whPerToken = whPerSecond / tps;
   const estimate = tokens * whPerToken;

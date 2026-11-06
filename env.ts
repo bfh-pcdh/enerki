@@ -5,7 +5,7 @@ export const ENV = [
     ENDPOINT: '/v1/chat/completions',
     MODEL: 'gpt-oss:120b',
     REASONING: 'low',
-    WATT_PER_TOKEN: '180',
+    WATT_CONSUMPTION: '180',
     TOKEN: '' // insert your TOKEN here
   },
   {
@@ -14,7 +14,7 @@ export const ENV = [
     ENDPOINT: '/v1/chat/completions',
     MODEL: 'gemma-4-26b',
     REASONING: 'low',
-    WATT_PER_TOKEN: '180',
+    WATT_CONSUMPTION: '180',
     TOKEN: '' // insert your TOKEN here
   },
   {
@@ -23,7 +23,7 @@ export const ENV = [
     ENDPOINT: '/v1/chat/completions',
     MODEL: 'gpt-oss:120b',
     REASONING: 'low',
-    WATT_PER_TOKEN: '180',
+    WATT_CONSUMPTION: '180',
     TOKEN: '' // insert your TOKEN here
   },
   {
@@ -32,7 +32,7 @@ export const ENV = [
     ENDPOINT: '/v1/chat/completions',
     MODEL: 'gpt-oss:120b',
     REASONING: 'medium',
-    WATT_PER_TOKEN: '180',
+    WATT_CONSUMPTION: '180',
     TOKEN: '' // 'not_needed_for_localhost'
   },
   {
@@ -41,7 +41,7 @@ export const ENV = [
     ENDPOINT: '/v1/chat/completions',
     MODEL: 'gpt-5.6-luna', // 'gpt-3.5-turbo',
     REASONING: '',
-    WATT_PER_TOKEN: '180',
+    WATT_CONSUMPTION: '180',
     TOKEN: '' // insert token here
   }
 ];
