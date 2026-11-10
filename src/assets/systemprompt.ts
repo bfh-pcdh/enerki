@@ -1,14 +1,20 @@
 import { Message, USER_ROLE } from "@/models";
 import { LANG } from "@/store";
 
-export function getSystemPrompt(l: LANG): Message {
-  return SYSTEM_PROMPT;
+export function getSystemPrompts(l: LANG): Message[] {
+  return [
+    {
+      role: USER_ROLE.SYSTEM,
+      content: 'Das heutige Datum ist ' + new Date().toLocaleDateString() + '.'
+    },
+    SYSTEM_PROMPT
+  ];
 }
 
 const SYSTEM_PROMPT: Message = {
   role: USER_ROLE.SYSTEM,
   content: `
-    Beantworte die Fragen nicht allzu ausführlich, ausser du wirst explizit darum gebeten. Du bist mit dem User per du.
+    Beantworte die Fragen nicht allzu ausführlich, ausser du wirst explizit darum gebeten. Nutze die Suche, wenn du etwas nicht weisst. Du bist mit dem User per du.
     Vermeide LaTeX-Formeln, diese werden in der Anzeige nicht unterstützt.
     Wenn du zum Thema Medizininformatik-Studium oder Studium in Biel gefragt wirst, beachte folgende Informationen:
     # Bachelor of Science Medizininformatik Berner Fachhochschule BFH

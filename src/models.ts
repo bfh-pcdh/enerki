@@ -2,7 +2,8 @@ export enum USER_ROLE {
     USER = 'user',
     AI = 'assistant',
     DEV = 'developer',
-    SYSTEM = 'system'
+    SYSTEM = 'system',
+    TOOL = 'tool'
 };
 
 export interface Message {
@@ -10,6 +11,7 @@ export interface Message {
     content: string;
     loading?: boolean;
     percent?: number;
+    tool_call_id?: string;
 };
 
 export interface ExamplePrompt {

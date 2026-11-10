@@ -83,6 +83,116 @@ function isLastMessage(index: number): boolean {
 }
 
 /**
+ * TODO: documentation
+ * @param query
+ */
+function runSearch(query: string): Promise<string> {
+  console.log('run search', query)
+  return axios.get(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`).then((res) => {
+    console.log('search result',res)
+    return JSON.stringify(res.data)
+  });
+}
+
+async function sendWithSearch(): Promise<any> {
+   type Tool = {
+    type: string,
+    function: {
+      name: string,
+      description :string,
+      parameters: {
+        type: string,
+        properties: {
+          query: { type: string, description: string }
+        },
+        required: string[]
+      }
+    }
+  };
+
+  const MAX_TOOL_CALLS = 5;
+
+  type API_BODY = {
+    model: string;
+    messages: Message[];
+    reasoning?: {
+      effort: string;
+    };
+    tools?: Tool[],
+    tool_choice?: 'auto',
+    'background-tasks'?: {
+      follow_up_generation: boolean;
+    };
+  };
+
+   const body: API_BODY = {
+    model: store.connection.MODEL,
+    messages: [...store.chatMessages],
+    tools: [{
+      type: 'function',
+      function: {
+        name: 'web_search',
+        description: 'Searches the web for current informations',
+        parameters: {
+          type: 'object',
+          properties: {
+            query: { type: 'string', description: 'The search query.' }
+          },
+          required: ['query']
+        }
+      }
+    }],
+    tool_choice: 'auto',
+    reasoning: {
+      effort: store.connection.REASONING
+    },
+    'background-tasks': {
+      follow_up_generation: false
+    }
+  };
+
+    // chatGPT does not like these params
+  if (!store.connection.REASONING) {
+    delete body.reasoning;
+    delete body['background-tasks'];
+  }
+
+  const config = {
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: 'Bearer ' + props.token,
+      'Cache-Control': 'no-cache, no-store'
+    }
+  };
+
+  const url = store.connection.BASE_URL + store.connection.ENDPOINT;
+
+  let messages = [...store.chatMessages];
+
+  // loop for maximum tool calls
+  for (let i = 0; i < MAX_TOOL_CALLS; i++) {
+    const result = await axios.post(url, { ...body, messages }, config);
+    const msg = result.data.choices[0].message;
+    messages.push(msg);
+
+    if (!msg.tool_calls?.length) {
+      console.log('final answer', result, msg)
+      return result;
+    }
+
+    for (const call of msg.tool_calls) {
+      const args = JSON.parse(call.function.arguments);
+      const output = await runSearch(args.query);
+      messages.push({
+        role: USER_ROLE.TOOL,
+        tool_call_id: call.id,
+        content: output
+      });
+    }
+  }
+}
+
+/**
  * Sends a message to the model, with all previous messages as context
  */
 function send() {
@@ -97,33 +207,6 @@ function send() {
 
   store.chatMessages.push(message);
 
-  type API_BODY = {
-    model: string;
-    messages: Message[];
-    reasoning?: {
-      effort: string;
-    };
-    'background-tasks'?: {
-      follow_up_generation: boolean;
-    };
-  };
-
-  const body: API_BODY = {
-    model: store.connection.MODEL,
-    messages: [...store.chatMessages],
-    reasoning: {
-      effort: store.connection.REASONING
-    },
-    'background-tasks': {
-      follow_up_generation: false
-    }
-  };
-
-  // chatGPT does not like these params
-  if (!store.connection.REASONING) {
-    delete body.reasoning;
-    delete body['background-tasks'];
-  }
 
   store.textInput = '';
 
@@ -157,15 +240,8 @@ function send() {
         }
       });
     }),
-    axios
-      .post(store.connection.BASE_URL + store.connection.ENDPOINT, body, {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: 'Bearer ' + props.token,
-          'Cache-Control': 'no-cache, no-store'
-        }
-      })
-      .then((result) => {
+    sendWithSearch().then((result) => {
+      console.log('final result', result)
         const duration = Math.round((Date.now() - time) / 1000);
         usage = estimateEnergyUsage(
           result.data.usage.completion_tokens,
@@ -250,7 +326,9 @@ function setPrompt(prompt: ExamplePrompt) {
     @on-select-prompt="setPrompt"
     :user-inputting="userInput"
     v-if="
-      !store.isPedalling() && store.getExamplePrompts().length > 0 && store.examplePromptsVisible
+      !store.isPedalling() &&
+      store.getExamplePrompts().length > 0 &&
+      store.examplePromptsVisible
     "
   />
 
@@ -260,7 +338,11 @@ function setPrompt(prompt: ExamplePrompt) {
       type="text"
       v-model="store.textInput"
       :placeholder="
-        i18n(store.getExamplePrompts().length > 0 ? 'CHAT_PLACEHOLDER_PROMPTS' : 'CHAT_PLACEHOLDER')
+        i18n(
+          store.getExamplePrompts().length > 0
+            ? 'CHAT_PLACEHOLDER_PROMPTS'
+            : 'CHAT_PLACEHOLDER'
+        )
       "
       @input="inputting"
       ref="chatInput"
@@ -297,9 +379,7 @@ li:first-child {
   border-radius: 1em;
   width: 75%;
   margin-top: 1em;
-  transition:
-    opacity 1.2s ease,
-    filter 1.2s ease;
+  transition: opacity 1.2s ease, filter 1.2s ease;
 }
 .chat-user {
   background-color: #64788b;

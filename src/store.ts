@@ -3,7 +3,7 @@ import { AntCallback, HeartRateService, PowerService } from './antService';
 import { ExamplePrompt, Message, QuizCard, USER_ROLE } from './models';
 import QuizService from './quizService';
 import { ENV } from '../env';
-import { getSystemPrompt } from './assets/systemprompt';
+import { getSystemPrompts } from './assets/systemprompt';
 
 let activeSubscriptions = new Array<number>();
 
@@ -59,7 +59,7 @@ const storeObj: Store = {
   textInput: '',
   examplePromptsVisible: true,
   isDebug: false,
-  chatMessages: [getSystemPrompt(LANG.DE)],
+  chatMessages: [...getSystemPrompts(LANG.DE)],
   lang: LANG.DE,
   connection: {...ENV[0]},
   setExamplePromptsVisible(v) {
@@ -97,7 +97,7 @@ const storeObj: Store = {
    * Resets the chat log and everything, when a new user is using the device
    */
   resetUser() {
-    this.chatMessages = [getSystemPrompt(this.lang)];
+    this.chatMessages = [...getSystemPrompts(this.lang)];
     this.toasts = [];
     this.activeCard = QuizService.drawRandomQuizCard();
     this.cardDrawn = false;
