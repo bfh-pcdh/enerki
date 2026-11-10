@@ -69,7 +69,9 @@ function estimateEnergyUsage(tokens: number, tps = 70) {
  * @returns         an estimation of energy (in Wh)
  */
 function preEstimateUsage() {
-  return usage > 1 ? usage : 1;
+  if (usage > 1) return usage;
+  // with tool use activated, we assume more energy consumption
+  return store.getUseTools() ? 3 : 1;
 }
 
 /**

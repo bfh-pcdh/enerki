@@ -9,7 +9,6 @@ import { getPersisted, LANG, persist, store, STORE_KEY } from "./store";
 import PowerSimulator from "./components/PowerSimulator.vue";
 import QuizCardModal from "./components/QuizCardModal.vue";
 import { i18n } from "./assets/i18n";
-import { access } from "node:fs";
 
 const version = require("../package.json").version;
 
@@ -48,14 +47,6 @@ showSettings.value = window.location.search.includes("settings=true");
 function getHeaderButtons() {
   return [
     {
-      icon: "🔍",
-      title: store.getUseTools() ? i18n("TOOL_USE_OFF") : i18n("TOOL_USE_ON"),
-      action: () => store.toggleUseTools(),
-      style: store.getUseTools()
-        ? "line-height: 2.8em; font-size: 1.5em; text-shadow: rgb(250, 195, 0) 0px 0px 3px; margin-right: 0.2em;"
-        : "line-height: 2.8em; font-size: 1.5em; filter: saturate(0); margin-right: 0.2em;",
-    },
-    {
       icon: "🀙",
       title: store.cardDrawn ? i18n("NEW_CARD") : i18n("SHOW_CARD"),
       action: showCard,
@@ -68,6 +59,14 @@ function getHeaderButtons() {
       title: i18n("RESET"),
       action: resetUser,
       style: "",
+    },
+    {
+      icon: "🔍",
+      title: store.getUseTools() ? i18n("TOOL_USE_OFF") : i18n("TOOL_USE_ON"),
+      action: () => store.toggleUseTools(),
+      style: store.getUseTools()
+        ? "line-height: 2.8em; font-size: 1.5em; text-shadow: rgb(250, 195, 0) 0px 0px 3px; margin-right: 0.2em;"
+        : "line-height: 2.8em; font-size: 1.5em; filter: saturate(0); margin-right: 0.2em;",
     },
     {
       icon: store.lang === LANG.DE ? "🇩🇪" : "🇫🇷",
