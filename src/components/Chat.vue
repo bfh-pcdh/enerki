@@ -95,7 +95,7 @@ function runSearch(query: string): Promise<string> {
  * @param url the url to fetch
  */
 function fetchUrl(url: string): Promise<string> {
-  return axios.get(url).then((res) => JSON.stringify(res.data));
+  return axios.get(url).then((res) => res.data.replace(/<(style|script)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, ''));
 }
 
 /**
@@ -166,7 +166,10 @@ async function sendWithTools(): Promise<any> {
   const body: API_BODY = {
     model: store.connection.MODEL,
     messages: [...store.chatMessages],
-    tools: store.getUseTools() ? [SEARCH_TOOL, WEBSITE_TOOL] : [],
+    tools: store.getUseTools() ? [
+      SEARCH_TOOL,
+      WEBSITE_TOOL
+    ] : [],
     tool_choice: 'auto',
     reasoning: {
       effort: store.connection.REASONING
@@ -276,7 +279,6 @@ function send() {
     sendWithTools()
       .then((result) => {
         const duration = Math.round((Date.now() - time) / 1000);
-        console.log(result.data.usage)
         usage = estimateEnergyUsage(
           result.data.usage.input_tokens,
           result.data.usage.output_tokens

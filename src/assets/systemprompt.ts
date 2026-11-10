@@ -2,9 +2,17 @@ import { Message, USER_ROLE } from "@/models";
 import { LANG } from "@/store";
 
 export function getSystemPrompts(l: LANG, toolUse: boolean): Message[] {
-  return toolUse
-    ? [DATE_INFO]
-    : [DATE_INFO, STUDI_INFO];
+  const systemPromps = [GENERAL_INSTRUCTIONS, DATE_INFO]
+  if (!toolUse) systemPromps.push(STUDI_INFO);
+  return systemPromps;
+}
+
+const GENERAL_INSTRUCTIONS: Message = {
+  role: USER_ROLE.SYSTEM,
+  content: `Beantworte die Fragen nicht allzu ausführlich, ausser du wirst explizit darum gebeten. 
+            Nutze die Suche, wenn du etwas nicht weisst.
+            Du bist mit dem User per du.
+            Vermeide LaTeX-Formeln, diese werden in der Anzeige nicht unterstützt.`
 }
 
 const DATE_INFO: Message = {
@@ -14,10 +22,7 @@ const DATE_INFO: Message = {
 
 const STUDI_INFO: Message = {
   role: USER_ROLE.SYSTEM,
-  content: `
-    Beantworte die Fragen nicht allzu ausführlich, ausser du wirst explizit darum gebeten. Nutze die Suche, wenn du etwas nicht weisst. Du bist mit dem User per du.
-    Vermeide LaTeX-Formeln, diese werden in der Anzeige nicht unterstützt.
-    Wenn du zum Thema Medizininformatik-Studium oder Studium in Biel gefragt wirst, beachte folgende Informationen:
+  content: `Falls du zum Thema Medizininformatik-Studium oder Studium in Biel gefragt wirst, beachte folgende Informationen:
     # Bachelor of Science Medizininformatik Berner Fachhochschule BFH
     Sie wollen die digitale Zukunft des Gesundheitswesens mitgestalten? In diesem Studium lernen Sie, wie mithilfe der Medizininformatik mehr Sicherheit, Effizienz und Behandlungsqualität für Patient*innen entsteht.
     Der schweizweit einzigartige Bachelor kombiniert medizinisches Prozesswissen, Informatik und Managementkompetenzen und macht Sie zur sehr gesuchten Fachperson. Sie studieren praxisnah mittels Projektarbeiten in Voll- oder Teilzeit, teilweise im Hybrid- und Online-Unterricht.
