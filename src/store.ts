@@ -33,6 +33,7 @@ interface Store {
   chatMessages: Message[],
   lang: LANG,
   connection: Connection,
+  useTools: boolean,
   getExamplePrompts: () => ExamplePrompt[],
   drawQuizCard: (n?: boolean) => void,
   isPedalling: () => boolean,
@@ -42,11 +43,15 @@ interface Store {
   resetSubscriptions: () => void,
   setTarget: (t: number) => void,
   setExamplePromptsVisible: (v: boolean) => void,
+  toggleUseTools: () => void,
+  getUseTools: () => boolean,
   getVisibleMessages: () => Message[],
   setConnection: (c: Connection) => void,
   addToast: (t: string, to?: number) => void,
   removeToast: (t: string) => boolean
 };
+
+const USE_TOOLS = false;
 
 const storeObj: Store = {
   power: new PowerService({debug: false}),
@@ -59,7 +64,8 @@ const storeObj: Store = {
   textInput: '',
   examplePromptsVisible: true,
   isDebug: false,
-  chatMessages: [...getSystemPrompts(LANG.DE)],
+  useTools: USE_TOOLS,
+  chatMessages: [...getSystemPrompts(LANG.DE, USE_TOOLS)],
   lang: LANG.DE,
   connection: {...ENV[0]},
   setExamplePromptsVisible(v) {
@@ -97,7 +103,7 @@ const storeObj: Store = {
    * Resets the chat log and everything, when a new user is using the device
    */
   resetUser() {
-    this.chatMessages = [...getSystemPrompts(this.lang)];
+    this.chatMessages = [...getSystemPrompts(this.lang, this.useTools)];
     this.toasts = [];
     this.activeCard = QuizService.drawRandomQuizCard();
     this.cardDrawn = false;
@@ -195,8 +201,17 @@ const storeObj: Store = {
       return false;
     }
   },
+  toggleUseTools(): void {
+    this.useTools = !this.useTools;
+  },
+  getUseTools(): boolean {
+    return this.useTools;
+  },
+  /**
+   * 
+   * @param newConnection 
+   */
   setConnection(newConnection: Connection): void {
-    console.log('set connection', newConnection);
     this.connection = newConnection;
     console.log(this);
   }

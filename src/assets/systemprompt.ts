@@ -1,17 +1,18 @@
 import { Message, USER_ROLE } from "@/models";
 import { LANG } from "@/store";
 
-export function getSystemPrompts(l: LANG): Message[] {
-  return [
-    {
-      role: USER_ROLE.SYSTEM,
-      content: 'Das heutige Datum ist ' + new Date().toLocaleDateString() + '.'
-    },
-    SYSTEM_PROMPT
-  ];
+export function getSystemPrompts(l: LANG, toolUse: boolean): Message[] {
+  return toolUse
+    ? [DATE_INFO]
+    : [DATE_INFO, STUDI_INFO];
 }
 
-const SYSTEM_PROMPT: Message = {
+const DATE_INFO: Message = {
+  role: USER_ROLE.SYSTEM,
+  content: 'Das heutige Datum ist ' + new Date().toLocaleDateString() + '.'
+} 
+
+const STUDI_INFO: Message = {
   role: USER_ROLE.SYSTEM,
   content: `
     Beantworte die Fragen nicht allzu ausführlich, ausser du wirst explizit darum gebeten. Nutze die Suche, wenn du etwas nicht weisst. Du bist mit dem User per du.

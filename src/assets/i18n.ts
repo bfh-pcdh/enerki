@@ -144,5 +144,13 @@ const KEYS: {[key: string]: {de: string, fr: string}} = {
     GO: {
         de: 'LOS!',
         fr: 'PARTEZ !'
+    },
+    TOOL_USE_ON: {
+        de: 'Suchtools aktivieren', 
+        fr: 'Activer les outils de recherche'
+    },
+    TOOL_USE_OFF: {
+        de: 'Suchtools deaktivieren', 
+        fr: 'Desactiver les outils de recherche'
     }
 };

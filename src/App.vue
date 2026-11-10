@@ -1,16 +1,17 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import { ENV } from '../env';
-import AuthForm from './components/AuthForm.vue';
-import ConnectModal from './components/ConnectModal.vue';
-import Settings from './components/Settings.vue';
-import Chat from './components/Chat.vue';
-import { getPersisted, LANG, persist, store, STORE_KEY } from './store';
-import PowerSimulator from './components/PowerSimulator.vue';
-import QuizCardModal from './components/QuizCardModal.vue';
-import { i18n } from './assets/i18n';
+import { ref } from "vue";
+import { ENV } from "../env";
+import AuthForm from "./components/AuthForm.vue";
+import ConnectModal from "./components/ConnectModal.vue";
+import Settings from "./components/Settings.vue";
+import Chat from "./components/Chat.vue";
+import { getPersisted, LANG, persist, store, STORE_KEY } from "./store";
+import PowerSimulator from "./components/PowerSimulator.vue";
+import QuizCardModal from "./components/QuizCardModal.vue";
+import { i18n } from "./assets/i18n";
+import { access } from "node:fs";
 
-const version = require('../package.json').version;
+const version = require("../package.json").version;
 
 const token = ref(getPersisted<string>(STORE_KEY.TOKEN) || ENV[0].TOKEN);
 
@@ -22,42 +23,58 @@ const showCardModal = ref(false);
 
 const showSettings = ref(false);
 
-document.addEventListener('keydown', function (event) {
-  if (showCardModal.value && event.key == 'Enter') {
+document.addEventListener("keydown", function (event) {
+  if (showCardModal.value && event.key == "Enter") {
     showCardModal.value = false;
-  } else if (event.key == 'Enter' && store.textInput == '') {
+  } else if (event.key == "Enter" && store.textInput == "") {
     showCard();
   }
 });
 
 // fast hack for displaying settings
-showSettings.value = window.location.search.includes('settings=true');
+showSettings.value = window.location.search.includes("settings=true");
 
 /**
  * Calculates the header buttons
+ * <div
+        class="toggle-button"
+        @click="store.toggleUseTools()"
+        :class="{ active: store.getUseTools() }"
+        :title="store.getUseTools() ? i18n('TOOL_USE_OFF') : i18n('TOOL_USE_ON')"
+      >
+        🔍
+      </div>
  */
 function getHeaderButtons() {
   return [
     {
-      icon: '🀙',
-      title: store.cardDrawn ? i18n('NEW_CARD') : i18n('SHOW_CARD'),
+      icon: "🔍",
+      title: store.getUseTools() ? i18n("TOOL_USE_OFF") : i18n("TOOL_USE_ON"),
+      action: () => store.toggleUseTools(),
+      style: store.getUseTools()
+        ? "line-height: 2.8em; font-size: 1.5em; text-shadow: rgb(250, 195, 0) 0px 0px 3px; margin-right: 0.2em;"
+        : "line-height: 2.8em; font-size: 1.5em; filter: saturate(0); margin-right: 0.2em;",
+    },
+    {
+      icon: "🀙",
+      title: store.cardDrawn ? i18n("NEW_CARD") : i18n("SHOW_CARD"),
       action: showCard,
       style: store.cardDrawn
-        ? 'text-shadow: #fac300 0px 0 3px; line-height: 1.8em;'
-        : 'line-height: 1.8em;'
+        ? "text-shadow: #fac300 0px 0 3px; line-height: 1.8em;"
+        : "line-height: 1.8em;",
     },
     {
-      icon: '⟲',
-      title: i18n('RESET'),
+      icon: "⟲",
+      title: i18n("RESET"),
       action: resetUser,
-      style: ''
+      style: "",
     },
     {
-      icon: store.lang === LANG.DE ? '🇩🇪' : '🇫🇷',
-      title: i18n('LANGUAGE'),
+      icon: store.lang === LANG.DE ? "🇩🇪" : "🇫🇷",
+      title: i18n("LANGUAGE"),
       action: toggleLanguage,
-      style: 'filter: saturate(0)'
-    }
+      style: "filter: saturate(0)",
+    },
     // {
     //   icon: '⚙︎',
     //   title: 'Einstellungen',
@@ -97,7 +114,7 @@ function toggleLanguage() {
  * Resets the app to start with a new user
  */
 function resetUser() {
-  if (confirm(i18n('RESET_USER'))) {
+  if (confirm(i18n("RESET_USER"))) {
     store.resetUser();
   }
 }
@@ -125,14 +142,14 @@ function showCard() {
  */
 function closeSettings() {
   showSettings.value = false;
-  window.location.search = 'settings=' + showSettings.value;
+  window.location.search = "settings=" + showSettings.value;
 }
 
 /**
  * Handles an error and displays it to the user
  * @param error   the error message to display to the user
  */
-function handleError(e: string = i18n('UNKNOWN_ERROR')) {
+function handleError(e: string = i18n("UNKNOWN_ERROR")) {
   error.value = e;
 }
 
@@ -141,7 +158,7 @@ function handleError(e: string = i18n('UNKNOWN_ERROR')) {
  * @param i the position of the toast message
  */
 function getToastOpacity(i: number): string {
-  return 'opacity: ' + (i + 1) / store.toasts.length;
+  return "opacity: " + (i + 1) / store.toasts.length;
 }
 </script>
 
@@ -180,12 +197,12 @@ function getToastOpacity(i: number): string {
     <main v-else>
       <!-- display error message -->
       <div class="error" v-if="error">
-        <h2>{{ i18n('ERROR') }}</h2>
+        <h2>{{ i18n("ERROR") }}</h2>
         {{ error }}
         <br />
         <div class="error-buttons">
-          <button @click="reset">{{ i18n('RESET') }}</button>
-          <button @click="error = ''">{{ i18n('OK') }}</button>
+          <button @click="reset">{{ i18n("RESET") }}</button>
+          <button @click="error = ''">{{ i18n("OK") }}</button>
         </div>
       </div>
 
@@ -257,7 +274,7 @@ header h1 {
   margin: 0.2em;
 }
 .header-buttons {
-  width: 6em;
+  width: 8em;
   margin-left: auto;
   justify-content: space-evenly;
   display: flex;

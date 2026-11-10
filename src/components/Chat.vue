@@ -83,31 +83,41 @@ function isLastMessage(index: number): boolean {
 }
 
 /**
- * TODO: documentation
- * @param query
+ * Runs a search on duck duck go with a given query
+ * @param query the search string to query
  */
 function runSearch(query: string): Promise<string> {
-  console.log('run search', query)
-  return axios.get(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`).then((res) => {
-    console.log('search result',res)
-    return JSON.stringify(res.data)
-  });
+  return axios
+    .get(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`)
+    .then((res) => JSON.stringify(res.data));
 }
 
-async function sendWithSearch(): Promise<any> {
-   type Tool = {
-    type: string,
+/**
+ * Fetches the website from an url
+ * @param url the url to fetch
+ */
+function fetchUrl(url: string): Promise<string> {
+  return axios.get(url).then((res) => JSON.stringify(res.data));
+}
+
+/**
+ * Sends a request to the inference service, and then performs the action needed
+ * for tool use
+ */
+async function sendWithTools(): Promise<any> {
+  type Tool = {
+    type: string;
     function: {
-      name: string,
-      description :string,
+      name: string;
+      description: string;
       parameters: {
-        type: string,
+        type: string;
         properties: {
-          query: { type: string, description: string }
-        },
-        required: string[]
-      }
-    }
+          query: { type: string; description: string };
+        };
+        required: string[];
+      };
+    };
   };
 
   const MAX_TOOL_CALLS = 5;
@@ -118,30 +128,47 @@ async function sendWithSearch(): Promise<any> {
     reasoning?: {
       effort: string;
     };
-    tools?: Tool[],
-    tool_choice?: 'auto',
+    tools?: Tool[];
+    tool_choice?: 'auto';
     'background-tasks'?: {
       follow_up_generation: boolean;
     };
   };
 
-   const body: API_BODY = {
+  const SEARCH_TOOL = {
+    type: 'function',
+    function: {
+      name: 'web_search',
+      description: 'Searches the web for current informations',
+      parameters: {
+        type: 'object',
+        properties: {
+          query: { type: 'string', description: 'The search query.' }
+        },
+        required: ['query']
+      }
+    }
+  };
+
+  const WEBSITE_TOOL = {
+    type: 'function',
+    function: {
+      name: 'web_site',
+      description: 'Loads a website from a given URL',
+      parameters: {
+        type: 'object',
+        properties: {
+          query: { type: 'string', description: 'The url to load.' }
+        },
+        required: ['query']
+      }
+    }
+  };
+
+  const body: API_BODY = {
     model: store.connection.MODEL,
     messages: [...store.chatMessages],
-    tools: [{
-      type: 'function',
-      function: {
-        name: 'web_search',
-        description: 'Searches the web for current informations',
-        parameters: {
-          type: 'object',
-          properties: {
-            query: { type: 'string', description: 'The search query.' }
-          },
-          required: ['query']
-        }
-      }
-    }],
+    tools: store.getUseTools() ? [SEARCH_TOOL, WEBSITE_TOOL] : [],
     tool_choice: 'auto',
     reasoning: {
       effort: store.connection.REASONING
@@ -151,7 +178,7 @@ async function sendWithSearch(): Promise<any> {
     }
   };
 
-    // chatGPT does not like these params
+  // chatGPT does not like these params
   if (!store.connection.REASONING) {
     delete body.reasoning;
     delete body['background-tasks'];
@@ -176,18 +203,27 @@ async function sendWithSearch(): Promise<any> {
     messages.push(msg);
 
     if (!msg.tool_calls?.length) {
-      console.log('final answer', result, msg)
       return result;
     }
 
     for (const call of msg.tool_calls) {
       const args = JSON.parse(call.function.arguments);
-      const output = await runSearch(args.query);
-      messages.push({
-        role: USER_ROLE.TOOL,
-        tool_call_id: call.id,
-        content: output
-      });
+      switch (call.function.name) {
+        case 'web_search':
+          messages.push({
+            role: USER_ROLE.TOOL,
+            tool_call_id: call.id,
+            content: await runSearch(args.query)
+          });
+          break;
+        case 'web_site':
+          messages.push({
+            role: USER_ROLE.TOOL,
+            tool_call_id: call.id,
+            content: await fetchUrl(args.url)
+          });
+          break;
+      }
     }
   }
 }
@@ -206,7 +242,6 @@ function send() {
   loadingPercent.value = 0;
 
   store.chatMessages.push(message);
-
 
   store.textInput = '';
 
@@ -240,8 +275,8 @@ function send() {
         }
       });
     }),
-    sendWithSearch().then((result) => {
-      console.log('final result', result)
+    sendWithTools()
+      .then((result) => {
         const duration = Math.round((Date.now() - time) / 1000);
         usage = estimateEnergyUsage(
           result.data.usage.completion_tokens,
