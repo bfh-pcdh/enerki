@@ -44,24 +44,20 @@ const loadingStyle = computed(() => {
 });
 
 /**
- * Estimates the energy usage for an answer, based on the number of output tokens. Samsi et al. estimated the energy usage with 3 - 4 Joule per token, which equals to ~0.001 Wh
- * @see Paper       Samsi et al. (2023): From Words to Watts: Benchmarking the Energy Costs of Large Language Model Inference. https://doi.org/10.48550/arXiv.2310.03003
- * @see Blogpost    gpt-oss uses around 8.3 Wh per 100 output token, which seems way too high https://huggingface.co/blog/sasha/gpt-oss-energy
- * @see YouTube     https://www.youtube.com/watch?v=zjG9TkfWd0o&t=143s
- * @param tokens    number of output tokens of the answer
- * @param tps       token per seconds generated, defaults to 70
- * @returns         an estimation of energy (in Wh), based on the number of output tokens
+ * Estimates the energy usage for an answer, based on the number of input and output tokens.
+ * We measured the energy usage for inference on a M3Ultra Mac Studio
+ * Legacy: Samsi et al. estimated the energy usage with 3 - 4 Joule per token, which equals to ~0.001 Wh
+ * @see Paper           Samsi et al. (2023): From Words to Watts: Benchmarking the Energy Costs of Large Language Model Inference. https://doi.org/10.48550/arXiv.2310.03003
+ * @see Blogpost        gpt-oss uses around 8.3 Wh per 100 output token, which seems way too high https://huggingface.co/blog/sasha/gpt-oss-energy
+ * @see YouTube         https://www.youtube.com/watch?v=zjG9TkfWd0o&t=143s
+ * @param inputTokens   number of input tokens given to the llm
+ * @param outputTokens  number of output tokens given to the llm
+ * @returns             an estimation of energy (in Wh), based on the number of in- and output tokens
  */
-function estimateEnergyUsage(tokens: number, tps = 70) {
-  // Mac Studio M3Utra uses up to 480W. That is 0.1333 Wh per second in full load (480 / 3600).
-  // however, he measures 120W: https://www.youtube.com/watch?v=zjG9TkfWd0o&t=143s TODO: own measurements
-  // we use the Watt per Token stored in ENV setup
-  const whPerSecond = Number(store.connection.WATT_CONSUMPTION) / 3600;
-  // With gpt-oss:120b, it generates around 70 token/s.
-  const whPerToken = whPerSecond / tps;
-  const estimate = tokens * whPerToken;
-  return estimate;
-  // old samsi et al estimate: return (tokens * 3.5) / 3600; // 3.5 joules per token; 3600 J = 1 Wh
+function estimateEnergyUsage(inputTokens: number, outputTokens: number) {
+  const joule = inputTokens * Number(store.connection.JOULE_PER_INPUT_TOKEN) +
+                outputTokens * Number(store.connection.JOULE_PER_OUTPUT_TOKEN)
+  return joule / 3600; // 1 J is a Ws, so 1 Wh has 3600 J
 }
 
 /**
@@ -280,9 +276,10 @@ function send() {
     sendWithTools()
       .then((result) => {
         const duration = Math.round((Date.now() - time) / 1000);
+        console.log(result.data.usage)
         usage = estimateEnergyUsage(
-          result.data.usage.completion_tokens,
-          result.data.usage.generation_tokens_per_second
+          result.data.usage.input_tokens,
+          result.data.usage.output_tokens
         );
         store.setTarget(usage);
 
