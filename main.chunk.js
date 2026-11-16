@@ -54,7 +54,7 @@ header h1[data-v-7ba5bd90] {
   margin: 0.2em;
 }
 .header-buttons[data-v-7ba5bd90] {
-  width: 6em;
+  width: 8em;
   margin-left: auto;
   justify-content: space-evenly;
   display: flex;
@@ -85,7 +85,7 @@ header h1[data-v-7ba5bd90] {
   width: 60%;
   margin-left: 20%;
 }
-`, "",{"version":3,"sources":["webpack://./src/App.vue"],"names":[],"mappings":";AAiOA;EACE,wBAAwB;EACxB,YAAY;EACZ,WAAW;EACX,cAAc;EACd,oBAAoB;AACtB;AACA;EACE,8BAA8B;AAChC;AACA;EACE,cAAc;EACd,aAAa;EACb,mBAAmB;AACrB;AAEA;EACE,kBAAkB;EAClB,gBAAgB;AAClB;AAEA;EACE,gBAAgB;EAChB,iBAAiB;AACnB;AACA;EACE,kBAAkB;EAClB,cAAc;EACd,cAAc;AAChB;AACA;EACE,aAAa;AACf;AACA;EACE,UAAU;EACV,iBAAiB;EACjB,6BAA6B;EAC7B,aAAa;AACf;AACA;EACE,eAAe;EACf,qBAAqB;EACrB,cAAc;EACd,cAAc;EACd,gBAAgB;EAChB,kBAAkB;AACpB;AACA;EACE,8BAA8B;AAChC;AAEA;EACE,cAAc;EACd,8BAA8B;AAChC;AAEA;EACE,aAAa;EACb,cAAc;AAChB;AAEA;EACE,qBAAqB;EACrB,eAAe;EACf,WAAW;EACX,UAAU;EACV,gBAAgB;AAClB","sourcesContent":["<script setup lang=\"ts\">\nimport { ref } from 'vue';\nimport { ENV } from '../env';\nimport AuthForm from './components/AuthForm.vue';\nimport ConnectModal from './components/ConnectModal.vue';\nimport Settings from './components/Settings.vue';\nimport Chat from './components/Chat.vue';\nimport { getPersisted, LANG, persist, store, STORE_KEY } from './store';\nimport PowerSimulator from './components/PowerSimulator.vue';\nimport QuizCardModal from './components/QuizCardModal.vue';\nimport { i18n } from './assets/i18n';\n\nconst version = require('../package.json').version;\n\nconst token = ref(getPersisted<string>(STORE_KEY.TOKEN) || ENV[0].TOKEN);\n\nconst error = ref<string | undefined>();\n\nconst percent = ref<number>(0);\n\nconst showCardModal = ref(false);\n\nconst showSettings = ref(false);\n\ndocument.addEventListener('keydown', function (event) {\n  if (showCardModal.value && event.key == 'Enter') {\n    showCardModal.value = false;\n  } else if (event.key == 'Enter' && store.textInput == '') {\n    showCard();\n  }\n});\n\n// fast hack for displaying settings\nshowSettings.value = window.location.search.includes('settings=true');\n\n/**\n * Calculates the header buttons\n */\nfunction getHeaderButtons() {\n  return [\n    {\n      icon: '🀙',\n      title: store.cardDrawn ? i18n('NEW_CARD') : i18n('SHOW_CARD'),\n      action: showCard,\n      style: store.cardDrawn\n        ? 'text-shadow: #fac300 0px 0 3px; line-height: 1.8em;'\n        : 'line-height: 1.8em;'\n    },\n    {\n      icon: '⟲',\n      title: i18n('RESET'),\n      action: resetUser,\n      style: ''\n    },\n    {\n      icon: store.lang === LANG.DE ? '🇩🇪' : '🇫🇷',\n      title: i18n('LANGUAGE'),\n      action: toggleLanguage,\n      style: 'filter: saturate(0)'\n    }\n    // {\n    //   icon: '⚙︎',\n    //   title: 'Einstellungen',\n    //   action: () => (showSettings.value = !showSettings.value),\n    //   style: '',\n    // },\n  ];\n}\n\n/**\n * Sets the token recieved from authentication\n * @param t    object with the new token and a boolean value\n *             that defines if the token should be persistet to local storage\n */\nfunction setToken(t: { token: string; persist: boolean }) {\n  token.value = t.token;\n  if (t.persist) {\n    persist(STORE_KEY.TOKEN, token.value);\n  }\n}\n\n/**\n * Toggles the language between DE and FR\n */\nfunction toggleLanguage() {\n  switch (store.lang) {\n    case LANG.DE:\n      store.lang = LANG.FR;\n      break;\n    case LANG.FR:\n      store.lang = LANG.DE;\n      break;\n  }\n}\n\n/**\n * Resets the app to start with a new user\n */\nfunction resetUser() {\n  if (confirm(i18n('RESET_USER'))) {\n    store.resetUser();\n  }\n}\n\n/**\n * Resets the whole app\n */\nfunction reset() {\n  store.resetUser();\n  error.value = undefined;\n  token.value = ENV[0].TOKEN;\n}\n\n/**\n * Draws a new quiz card and sets the example prompts.\n */\nfunction showCard() {\n  store.drawQuizCard();\n  store.setExamplePromptsVisible(true);\n  showCardModal.value = true;\n}\n\n/**\n * Closes the settings window\n */\nfunction closeSettings() {\n  showSettings.value = false;\n  window.location.search = 'settings=' + showSettings.value;\n}\n\n/**\n * Handles an error and displays it to the user\n * @param error   the error message to display to the user\n */\nfunction handleError(e: string = i18n('UNKNOWN_ERROR')) {\n  error.value = e;\n}\n\n/**\n * Calculates the css opacity for a given toast message\n * @param i the position of the toast message\n */\nfunction getToastOpacity(i: number): string {\n  return 'opacity: ' + (i + 1) / store.toasts.length;\n}\n</script>\n\n<template>\n  <header>\n    <img\n      :src=\"require('@/assets/logo.png')\"\n      alt=\"Logo Berner Fachhochschule\"\n      class=\"logo\"\n      :title=\"\n        'enerKI Version: ' +\n        version +\n        '\\nModel: ' +\n        store.connection.BASE_URL +\n        ' > ' +\n        store.connection.MODEL\n      \"\n    />\n    <h1>enerKI</h1>\n    <div class=\"header-buttons\">\n      <a\n        v-for=\"b of getHeaderButtons()\"\n        @click=\"b.action\"\n        :title=\"b.title\"\n        class=\"header-button\"\n        :style=\"b.style\"\n        >{{ b.icon }}</a\n      >\n    </div>\n  </header>\n  <Settings v-if=\"showSettings\" @on-close=\"closeSettings\" />\n  <div v-else>\n    <!-- if no token is set, we show the auth form -->\n    <auth-form v-if=\"token?.length == 0\" @on-token=\"setToken\" @on-error=\"handleError\" />\n\n    <main v-else>\n      <!-- display error message -->\n      <div class=\"error\" v-if=\"error\">\n        <h2>{{ i18n('ERROR') }}</h2>\n        {{ error }}\n        <br />\n        <div class=\"error-buttons\">\n          <button @click=\"reset\">{{ i18n('RESET') }}</button>\n          <button @click=\"error = ''\">{{ i18n('OK') }}</button>\n        </div>\n      </div>\n\n      <!-- chat window -->\n      <chat v-else :token=\"token\" :percent=\"percent\" @on-error=\"handleError\" />\n\n      <!-- window for power simulation / debug -->\n      <PowerSimulator\n        v-if=\"store.connected && store.isPedalling() && !error\"\n        :debug=\"store.isDebug\"\n        :watt=\"Math.round(store.power.getValues().value)\"\n      />\n    </main>\n\n    <ConnectModal v-if=\"!store.connected\" @on-error=\"handleError\" />\n    <QuizCardModal\n      v-if=\"store.activeCard && showCardModal\"\n      :card=\"store.activeCard\"\n      @on-close=\"showCardModal = false\"\n    />\n\n    <ul class=\"toast-list\">\n      <!--li v-for=\"(toast, i) of store.toasts\" :style=\"getToastOpacity(i)\">\n        <div class=\"alert alert-info\" role=\"alert\">\n          {{ toast }}\n        </div>\n      </li-->\n      <li v-if=\"store.toasts.length > 0\">\n        <div class=\"alert alert-info\" role=\"alert\">\n          {{ store.toasts.at(-1) }}\n        </div>\n      </li>\n    </ul>\n  </div>\n</template>\n\n<style scoped>\n.error {\n  background-color: salmon;\n  color: white;\n  margin: 1em;\n  padding: 0.5em;\n  border-radius: 0.5em;\n}\n.alert {\n  box-shadow: 0 0 20px lightgray;\n}\nheader {\n  color: #697d91;\n  display: flex;\n  flex-direction: row;\n}\n\nheader h1 {\n  line-height: 1.6em;\n  margin-left: 1em;\n}\n\n.error h2 {\n  font-size: 1.5em;\n  font-weight: bold;\n}\n.error-buttons {\n  width: fit-content;\n  margin: 0 auto;\n  display: block;\n}\n.error button {\n  margin: 0.2em;\n}\n.header-buttons {\n  width: 6em;\n  margin-left: auto;\n  justify-content: space-evenly;\n  display: flex;\n}\n.header-button {\n  cursor: pointer;\n  text-decoration: none;\n  color: #c1c9d1;\n  font-size: 2em;\n  line-height: 2em;\n  margin-left: 0.2em;\n}\n.glow {\n  text-shadow: #fac300 0px 0 3px;\n}\n\n.header-button:hover {\n  color: #697d91;\n  filter: saturate(1) !important;\n}\n\n.logo {\n  height: 2.5em;\n  margin: 0.75em;\n}\n\n.toast-list {\n  list-style-type: none;\n  position: fixed;\n  bottom: 30%;\n  width: 60%;\n  margin-left: 20%;\n}\n</style>\n"],"sourceRoot":""}]);
+`, "",{"version":3,"sources":["webpack://./src/App.vue"],"names":[],"mappings":";AAiPA;EACE,wBAAwB;EACxB,YAAY;EACZ,WAAW;EACX,cAAc;EACd,oBAAoB;AACtB;AACA;EACE,8BAA8B;AAChC;AACA;EACE,cAAc;EACd,aAAa;EACb,mBAAmB;AACrB;AAEA;EACE,kBAAkB;EAClB,gBAAgB;AAClB;AAEA;EACE,gBAAgB;EAChB,iBAAiB;AACnB;AACA;EACE,kBAAkB;EAClB,cAAc;EACd,cAAc;AAChB;AACA;EACE,aAAa;AACf;AACA;EACE,UAAU;EACV,iBAAiB;EACjB,6BAA6B;EAC7B,aAAa;AACf;AACA;EACE,eAAe;EACf,qBAAqB;EACrB,cAAc;EACd,cAAc;EACd,gBAAgB;EAChB,kBAAkB;AACpB;AACA;EACE,8BAA8B;AAChC;AAEA;EACE,cAAc;EACd,8BAA8B;AAChC;AAEA;EACE,aAAa;EACb,cAAc;AAChB;AAEA;EACE,qBAAqB;EACrB,eAAe;EACf,WAAW;EACX,UAAU;EACV,gBAAgB;AAClB","sourcesContent":["<script setup lang=\"ts\">\nimport { ref } from \"vue\";\nimport { ENV } from \"../env\";\nimport AuthForm from \"./components/AuthForm.vue\";\nimport ConnectModal from \"./components/ConnectModal.vue\";\nimport Settings from \"./components/Settings.vue\";\nimport Chat from \"./components/Chat.vue\";\nimport { getPersisted, LANG, persist, store, STORE_KEY } from \"./store\";\nimport PowerSimulator from \"./components/PowerSimulator.vue\";\nimport QuizCardModal from \"./components/QuizCardModal.vue\";\nimport { i18n } from \"./assets/i18n\";\n\nconst version = require(\"../package.json\").version;\n\nconst token = ref(getPersisted<string>(STORE_KEY.TOKEN) || ENV[0].TOKEN);\n\nconst error = ref<string | undefined>();\n\nconst percent = ref<number>(0);\n\nconst showCardModal = ref(false);\n\nconst showSettings = ref(false);\n\ndocument.addEventListener(\"keydown\", function (event) {\n  if (showCardModal.value && event.key == \"Enter\") {\n    showCardModal.value = false;\n  } else if (event.key == \"Enter\" && store.textInput == \"\") {\n    showCard();\n  }\n});\n\n// fast hack for displaying settings\nshowSettings.value = window.location.search.includes(\"settings=true\");\n\n/**\n * Calculates the header buttons\n * <div\n        class=\"toggle-button\"\n        @click=\"store.toggleUseTools()\"\n        :class=\"{ active: store.getUseTools() }\"\n        :title=\"store.getUseTools() ? i18n('TOOL_USE_OFF') : i18n('TOOL_USE_ON')\"\n      >\n        🔍\n      </div>\n */\nfunction getHeaderButtons() {\n  return [\n    {\n      icon: \"🀙\",\n      title: store.cardDrawn ? i18n(\"NEW_CARD\") : i18n(\"SHOW_CARD\"),\n      action: showCard,\n      style: store.cardDrawn\n        ? \"text-shadow: #fac300 0px 0 3px; line-height: 1.8em;\"\n        : \"line-height: 1.8em;\",\n    },\n    {\n      icon: \"⟲\",\n      title: i18n(\"RESET\"),\n      action: resetUser,\n      style: \"\",\n    },\n    {\n      icon: \"🔍\",\n      title: store.getUseTools() ? i18n(\"TOOL_USE_OFF\") : i18n(\"TOOL_USE_ON\"),\n      action: () => store.toggleUseTools(),\n      style: store.getUseTools()\n        ? \"line-height: 2.8em; font-size: 1.5em; text-shadow: rgb(250, 195, 0) 0px 0px 3px; margin-right: 0.2em;\"\n        : \"line-height: 2.8em; font-size: 1.5em; filter: saturate(0); margin-right: 0.2em;\",\n    },\n    {\n      icon: store.lang === LANG.DE ? \"🇩🇪\" : \"🇫🇷\",\n      title: i18n(\"LANGUAGE\"),\n      action: toggleLanguage,\n      style: \"filter: saturate(0)\",\n    },\n    // {\n    //   icon: '⚙︎',\n    //   title: 'Einstellungen',\n    //   action: () => (showSettings.value = !showSettings.value),\n    //   style: '',\n    // },\n  ];\n}\n\n/**\n * Sets the token recieved from authentication\n * @param t    object with the new token and a boolean value\n *             that defines if the token should be persistet to local storage\n */\nfunction setToken(t: { token: string; persist: boolean }) {\n  token.value = t.token;\n  if (t.persist) {\n    persist(STORE_KEY.TOKEN, token.value);\n  }\n}\n\n/**\n * Toggles the language between DE and FR\n */\nfunction toggleLanguage() {\n  switch (store.lang) {\n    case LANG.DE:\n      store.lang = LANG.FR;\n      break;\n    case LANG.FR:\n      store.lang = LANG.DE;\n      break;\n  }\n}\n\n/**\n * Resets the app to start with a new user\n */\nfunction resetUser() {\n  if (confirm(i18n(\"RESET_USER\"))) {\n    store.resetUser();\n  }\n}\n\n/**\n * Resets the whole app\n */\nfunction reset() {\n  store.resetUser();\n  error.value = undefined;\n  token.value = ENV[0].TOKEN;\n}\n\n/**\n * Draws a new quiz card and sets the example prompts.\n */\nfunction showCard() {\n  store.drawQuizCard();\n  store.setExamplePromptsVisible(true);\n  showCardModal.value = true;\n}\n\n/**\n * Closes the settings window\n */\nfunction closeSettings() {\n  showSettings.value = false;\n  window.location.search = \"settings=\" + showSettings.value;\n}\n\n/**\n * Handles an error and displays it to the user\n * @param error   the error message to display to the user\n */\nfunction handleError(e: string = i18n(\"UNKNOWN_ERROR\")) {\n  error.value = e;\n}\n\n/**\n * Calculates the css opacity for a given toast message\n * @param i the position of the toast message\n */\nfunction getToastOpacity(i: number): string {\n  return \"opacity: \" + (i + 1) / store.toasts.length;\n}\n</script>\n\n<template>\n  <header>\n    <img\n      :src=\"require('@/assets/logo.png')\"\n      alt=\"Logo Berner Fachhochschule\"\n      class=\"logo\"\n      :title=\"\n        'enerKI Version: ' +\n        version +\n        '\\nModel: ' +\n        store.connection.BASE_URL +\n        ' > ' +\n        store.connection.MODEL\n      \"\n    />\n    <h1>enerKI</h1>\n    <div class=\"header-buttons\">\n      <a\n        v-for=\"b of getHeaderButtons()\"\n        @click=\"b.action\"\n        :title=\"b.title\"\n        class=\"header-button\"\n        :style=\"b.style\"\n        >{{ b.icon }}</a\n      >\n    </div>\n  </header>\n  <Settings v-if=\"showSettings\" @on-close=\"closeSettings\" />\n  <div v-else>\n    <!-- if no token is set, we show the auth form -->\n    <auth-form v-if=\"token?.length == 0\" @on-token=\"setToken\" @on-error=\"handleError\" />\n\n    <main v-else>\n      <!-- display error message -->\n      <div class=\"error\" v-if=\"error\">\n        <h2>{{ i18n(\"ERROR\") }}</h2>\n        {{ error }}\n        <br />\n        <div class=\"error-buttons\">\n          <button @click=\"reset\">{{ i18n(\"RESET\") }}</button>\n          <button @click=\"error = ''\">{{ i18n(\"OK\") }}</button>\n        </div>\n      </div>\n\n      <!-- chat window -->\n      <chat v-else :token=\"token\" :percent=\"percent\" @on-error=\"handleError\" />\n\n      <!-- window for power simulation / debug -->\n      <PowerSimulator\n        v-if=\"store.connected && store.isPedalling() && !error\"\n        :debug=\"store.isDebug\"\n        :watt=\"Math.round(store.power.getValues().value)\"\n      />\n    </main>\n\n    <ConnectModal v-if=\"!store.connected\" @on-error=\"handleError\" />\n    <QuizCardModal\n      v-if=\"store.activeCard && showCardModal\"\n      :card=\"store.activeCard\"\n      @on-close=\"showCardModal = false\"\n    />\n\n    <ul class=\"toast-list\">\n      <!--li v-for=\"(toast, i) of store.toasts\" :style=\"getToastOpacity(i)\">\n        <div class=\"alert alert-info\" role=\"alert\">\n          {{ toast }}\n        </div>\n      </li-->\n      <li v-if=\"store.toasts.length > 0\">\n        <div class=\"alert alert-info\" role=\"alert\">\n          {{ store.toasts.at(-1) }}\n        </div>\n      </li>\n    </ul>\n  </div>\n</template>\n\n<style scoped>\n.error {\n  background-color: salmon;\n  color: white;\n  margin: 1em;\n  padding: 0.5em;\n  border-radius: 0.5em;\n}\n.alert {\n  box-shadow: 0 0 20px lightgray;\n}\nheader {\n  color: #697d91;\n  display: flex;\n  flex-direction: row;\n}\n\nheader h1 {\n  line-height: 1.6em;\n  margin-left: 1em;\n}\n\n.error h2 {\n  font-size: 1.5em;\n  font-weight: bold;\n}\n.error-buttons {\n  width: fit-content;\n  margin: 0 auto;\n  display: block;\n}\n.error button {\n  margin: 0.2em;\n}\n.header-buttons {\n  width: 8em;\n  margin-left: auto;\n  justify-content: space-evenly;\n  display: flex;\n}\n.header-button {\n  cursor: pointer;\n  text-decoration: none;\n  color: #c1c9d1;\n  font-size: 2em;\n  line-height: 2em;\n  margin-left: 0.2em;\n}\n.glow {\n  text-shadow: #fac300 0px 0 3px;\n}\n\n.header-button:hover {\n  color: #697d91;\n  filter: saturate(1) !important;\n}\n\n.logo {\n  height: 2.5em;\n  margin: 0.75em;\n}\n\n.toast-list {\n  list-style-type: none;\n  position: fixed;\n  bottom: 30%;\n  width: 60%;\n  margin-left: 20%;\n}\n</style>\n"],"sourceRoot":""}]);
 // Exports
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
 
@@ -182,9 +182,7 @@ li[data-v-2bc3d388]:first-child {
   border-radius: 1em;
   width: 75%;
   margin-top: 1em;
-  transition:
-    opacity 1.2s ease,
-    filter 1.2s ease;
+  transition: opacity 1.2s ease, filter 1.2s ease;
 }
 .chat-user[data-v-2bc3d388] {
   background-color: #64788b;
@@ -268,7 +266,7 @@ button .spinner-border[data-v-2bc3d388] {
   height: 4em;
   color: white;
 }
-`, "",{"version":3,"sources":["webpack://./src/components/Chat.vue"],"names":[],"mappings":";AA0RA;EACE,gBAAgB;EAChB,aAAa;EACb,gBAAgB;EAChB,YAAY;EACZ,iBAAiB;AACnB;AACA;EACE,eAAe;AACjB;AACA;EACE,iCAAiC;EACjC,gBAAgB;EAChB,mBAAmB;EACnB,kBAAkB;EAClB,UAAU;EACV,eAAe;EACf;;oBAEkB;AACpB;AACA;EACE,yBAAyB;EACzB,cAAc;EACd,gBAAgB;EAChB,iCAAiC;AACnC;AACA;EACE,yBAAyB;EACzB,cAAc;EACd,iBAAiB;EACjB,gCAAgC;AAClC;AACA;;EAEE,aAAa;AACf;AAEA;EACE,cAAc;EACd,WAAW;EACX,UAAU;EACV,iBAAiB;EACjB,kBAAkB;AACpB;AAEA;EACE,SAAS;EACT,OAAO;EACP,iBAAiB;AACnB;AAEA;EACE,gBAAgB;EAChB,aAAa;AACf;AAEA;EACE,kCAAkC;EAClC,aAAa;EACb,aAAa;EACb,gCAAgC;EAChC,6BAA6B;EAC7B,iCAAiC;EACjC,8BAA8B;AAChC;AAEA;EACE,8BAA8B;EAC9B,2BAA2B;EAC3B,+BAA+B;EAC/B,4BAA4B;EAC5B,yBAAyB;EACzB,YAAY;EACZ,aAAa;EACb,WAAW;EACX,WAAW;EACX,UAAU;AACZ;AAEA;EACE,yBAAyB;EACzB,cAAc;AAChB;AAEA;EACE,cAAc;EACd,aAAa;EACb,2BAA2B;AAC7B;AAEA;EACE,oBAAoB;EACpB,YAAY;EACZ,aAAa;AACf;AAEA;EACE,WAAW;EACX,eAAe;EACf,cAAc;EACd,kBAAkB;EAClB,eAAe;AACjB;AAEA;EACE,eAAe;EACf,kBAAkB;AACpB;AACA;EACE,WAAW;EACX,YAAY;AACd","sourcesContent":["<script setup lang=\"ts\">\nimport { computed, ref, ShallowRef, useTemplateRef } from 'vue';\nimport { ExamplePrompt, type Message, USER_ROLE } from '@/models';\nimport axios from 'axios';\nimport markdownit from 'markdown-it';\nimport { store } from '../store';\nimport { AntSubscription } from '@/antService';\nimport ToastService from '@/toastService';\nimport PromptExamples from './PromptExamples.vue';\nimport { i18n } from '@/assets/i18n';\n\n// define props\nconst props = defineProps<{\n  token: string;\n  percent: number;\n}>();\n\nconst md = markdownit({\n  html: true,\n  linkify: true,\n  typographer: true\n});\n\n// define events\nconst emit = defineEmits(['onAnswer', 'onError']);\n\nconst chat: ShallowRef = useTemplateRef('chat-list');\n\nconst loadingPercent = ref(0);\n\nconst userInput = ref(false);\nconst chatInput = ref(null);\nlet usage = -1;\nlet inputTimeout = -1;\n\nconst loadingStyle = computed(() => {\n  return (\n    'filter: blur(' +\n    (10 - Math.round(loadingPercent.value / 10)) +\n    'px);opacity:' +\n    (0.009 * loadingPercent.value + 0.1).toFixed(2) +\n    ';'\n  );\n});\n\n/**\n * Estimates the energy usage for an answer, based on the number of output tokens. Samsi et al. estimated the energy usage with 3 - 4 Joule per token, which equals to ~0.001 Wh\n * @see Paper       Samsi et al. (2023): From Words to Watts: Benchmarking the Energy Costs of Large Language Model Inference. https://doi.org/10.48550/arXiv.2310.03003\n * @see Blogpost    gpt-oss uses around 8.3 Wh per 100 output token, which seems way too high https://huggingface.co/blog/sasha/gpt-oss-energy\n * @see YouTube     https://www.youtube.com/watch?v=zjG9TkfWd0o&t=143s\n * @param tokens    number of output tokens of the answer\n * @param tps       token per seconds generated, defaults to 70\n * @returns         an estimation of energy (in Wh), based on the number of output tokens\n */\nfunction estimateEnergyUsage(tokens: number, tps = 70) {\n  // Mac Studio M3Utra uses up to 480W. That is 0.1333 Wh per second in full load (480 / 3600).\n  // however, he measures 120W: https://www.youtube.com/watch?v=zjG9TkfWd0o&t=143s TODO: own measurements\n  // we use the Watt per Token stored in ENV setup\n  const whPerSecond = Number(store.connection.WATT_CONSUMPTION) / 3600;\n  // With gpt-oss:120b, it generates around 70 token/s.\n  const whPerToken = whPerSecond / tps;\n  const estimate = tokens * whPerToken;\n  return estimate;\n  // old samsi et al estimate: return (tokens * 3.5) / 3600; // 3.5 joules per token; 3600 J = 1 Wh\n}\n\n/**\n * Estimates the energy usage before knowing the answer\n * @returns         an estimation of energy (in Wh)\n */\nfunction preEstimateUsage() {\n  return usage > 1 ? usage : 1;\n}\n\n/**\n * Checks if a message is currently the last\n * @param index   the index of the message\n * @returns       TRUE if the message is the last in the array\n *                FALSE if there are more messages after it in the array\n */\nfunction isLastMessage(index: number): boolean {\n  return store.getVisibleMessages().length - index === 1;\n}\n\n/**\n * Sends a message to the model, with all previous messages as context\n */\nfunction send() {\n  if (store.textInput == '') return;\n\n  const message: Message = {\n    role: USER_ROLE.USER,\n    content: store.textInput,\n    loading: false\n  };\n  loadingPercent.value = 0;\n\n  store.chatMessages.push(message);\n\n  type API_BODY = {\n    model: string;\n    messages: Message[];\n    reasoning?: {\n      effort: string;\n    };\n    'background-tasks'?: {\n      follow_up_generation: boolean;\n    };\n  };\n\n  const body: API_BODY = {\n    model: store.connection.MODEL,\n    messages: [...store.chatMessages],\n    reasoning: {\n      effort: store.connection.REASONING\n    },\n    'background-tasks': {\n      follow_up_generation: false\n    }\n  };\n\n  // chatGPT does not like these params\n  if (!store.connection.REASONING) {\n    delete body.reasoning;\n    delete body['background-tasks'];\n  }\n\n  store.textInput = '';\n\n  const answerMessage = {\n    role: USER_ROLE.AI,\n    content: '...',\n    loading: true,\n    percent: 0\n  };\n\n  store.chatMessages.push(answerMessage);\n  usage = -1;\n\n  chat.value.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'end' });\n\n  const time = Date.now();\n  Promise.all([\n    ToastService.startToast().then(() => {\n      store.startAndSubscribe(usage === -1 ? preEstimateUsage() : usage, (ant: AntSubscription) => {\n        answerMessage.percent = Math.min(ant.percent, 100);\n        loadingPercent.value = Math.min(ant.percent, 100);\n\n        ToastService.progressToast(\n          answerMessage.percent,\n          answerMessage.content !== '...',\n          ant.value\n        );\n        if (ant.percent >= 100 && usage > 0) {\n          ToastService.energyToast(usage);\n          usage = -1;\n        }\n      });\n    }),\n    axios\n      .post(store.connection.BASE_URL + store.connection.ENDPOINT, body, {\n        headers: {\n          'Content-Type': 'application/json',\n          Authorization: 'Bearer ' + props.token,\n          'Cache-Control': 'no-cache, no-store'\n        }\n      })\n      .then((result) => {\n        const duration = Math.round((Date.now() - time) / 1000);\n        usage = estimateEnergyUsage(\n          result.data.usage.completion_tokens,\n          result.data.usage.generation_tokens_per_second\n        );\n        store.setTarget(usage);\n\n        console.log(\n          'Energie verbraucht: ' +\n            usage.toFixed(2) +\n            ' Wh in ' +\n            duration +\n            ' Sekunden. \\nDas benötigt eine Durchschnittsleistung von ' +\n            Math.round((3600 * usage) / duration) +\n            ' Watt.'\n        );\n\n        answerMessage.content = (result.data.choices[0].message.content as string).replaceAll(\n          'ß',\n          'ss'\n        );\n        answerMessage.loading = false;\n\n        // we need to do this, or vue won't detect the update...\n        store.chatMessages.pop();\n        store.chatMessages.push(answerMessage);\n\n        chat.value.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'end' });\n        emit('onAnswer', answerMessage);\n      })\n      .catch((e) => {\n        console.error(e);\n        ToastService.abort();\n        emit('onError', JSON.stringify(e, null, 2));\n      })\n  ]);\n}\n\n/**\n * Sets a 1 second timeout in which we don't listen to hotkey inputs\n */\nfunction inputting() {\n  userInput.value = true;\n  if (inputTimeout > 0) {\n    window.clearTimeout(inputTimeout);\n  }\n  inputTimeout = window.setTimeout(() => {\n    userInput.value = false;\n  }, 1000);\n}\n\nfunction setPrompt(prompt: ExamplePrompt) {\n  if (!store.chatMessages[store.chatMessages.length - 1]?.loading) {\n    store.textInput = prompt[store.lang];\n    usage = prompt.estimateFactor;\n    store.setTarget(usage);\n    (chatInput.value as any)?.focus();\n  }\n}\n</script>\n\n<template>\n  <ul ref=\"chat-list\" class=\"chat-list\">\n    <li\n      v-for=\"(message, i) of store.getVisibleMessages()\"\n      :class=\"'message-bubble chat-' + message.role\"\n      :style=\"\n        message.percent != undefined && message.percent < 100 && isLastMessage(i)\n          ? loadingStyle\n          : ''\n      \"\n    >\n      <div v-if=\"message.loading\" class=\"spinner-border\" role=\"status\">\n        <span class=\"visually-hidden\">Loading...</span>\n      </div>\n      <div v-else v-html=\"md.render(message.content)\" />\n    </li>\n    <li style=\"height: 10em; color: white; box-shadow: 0 0 0 white\"></li>\n  </ul>\n\n  <PromptExamples\n    @on-select-prompt=\"setPrompt\"\n    :user-inputting=\"userInput\"\n    v-if=\"\n      !store.isPedalling() && store.getExamplePrompts().length > 0 && store.examplePromptsVisible\n    \"\n  />\n\n  <form action=\"#\" ref=\"input-form\" id=\"input-form\">\n    <input\n      autofocus\n      type=\"text\"\n      v-model=\"store.textInput\"\n      :placeholder=\"\n        i18n(store.getExamplePrompts().length > 0 ? 'CHAT_PLACEHOLDER_PROMPTS' : 'CHAT_PLACEHOLDER')\n      \"\n      @input=\"inputting\"\n      ref=\"chatInput\"\n    />\n    <button\n      @click=\"send\"\n      type=\"submit\"\n      :disabled=\"store.isPedalling()\"\n      :class=\"{ disabled: store.isPedalling() }\"\n    >\n      <div v-if=\"store.isPedalling()\" class=\"spinner-border\" role=\"status\">\n        <span class=\"visually-hidden\">...</span>\n      </div>\n      <span v-else>⬆︎</span>\n    </button>\n  </form>\n</template>\n\n<style scoped>\nul.chat-list {\n  overflow: scroll;\n  height: 100vh;\n  margin-bottom: 0;\n  padding: 1em;\n  padding-top: 10em;\n}\nli:first-child {\n  margin-top: 3em;\n}\n.message-bubble {\n  box-shadow: 2px 2px 5px lightgray;\n  list-style: none;\n  padding: 0.25em 1em;\n  border-radius: 1em;\n  width: 75%;\n  margin-top: 1em;\n  transition:\n    opacity 1.2s ease,\n    filter 1.2s ease;\n}\n.chat-user {\n  background-color: #64788b;\n  color: #eff1f3;\n  margin-left: 25%;\n  border-bottom-right-radius: 0.5em;\n}\n.chat-assistant {\n  background-color: #e0e4e8;\n  color: #4b647d;\n  margin-right: 25%;\n  border-bottom-left-radius: 0.5em;\n}\n.chat-developer,\n.chat-system {\n  display: none;\n}\n\n.spinner-border {\n  display: block;\n  height: 1em;\n  width: 1em;\n  margin-left: auto;\n  margin-right: auto;\n}\n\ninput {\n  border: 0;\n  flex: 1;\n  margin: 0.2em 1em;\n}\n\ninput:focus {\n  outline-width: 0;\n  outline: none;\n}\n\n#input-form {\n  box-shadow: 0px 0px 10px lightgray;\n  display: flex;\n  height: 2.4em;\n  border-bottom-left-radius: 1.2em;\n  border-top-left-radius: 1.2em;\n  border-bottom-right-radius: 1.2em;\n  border-top-right-radius: 1.2em;\n}\n\nbutton {\n  border-bottom-left-radius: 1em;\n  border-top-left-radius: 1em;\n  border-bottom-right-radius: 1em;\n  border-top-right-radius: 1em;\n  background-color: #f5be41;\n  color: white;\n  margin: 0.2em;\n  border: 0px;\n  height: 2em;\n  width: 2em;\n}\n\nbutton:hover {\n  background-color: #f9b310;\n  color: #697d91;\n}\n\nbutton.disabled {\n  color: #697d91;\n  opacity: 0.75;\n  background-color: lightgray;\n}\n\nbutton .spinner-border {\n  margin: 0 !important;\n  width: 1.3em;\n  height: 1.3em;\n}\n\n.usage {\n  width: 100%;\n  margin-top: 1em;\n  display: block;\n  text-align: center;\n  color: darkgray;\n}\n\n.spinner-border {\n  margin-top: 2em;\n  margin-bottom: 2em;\n}\n.scroll-target {\n  height: 4em;\n  color: white;\n}\n</style>\n"],"sourceRoot":""}]);
+`, "",{"version":3,"sources":["webpack://./src/components/Chat.vue"],"names":[],"mappings":";AA+YA;EACE,gBAAgB;EAChB,aAAa;EACb,gBAAgB;EAChB,YAAY;EACZ,iBAAiB;AACnB;AACA;EACE,eAAe;AACjB;AACA;EACE,iCAAiC;EACjC,gBAAgB;EAChB,mBAAmB;EACnB,kBAAkB;EAClB,UAAU;EACV,eAAe;EACf,+CAA+C;AACjD;AACA;EACE,yBAAyB;EACzB,cAAc;EACd,gBAAgB;EAChB,iCAAiC;AACnC;AACA;EACE,yBAAyB;EACzB,cAAc;EACd,iBAAiB;EACjB,gCAAgC;AAClC;AACA;;EAEE,aAAa;AACf;AAEA;EACE,cAAc;EACd,WAAW;EACX,UAAU;EACV,iBAAiB;EACjB,kBAAkB;AACpB;AAEA;EACE,SAAS;EACT,OAAO;EACP,iBAAiB;AACnB;AAEA;EACE,gBAAgB;EAChB,aAAa;AACf;AAEA;EACE,kCAAkC;EAClC,aAAa;EACb,aAAa;EACb,gCAAgC;EAChC,6BAA6B;EAC7B,iCAAiC;EACjC,8BAA8B;AAChC;AAEA;EACE,8BAA8B;EAC9B,2BAA2B;EAC3B,+BAA+B;EAC/B,4BAA4B;EAC5B,yBAAyB;EACzB,YAAY;EACZ,aAAa;EACb,WAAW;EACX,WAAW;EACX,UAAU;AACZ;AAEA;EACE,yBAAyB;EACzB,cAAc;AAChB;AAEA;EACE,cAAc;EACd,aAAa;EACb,2BAA2B;AAC7B;AAEA;EACE,oBAAoB;EACpB,YAAY;EACZ,aAAa;AACf;AAEA;EACE,WAAW;EACX,eAAe;EACf,cAAc;EACd,kBAAkB;EAClB,eAAe;AACjB;AAEA;EACE,eAAe;EACf,kBAAkB;AACpB;AACA;EACE,WAAW;EACX,YAAY;AACd","sourcesContent":["<script setup lang=\"ts\">\nimport { computed, ref, ShallowRef, useTemplateRef } from 'vue';\nimport { API_BODY, ExamplePrompt, type Message, TOOL_TYPE, USER_ROLE } from '@/models';\nimport axios from 'axios';\nimport markdownit from 'markdown-it';\nimport { store } from '../store';\nimport { AntSubscription } from '@/antService';\nimport ToastService, { getKiloCalsFromWatthour } from '@/toastService';\nimport PromptExamples from './PromptExamples.vue';\nimport { i18n } from '@/assets/i18n';\n\n// define props\nconst props = defineProps<{\n  token: string;\n  percent: number;\n}>();\n\nconst md = markdownit({\n  html: true,\n  linkify: true,\n  typographer: true\n});\n\n// define events\nconst emit = defineEmits(['onAnswer', 'onError']);\n\nconst chat: ShallowRef = useTemplateRef('chat-list');\n\nconst loadingPercent = ref(0);\n\nconst userInput = ref(false);\nconst chatInput = ref(null);\nlet usage = -1;\nlet inputTimeout = -1;\n\nconst usageInfo = ref('');\n\nconst loadingStyle = computed(() => {\n  return (\n    'filter: blur(' +\n    (10 - Math.round(loadingPercent.value / 10)) +\n    'px);opacity:' +\n    (0.009 * loadingPercent.value + 0.1).toFixed(2) +\n    ';'\n  );\n});\n\n/**\n * Estimates the energy usage for an answer, based on the number of input and output tokens.\n * We measured the energy usage for inference on a M3Ultra Mac Studio\n * Legacy: Samsi et al. estimated the energy usage with 3 - 4 Joule per token, which equals to ~0.001 Wh\n * @see Paper           Samsi et al. (2023): From Words to Watts: Benchmarking the Energy Costs of Large Language Model Inference. https://doi.org/10.48550/arXiv.2310.03003\n * @see Blogpost        gpt-oss uses around 8.3 Wh per 100 output token, which seems way too high https://huggingface.co/blog/sasha/gpt-oss-energy\n * @see YouTube         https://www.youtube.com/watch?v=zjG9TkfWd0o&t=143s\n * @param inputTokens   number of input tokens given to the llm\n * @param outputTokens  number of output tokens given to the llm\n * @returns             an estimation of energy (in Wh), based on the number of in- and output tokens\n */\nfunction estimateEnergyUsage(inputTokens: number, outputTokens: number) {\n  const joule = inputTokens * Number(store.connection.JOULE_PER_INPUT_TOKEN) +\n                outputTokens * Number(store.connection.JOULE_PER_OUTPUT_TOKEN)\n  return joule / 3600; // 1 J is a Ws, so 1 Wh has 3600 J\n}\n\n/**\n * Estimates the energy usage before knowing the answer\n * @returns         an estimation of energy (in Wh)\n */\nfunction preEstimateUsage() {\n  if (usage > 1) return usage;\n  // with tool use activated, we assume more energy consumption\n  return store.getUseTools() ? 3 : 1;\n}\n\n/**\n * Checks if a message is currently the last\n * @param index   the index of the message\n * @returns       TRUE if the message is the last in the array\n *                FALSE if there are more messages after it in the array\n */\nfunction isLastMessage(index: number): boolean {\n  return store.getVisibleMessages().length - index === 1;\n}\n\nfunction getUsageInfoString(usage: {input_tokens: number, output_tokens: number}, duration: number): string {\n  const BR = '\\n';\n  const wh = estimateEnergyUsage(\n    usage.input_tokens,\n    usage.output_tokens\n  );\n  return '- Input tokens: ' + usage.input_tokens + BR +\n         '- Output tokens: ' + usage.output_tokens + BR +\n         '- ' + duration + ' s' + BR +\n         '- ' + wh.toFixed(2) + ' Wh' + BR +\n         '- ~' + getKiloCalsFromWatthour(wh) + ' kcal'\n}\n\n/**\n * Runs a search on duck duck go with a given query\n * @param query the search string to query\n */\nfunction runSearch(query: string): Promise<string> {\n  return axios\n    .get(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`)\n    .then((res) => JSON.stringify(res.data));\n}\n\n/**\n * Fetches the website from an url\n * @param url the url to fetch\n */\nfunction fetchUrl(url: string): Promise<string> {\n  return axios.get(url).then((res) => res.data.replace(/<(style|script)\\b[^>]*>[\\s\\S]*?<\\/\\1\\s*>/gi, ''));\n}\n\n/**\n * Sends a request to the inference service, and then performs the action needed\n * for tool use\n */\nasync function sendWithTools(): Promise<any> {\n  const MAX_TOOL_CALLS = 5;\n\n\n  const SEARCH_TOOL = {\n    type: 'function',\n    function: {\n      name: TOOL_TYPE.SEARCH,\n      description: 'Searches the web for current informations',\n      parameters: {\n        type: 'object',\n        properties: {\n          query: { type: 'string', description: 'The search query.' }\n        },\n        required: ['query']\n      }\n    }\n  };\n\n  const WEBSITE_TOOL = {\n    type: 'function',\n    function: {\n      name: TOOL_TYPE.SITE,\n      description: 'Loads a website from a given URL',\n      parameters: {\n        type: 'object',\n        properties: {\n          query: { type: 'string', description: 'The url to load.' }\n        },\n        required: ['query']\n      }\n    }\n  };\n\n  const body: API_BODY = {\n    model: store.connection.MODEL,\n    messages: [...store.chatMessages],\n    tools: store.getUseTools() ? [\n      SEARCH_TOOL,\n      WEBSITE_TOOL\n    ] : [],\n    tool_choice: 'auto',\n    reasoning: {\n      effort: store.connection.REASONING\n    },\n    'background-tasks': {\n      follow_up_generation: false\n    }\n  };\n\n  // chatGPT does not like these params\n  if (!store.connection.REASONING) {\n    delete body.reasoning;\n    delete body['background-tasks'];\n  }\n\n  const config = {\n    headers: {\n      'Content-Type': 'application/json',\n      Authorization: 'Bearer ' + props.token,\n      'Cache-Control': 'no-cache, no-store'\n    }\n  };\n\n  const url = store.connection.BASE_URL + store.connection.ENDPOINT;\n\n  let messages = [...store.chatMessages];\n\n  // loop for maximum tool calls\n  for (let i = 0; i < MAX_TOOL_CALLS; i++) {\n    const result = await axios.post(url, { ...body, messages }, config);\n    const msg = result.data.choices[0].message;\n    messages.push(msg);\n\n    if (!msg.tool_calls?.length) {\n      return result;\n    }\n\n    for (const call of msg.tool_calls) {\n      const args = JSON.parse(call.function.arguments);\n      switch (call.function.name) {\n        case TOOL_TYPE.SEARCH:\n          ToastService.toolToast(TOOL_TYPE.SEARCH)\n          messages.push({\n            role: USER_ROLE.TOOL,\n            tool_call_id: call.id,\n            content: await runSearch(args.query)\n          });\n          break;\n        case TOOL_TYPE.SITE:\n          ToastService.toolToast(TOOL_TYPE.SITE)\n          messages.push({\n            role: USER_ROLE.TOOL,\n            tool_call_id: call.id,\n            content: await fetchUrl(args.url)\n          });\n          break;\n      }\n    }\n  }\n}\n\n/**\n * Sends a message to the model, with all previous messages as context\n */\nfunction send() {\n  if (store.textInput == '') return;\n\n  const message: Message = {\n    role: USER_ROLE.USER,\n    content: store.textInput,\n    loading: false\n  };\n  loadingPercent.value = 0;\n  usageInfo.value = '';\n\n  store.chatMessages.push(message);\n\n  store.textInput = '';\n\n  const answerMessage = {\n    role: USER_ROLE.AI,\n    content: '...',\n    loading: true,\n    percent: 0\n  };\n\n  store.chatMessages.push(answerMessage);\n  usage = -1;\n\n  chat.value.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'end' });\n\n  const time = Date.now();\n\n\n  Promise.all([\n    ToastService.startToast().then(() => {\n      store.startAndSubscribe(usage === -1 ? preEstimateUsage() : usage, (ant: AntSubscription) => {\n        answerMessage.percent = Math.min(ant.percent, 100);\n        loadingPercent.value = Math.min(ant.percent, 100);\n\n        ToastService.progressToast(\n          answerMessage.percent,\n          answerMessage.content !== '...',\n          ant.value\n        );\n        if (ant.percent >= 100 && usage > 0) {\n          ToastService.energyToast(usage);\n          usage = -1;\n        }\n      });\n    }),\n    sendWithTools()\n      .then((result) => {\n        const duration = Math.round((Date.now() - time) / 1000);\n        usage = estimateEnergyUsage(\n          result.data.usage.input_tokens,\n          result.data.usage.output_tokens\n        );\n        store.setTarget(usage);\n        usageInfo.value = getUsageInfoString(result.data.usage, duration);\n\n        console.log(\n          'Energie verbraucht: ' +\n            usage.toFixed(2) +\n            ' Wh in ' +\n            duration +\n            ' Sekunden. \\nDas benötigt eine Durchschnittsleistung von ' +\n            Math.round((3600 * usage) / duration) +\n            ' Watt.'\n        );\n\n        answerMessage.content = (result.data.choices[0].message.content as string).replaceAll(\n          'ß',\n          'ss'\n        );\n        answerMessage.loading = false;\n\n        // we need to do this, or vue won't detect the update...\n        store.chatMessages.pop();\n        store.chatMessages.push(answerMessage);\n\n        chat.value.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'end' });\n        emit('onAnswer', answerMessage);\n      })\n      .catch((e) => {\n        console.error(e);\n        ToastService.abort();\n        emit('onError', JSON.stringify(e, null, 2));\n      })\n  ]);\n}\n\n/**\n * Sets a 1 second timeout in which we don't listen to hotkey inputs\n */\nfunction inputting() {\n  userInput.value = true;\n  if (inputTimeout > 0) {\n    window.clearTimeout(inputTimeout);\n  }\n  inputTimeout = window.setTimeout(() => {\n    userInput.value = false;\n  }, 1000);\n}\n\nfunction setPrompt(prompt: ExamplePrompt) {\n  if (!store.chatMessages[store.chatMessages.length - 1]?.loading) {\n    store.textInput = prompt[store.lang];\n    usage = prompt.estimateFactor;\n    store.setTarget(usage);\n    (chatInput.value as any)?.focus();\n  }\n}\n</script>\n\n<template>\n  <ul ref=\"chat-list\" class=\"chat-list\">\n    <li\n      v-for=\"(message, i) of store.getVisibleMessages()\"\n      :class=\"'message-bubble chat-' + message.role\"\n      :style=\"\n        message.percent != undefined && message.percent < 100 && isLastMessage(i)\n          ? loadingStyle\n          : ''\n      \"\n      :title=\"\n        i == store.getVisibleMessages().length - 1 && message.role == USER_ROLE.AI\n          ? usageInfo\n          : ''\n      \"\n    >\n      <div v-if=\"message.loading\" class=\"spinner-border\" role=\"status\">\n        <span class=\"visually-hidden\">Loading...</span>\n      </div>\n      <div v-else v-html=\"md.render(message.content)\" />\n    </li>\n    <li style=\"height: 10em; color: white; box-shadow: 0 0 0 white\"></li>\n  </ul>\n\n  <PromptExamples\n    @on-select-prompt=\"setPrompt\"\n    :user-inputting=\"userInput\"\n    v-if=\"\n      !store.isPedalling() &&\n      store.getExamplePrompts().length > 0 &&\n      store.examplePromptsVisible\n    \"\n  />\n\n  <form action=\"#\" ref=\"input-form\" id=\"input-form\">\n    <input\n      autofocus\n      type=\"text\"\n      v-model=\"store.textInput\"\n      :placeholder=\"\n        i18n(\n          store.getExamplePrompts().length > 0\n            ? 'CHAT_PLACEHOLDER_PROMPTS'\n            : 'CHAT_PLACEHOLDER'\n        )\n      \"\n      @input=\"inputting\"\n      ref=\"chatInput\"\n    />\n    <button\n      @click=\"send\"\n      type=\"submit\"\n      :disabled=\"store.isPedalling()\"\n      :class=\"{ disabled: store.isPedalling() }\"\n    >\n      <div v-if=\"store.isPedalling()\" class=\"spinner-border\" role=\"status\">\n        <span class=\"visually-hidden\">...</span>\n      </div>\n      <span v-else>⬆︎</span>\n    </button>\n  </form>\n</template>\n\n<style scoped>\nul.chat-list {\n  overflow: scroll;\n  height: 100vh;\n  margin-bottom: 0;\n  padding: 1em;\n  padding-top: 10em;\n}\nli:first-child {\n  margin-top: 3em;\n}\n.message-bubble {\n  box-shadow: 2px 2px 5px lightgray;\n  list-style: none;\n  padding: 0.25em 1em;\n  border-radius: 1em;\n  width: 75%;\n  margin-top: 1em;\n  transition: opacity 1.2s ease, filter 1.2s ease;\n}\n.chat-user {\n  background-color: #64788b;\n  color: #eff1f3;\n  margin-left: 25%;\n  border-bottom-right-radius: 0.5em;\n}\n.chat-assistant {\n  background-color: #e0e4e8;\n  color: #4b647d;\n  margin-right: 25%;\n  border-bottom-left-radius: 0.5em;\n}\n.chat-developer,\n.chat-system {\n  display: none;\n}\n\n.spinner-border {\n  display: block;\n  height: 1em;\n  width: 1em;\n  margin-left: auto;\n  margin-right: auto;\n}\n\ninput {\n  border: 0;\n  flex: 1;\n  margin: 0.2em 1em;\n}\n\ninput:focus {\n  outline-width: 0;\n  outline: none;\n}\n\n#input-form {\n  box-shadow: 0px 0px 10px lightgray;\n  display: flex;\n  height: 2.4em;\n  border-bottom-left-radius: 1.2em;\n  border-top-left-radius: 1.2em;\n  border-bottom-right-radius: 1.2em;\n  border-top-right-radius: 1.2em;\n}\n\nbutton {\n  border-bottom-left-radius: 1em;\n  border-top-left-radius: 1em;\n  border-bottom-right-radius: 1em;\n  border-top-right-radius: 1em;\n  background-color: #f5be41;\n  color: white;\n  margin: 0.2em;\n  border: 0px;\n  height: 2em;\n  width: 2em;\n}\n\nbutton:hover {\n  background-color: #f9b310;\n  color: #697d91;\n}\n\nbutton.disabled {\n  color: #697d91;\n  opacity: 0.75;\n  background-color: lightgray;\n}\n\nbutton .spinner-border {\n  margin: 0 !important;\n  width: 1.3em;\n  height: 1.3em;\n}\n\n.usage {\n  width: 100%;\n  margin-top: 1em;\n  display: block;\n  text-align: center;\n  color: darkgray;\n}\n\n.spinner-border {\n  margin-top: 2em;\n  margin-bottom: 2em;\n}\n.scroll-target {\n  height: 4em;\n  color: white;\n}\n</style>\n"],"sourceRoot":""}]);
 // Exports
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
 
@@ -651,8 +649,9 @@ const ENV = [
         ENDPOINT: '/v1/chat/completions',
         MODEL: 'gpt-oss:120b',
         REASONING: 'low',
-        WATT_CONSUMPTION: '180',
-        TOKEN: '' // insert your TOKEN here
+        JOULE_PER_INPUT_TOKEN: '0.1601',
+        JOULE_PER_OUTPUT_TOKEN: '1.9598',
+        TOKEN: 'sk-X1LqFq8EQtUJWOlGm6FDyw' // insert your TOKEN here
     },
     {
         NAME: 'BFH MLMP gemma (für extern)',
@@ -660,7 +659,8 @@ const ENV = [
         ENDPOINT: '/v1/chat/completions',
         MODEL: 'gemma-4-26b',
         REASONING: 'low',
-        WATT_CONSUMPTION: '180',
+        JOULE_PER_INPUT_TOKEN: '0.0916',
+        JOULE_PER_OUTPUT_TOKEN: '1.177',
         TOKEN: '' // insert your TOKEN here
     },
     {
@@ -669,7 +669,8 @@ const ENV = [
         ENDPOINT: '/v1/chat/completions',
         MODEL: 'gpt-oss:120b',
         REASONING: 'low',
-        WATT_CONSUMPTION: '180',
+        JOULE_PER_INPUT_TOKEN: '0.1601',
+        JOULE_PER_OUTPUT_TOKEN: '1.9598',
         TOKEN: '' // insert your TOKEN here
     },
     {
@@ -678,7 +679,8 @@ const ENV = [
         ENDPOINT: '/v1/chat/completions',
         MODEL: 'gpt-oss:120b',
         REASONING: 'medium',
-        WATT_CONSUMPTION: '180',
+        JOULE_PER_INPUT_TOKEN: '0.2',
+        JOULE_PER_OUTPUT_TOKEN: '2',
         TOKEN: '' // 'not_needed_for_localhost'
     },
     {
@@ -687,7 +689,8 @@ const ENV = [
         ENDPOINT: '/v1/chat/completions',
         MODEL: 'gpt-5.6-luna', // 'gpt-3.5-turbo',
         REASONING: '',
-        WATT_CONSUMPTION: '180',
+        JOULE_PER_INPUT_TOKEN: '0.2',
+        JOULE_PER_OUTPUT_TOKEN: '2',
         TOKEN: '' // insert token here
     }
 ];
@@ -737,41 +740,57 @@ __webpack_require__.r(__webpack_exports__);
         const percent = (0,vue__WEBPACK_IMPORTED_MODULE_0__.ref)(0);
         const showCardModal = (0,vue__WEBPACK_IMPORTED_MODULE_0__.ref)(false);
         const showSettings = (0,vue__WEBPACK_IMPORTED_MODULE_0__.ref)(false);
-        document.addEventListener('keydown', function (event) {
-            if (showCardModal.value && event.key == 'Enter') {
+        document.addEventListener("keydown", function (event) {
+            if (showCardModal.value && event.key == "Enter") {
                 showCardModal.value = false;
             }
-            else if (event.key == 'Enter' && _store__WEBPACK_IMPORTED_MODULE_6__.store.textInput == '') {
+            else if (event.key == "Enter" && _store__WEBPACK_IMPORTED_MODULE_6__.store.textInput == "") {
                 showCard();
             }
         });
         // fast hack for displaying settings
-        showSettings.value = window.location.search.includes('settings=true');
+        showSettings.value = window.location.search.includes("settings=true");
         /**
          * Calculates the header buttons
+         * <div
+                class="toggle-button"
+                @click="store.toggleUseTools()"
+                :class="{ active: store.getUseTools() }"
+                :title="store.getUseTools() ? i18n('TOOL_USE_OFF') : i18n('TOOL_USE_ON')"
+              >
+                🔍
+              </div>
          */
         function getHeaderButtons() {
             return [
                 {
-                    icon: '🀙',
-                    title: _store__WEBPACK_IMPORTED_MODULE_6__.store.cardDrawn ? (0,_assets_i18n__WEBPACK_IMPORTED_MODULE_9__.i18n)('NEW_CARD') : (0,_assets_i18n__WEBPACK_IMPORTED_MODULE_9__.i18n)('SHOW_CARD'),
+                    icon: "🀙",
+                    title: _store__WEBPACK_IMPORTED_MODULE_6__.store.cardDrawn ? (0,_assets_i18n__WEBPACK_IMPORTED_MODULE_9__.i18n)("NEW_CARD") : (0,_assets_i18n__WEBPACK_IMPORTED_MODULE_9__.i18n)("SHOW_CARD"),
                     action: showCard,
                     style: _store__WEBPACK_IMPORTED_MODULE_6__.store.cardDrawn
-                        ? 'text-shadow: #fac300 0px 0 3px; line-height: 1.8em;'
-                        : 'line-height: 1.8em;'
+                        ? "text-shadow: #fac300 0px 0 3px; line-height: 1.8em;"
+                        : "line-height: 1.8em;",
                 },
                 {
-                    icon: '⟲',
-                    title: (0,_assets_i18n__WEBPACK_IMPORTED_MODULE_9__.i18n)('RESET'),
+                    icon: "⟲",
+                    title: (0,_assets_i18n__WEBPACK_IMPORTED_MODULE_9__.i18n)("RESET"),
                     action: resetUser,
-                    style: ''
+                    style: "",
                 },
                 {
-                    icon: _store__WEBPACK_IMPORTED_MODULE_6__.store.lang === _store__WEBPACK_IMPORTED_MODULE_6__.LANG.DE ? '🇩🇪' : '🇫🇷',
-                    title: (0,_assets_i18n__WEBPACK_IMPORTED_MODULE_9__.i18n)('LANGUAGE'),
+                    icon: "🔍",
+                    title: _store__WEBPACK_IMPORTED_MODULE_6__.store.getUseTools() ? (0,_assets_i18n__WEBPACK_IMPORTED_MODULE_9__.i18n)("TOOL_USE_OFF") : (0,_assets_i18n__WEBPACK_IMPORTED_MODULE_9__.i18n)("TOOL_USE_ON"),
+                    action: () => _store__WEBPACK_IMPORTED_MODULE_6__.store.toggleUseTools(),
+                    style: _store__WEBPACK_IMPORTED_MODULE_6__.store.getUseTools()
+                        ? "line-height: 2.8em; font-size: 1.5em; text-shadow: rgb(250, 195, 0) 0px 0px 3px; margin-right: 0.2em;"
+                        : "line-height: 2.8em; font-size: 1.5em; filter: saturate(0); margin-right: 0.2em;",
+                },
+                {
+                    icon: _store__WEBPACK_IMPORTED_MODULE_6__.store.lang === _store__WEBPACK_IMPORTED_MODULE_6__.LANG.DE ? "🇩🇪" : "🇫🇷",
+                    title: (0,_assets_i18n__WEBPACK_IMPORTED_MODULE_9__.i18n)("LANGUAGE"),
                     action: toggleLanguage,
-                    style: 'filter: saturate(0)'
-                }
+                    style: "filter: saturate(0)",
+                },
                 // {
                 //   icon: '⚙︎',
                 //   title: 'Einstellungen',
@@ -808,7 +827,7 @@ __webpack_require__.r(__webpack_exports__);
          * Resets the app to start with a new user
          */
         function resetUser() {
-            if (confirm((0,_assets_i18n__WEBPACK_IMPORTED_MODULE_9__.i18n)('RESET_USER'))) {
+            if (confirm((0,_assets_i18n__WEBPACK_IMPORTED_MODULE_9__.i18n)("RESET_USER"))) {
                 _store__WEBPACK_IMPORTED_MODULE_6__.store.resetUser();
             }
         }
@@ -833,13 +852,13 @@ __webpack_require__.r(__webpack_exports__);
          */
         function closeSettings() {
             showSettings.value = false;
-            window.location.search = 'settings=' + showSettings.value;
+            window.location.search = "settings=" + showSettings.value;
         }
         /**
          * Handles an error and displays it to the user
          * @param error   the error message to display to the user
          */
-        function handleError(e = (0,_assets_i18n__WEBPACK_IMPORTED_MODULE_9__.i18n)('UNKNOWN_ERROR')) {
+        function handleError(e = (0,_assets_i18n__WEBPACK_IMPORTED_MODULE_9__.i18n)("UNKNOWN_ERROR")) {
             error.value = e;
         }
         /**
@@ -847,7 +866,7 @@ __webpack_require__.r(__webpack_exports__);
          * @param i the position of the toast message
          */
         function getToastOpacity(i) {
-            return 'opacity: ' + (i + 1) / _store__WEBPACK_IMPORTED_MODULE_6__.store.toasts.length;
+            return "opacity: " + (i + 1) / _store__WEBPACK_IMPORTED_MODULE_6__.store.toasts.length;
         }
         const __returned__ = { version, token, error, percent, showCardModal, showSettings, getHeaderButtons, setToken, toggleLanguage, resetUser, reset, showCard, closeSettings, handleError, getToastOpacity, AuthForm: _components_AuthForm_vue__WEBPACK_IMPORTED_MODULE_2__["default"], ConnectModal: _components_ConnectModal_vue__WEBPACK_IMPORTED_MODULE_3__["default"], Settings: _components_Settings_vue__WEBPACK_IMPORTED_MODULE_4__["default"], Chat: _components_Chat_vue__WEBPACK_IMPORTED_MODULE_5__["default"], get store() { return _store__WEBPACK_IMPORTED_MODULE_6__.store; }, PowerSimulator: _components_PowerSimulator_vue__WEBPACK_IMPORTED_MODULE_7__["default"], QuizCardModal: _components_QuizCardModal_vue__WEBPACK_IMPORTED_MODULE_8__["default"], get i18n() { return _assets_i18n__WEBPACK_IMPORTED_MODULE_9__.i18n; } };
         Object.defineProperty(__returned__, '__isScriptSetup', { enumerable: false, value: true });
@@ -968,6 +987,7 @@ __webpack_require__.r(__webpack_exports__);
         const chatInput = (0,vue__WEBPACK_IMPORTED_MODULE_0__.ref)(null);
         let usage = -1;
         let inputTimeout = -1;
+        const usageInfo = (0,vue__WEBPACK_IMPORTED_MODULE_0__.ref)('');
         const loadingStyle = (0,vue__WEBPACK_IMPORTED_MODULE_0__.computed)(() => {
             return ('filter: blur(' +
                 (10 - Math.round(loadingPercent.value / 10)) +
@@ -976,31 +996,30 @@ __webpack_require__.r(__webpack_exports__);
                 ';');
         });
         /**
-         * Estimates the energy usage for an answer, based on the number of output tokens. Samsi et al. estimated the energy usage with 3 - 4 Joule per token, which equals to ~0.001 Wh
-         * @see Paper       Samsi et al. (2023): From Words to Watts: Benchmarking the Energy Costs of Large Language Model Inference. https://doi.org/10.48550/arXiv.2310.03003
-         * @see Blogpost    gpt-oss uses around 8.3 Wh per 100 output token, which seems way too high https://huggingface.co/blog/sasha/gpt-oss-energy
-         * @see YouTube     https://www.youtube.com/watch?v=zjG9TkfWd0o&t=143s
-         * @param tokens    number of output tokens of the answer
-         * @param tps       token per seconds generated, defaults to 70
-         * @returns         an estimation of energy (in Wh), based on the number of output tokens
+         * Estimates the energy usage for an answer, based on the number of input and output tokens.
+         * We measured the energy usage for inference on a M3Ultra Mac Studio
+         * Legacy: Samsi et al. estimated the energy usage with 3 - 4 Joule per token, which equals to ~0.001 Wh
+         * @see Paper           Samsi et al. (2023): From Words to Watts: Benchmarking the Energy Costs of Large Language Model Inference. https://doi.org/10.48550/arXiv.2310.03003
+         * @see Blogpost        gpt-oss uses around 8.3 Wh per 100 output token, which seems way too high https://huggingface.co/blog/sasha/gpt-oss-energy
+         * @see YouTube         https://www.youtube.com/watch?v=zjG9TkfWd0o&t=143s
+         * @param inputTokens   number of input tokens given to the llm
+         * @param outputTokens  number of output tokens given to the llm
+         * @returns             an estimation of energy (in Wh), based on the number of in- and output tokens
          */
-        function estimateEnergyUsage(tokens, tps = 70) {
-            // Mac Studio M3Utra uses up to 480W. That is 0.1333 Wh per second in full load (480 / 3600).
-            // however, he measures 120W: https://www.youtube.com/watch?v=zjG9TkfWd0o&t=143s TODO: own measurements
-            // we use the Watt per Token stored in ENV setup
-            const whPerSecond = Number(_store__WEBPACK_IMPORTED_MODULE_4__.store.connection.WATT_CONSUMPTION) / 3600;
-            // With gpt-oss:120b, it generates around 70 token/s.
-            const whPerToken = whPerSecond / tps;
-            const estimate = tokens * whPerToken;
-            return estimate;
-            // old samsi et al estimate: return (tokens * 3.5) / 3600; // 3.5 joules per token; 3600 J = 1 Wh
+        function estimateEnergyUsage(inputTokens, outputTokens) {
+            const joule = inputTokens * Number(_store__WEBPACK_IMPORTED_MODULE_4__.store.connection.JOULE_PER_INPUT_TOKEN) +
+                outputTokens * Number(_store__WEBPACK_IMPORTED_MODULE_4__.store.connection.JOULE_PER_OUTPUT_TOKEN);
+            return joule / 3600; // 1 J is a Ws, so 1 Wh has 3600 J
         }
         /**
          * Estimates the energy usage before knowing the answer
          * @returns         an estimation of energy (in Wh)
          */
         function preEstimateUsage() {
-            return usage > 1 ? usage : 1;
+            if (usage > 1)
+                return usage;
+            // with tool use activated, we assume more energy consumption
+            return _store__WEBPACK_IMPORTED_MODULE_4__.store.getUseTools() ? 3 : 1;
         }
         /**
          * Checks if a message is currently the last
@@ -1010,6 +1029,125 @@ __webpack_require__.r(__webpack_exports__);
          */
         function isLastMessage(index) {
             return _store__WEBPACK_IMPORTED_MODULE_4__.store.getVisibleMessages().length - index === 1;
+        }
+        function getUsageInfoString(usage, duration) {
+            const BR = '\n';
+            const wh = estimateEnergyUsage(usage.input_tokens, usage.output_tokens);
+            return '- Input tokens: ' + usage.input_tokens + BR +
+                '- Output tokens: ' + usage.output_tokens + BR +
+                '- ' + duration + ' s' + BR +
+                '- ' + wh.toFixed(2) + ' Wh' + BR +
+                '- ~' + (0,_toastService__WEBPACK_IMPORTED_MODULE_5__.getKiloCalsFromWatthour)(wh) + ' kcal';
+        }
+        /**
+         * Runs a search on duck duck go with a given query
+         * @param query the search string to query
+         */
+        function runSearch(query) {
+            return axios__WEBPACK_IMPORTED_MODULE_2__["default"]
+                .get(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`)
+                .then((res) => JSON.stringify(res.data));
+        }
+        /**
+         * Fetches the website from an url
+         * @param url the url to fetch
+         */
+        function fetchUrl(url) {
+            return axios__WEBPACK_IMPORTED_MODULE_2__["default"].get(url).then((res) => res.data.replace(/<(style|script)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, ''));
+        }
+        /**
+         * Sends a request to the inference service, and then performs the action needed
+         * for tool use
+         */
+        async function sendWithTools() {
+            const MAX_TOOL_CALLS = 5;
+            const SEARCH_TOOL = {
+                type: 'function',
+                function: {
+                    name: _models__WEBPACK_IMPORTED_MODULE_1__.TOOL_TYPE.SEARCH,
+                    description: 'Searches the web for current informations',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            query: { type: 'string', description: 'The search query.' }
+                        },
+                        required: ['query']
+                    }
+                }
+            };
+            const WEBSITE_TOOL = {
+                type: 'function',
+                function: {
+                    name: _models__WEBPACK_IMPORTED_MODULE_1__.TOOL_TYPE.SITE,
+                    description: 'Loads a website from a given URL',
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            query: { type: 'string', description: 'The url to load.' }
+                        },
+                        required: ['query']
+                    }
+                }
+            };
+            const body = {
+                model: _store__WEBPACK_IMPORTED_MODULE_4__.store.connection.MODEL,
+                messages: [..._store__WEBPACK_IMPORTED_MODULE_4__.store.chatMessages],
+                tools: _store__WEBPACK_IMPORTED_MODULE_4__.store.getUseTools() ? [
+                    SEARCH_TOOL,
+                    WEBSITE_TOOL
+                ] : [],
+                tool_choice: 'auto',
+                reasoning: {
+                    effort: _store__WEBPACK_IMPORTED_MODULE_4__.store.connection.REASONING
+                },
+                'background-tasks': {
+                    follow_up_generation: false
+                }
+            };
+            // chatGPT does not like these params
+            if (!_store__WEBPACK_IMPORTED_MODULE_4__.store.connection.REASONING) {
+                delete body.reasoning;
+                delete body['background-tasks'];
+            }
+            const config = {
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: 'Bearer ' + props.token,
+                    'Cache-Control': 'no-cache, no-store'
+                }
+            };
+            const url = _store__WEBPACK_IMPORTED_MODULE_4__.store.connection.BASE_URL + _store__WEBPACK_IMPORTED_MODULE_4__.store.connection.ENDPOINT;
+            let messages = [..._store__WEBPACK_IMPORTED_MODULE_4__.store.chatMessages];
+            // loop for maximum tool calls
+            for (let i = 0; i < MAX_TOOL_CALLS; i++) {
+                const result = await axios__WEBPACK_IMPORTED_MODULE_2__["default"].post(url, { ...body, messages }, config);
+                const msg = result.data.choices[0].message;
+                messages.push(msg);
+                if (!msg.tool_calls?.length) {
+                    return result;
+                }
+                for (const call of msg.tool_calls) {
+                    const args = JSON.parse(call.function.arguments);
+                    switch (call.function.name) {
+                        case _models__WEBPACK_IMPORTED_MODULE_1__.TOOL_TYPE.SEARCH:
+                            _toastService__WEBPACK_IMPORTED_MODULE_5__["default"].toolToast(_models__WEBPACK_IMPORTED_MODULE_1__.TOOL_TYPE.SEARCH);
+                            messages.push({
+                                role: _models__WEBPACK_IMPORTED_MODULE_1__.USER_ROLE.TOOL,
+                                tool_call_id: call.id,
+                                content: await runSearch(args.query)
+                            });
+                            break;
+                        case _models__WEBPACK_IMPORTED_MODULE_1__.TOOL_TYPE.SITE:
+                            _toastService__WEBPACK_IMPORTED_MODULE_5__["default"].toolToast(_models__WEBPACK_IMPORTED_MODULE_1__.TOOL_TYPE.SITE);
+                            messages.push({
+                                role: _models__WEBPACK_IMPORTED_MODULE_1__.USER_ROLE.TOOL,
+                                tool_call_id: call.id,
+                                content: await fetchUrl(args.url)
+                            });
+                            break;
+                    }
+                }
+            }
         }
         /**
          * Sends a message to the model, with all previous messages as context
@@ -1023,22 +1161,8 @@ __webpack_require__.r(__webpack_exports__);
                 loading: false
             };
             loadingPercent.value = 0;
+            usageInfo.value = '';
             _store__WEBPACK_IMPORTED_MODULE_4__.store.chatMessages.push(message);
-            const body = {
-                model: _store__WEBPACK_IMPORTED_MODULE_4__.store.connection.MODEL,
-                messages: [..._store__WEBPACK_IMPORTED_MODULE_4__.store.chatMessages],
-                reasoning: {
-                    effort: _store__WEBPACK_IMPORTED_MODULE_4__.store.connection.REASONING
-                },
-                'background-tasks': {
-                    follow_up_generation: false
-                }
-            };
-            // chatGPT does not like these params
-            if (!_store__WEBPACK_IMPORTED_MODULE_4__.store.connection.REASONING) {
-                delete body.reasoning;
-                delete body['background-tasks'];
-            }
             _store__WEBPACK_IMPORTED_MODULE_4__.store.textInput = '';
             const answerMessage = {
                 role: _models__WEBPACK_IMPORTED_MODULE_1__.USER_ROLE.AI,
@@ -1062,18 +1186,12 @@ __webpack_require__.r(__webpack_exports__);
                         }
                     });
                 }),
-                axios__WEBPACK_IMPORTED_MODULE_2__["default"]
-                    .post(_store__WEBPACK_IMPORTED_MODULE_4__.store.connection.BASE_URL + _store__WEBPACK_IMPORTED_MODULE_4__.store.connection.ENDPOINT, body, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: 'Bearer ' + props.token,
-                        'Cache-Control': 'no-cache, no-store'
-                    }
-                })
+                sendWithTools()
                     .then((result) => {
                     const duration = Math.round((Date.now() - time) / 1000);
-                    usage = estimateEnergyUsage(result.data.usage.completion_tokens, result.data.usage.generation_tokens_per_second);
+                    usage = estimateEnergyUsage(result.data.usage.input_tokens, result.data.usage.output_tokens);
                     _store__WEBPACK_IMPORTED_MODULE_4__.store.setTarget(usage);
+                    usageInfo.value = getUsageInfoString(result.data.usage, duration);
                     console.log('Energie verbraucht: ' +
                         usage.toFixed(2) +
                         ' Wh in ' +
@@ -1116,7 +1234,7 @@ __webpack_require__.r(__webpack_exports__);
                 chatInput.value?.focus();
             }
         }
-        const __returned__ = { props, md, emit, chat, loadingPercent, userInput, chatInput, get usage() { return usage; }, set usage(v) { usage = v; }, get inputTimeout() { return inputTimeout; }, set inputTimeout(v) { inputTimeout = v; }, loadingStyle, estimateEnergyUsage, preEstimateUsage, isLastMessage, send, inputting, setPrompt, get store() { return _store__WEBPACK_IMPORTED_MODULE_4__.store; }, PromptExamples: _PromptExamples_vue__WEBPACK_IMPORTED_MODULE_6__["default"], get i18n() { return _assets_i18n__WEBPACK_IMPORTED_MODULE_7__.i18n; } };
+        const __returned__ = { props, md, emit, chat, loadingPercent, userInput, chatInput, get usage() { return usage; }, set usage(v) { usage = v; }, get inputTimeout() { return inputTimeout; }, set inputTimeout(v) { inputTimeout = v; }, usageInfo, loadingStyle, estimateEnergyUsage, preEstimateUsage, isLastMessage, getUsageInfoString, runSearch, fetchUrl, sendWithTools, send, inputting, setPrompt, get USER_ROLE() { return _models__WEBPACK_IMPORTED_MODULE_1__.USER_ROLE; }, get store() { return _store__WEBPACK_IMPORTED_MODULE_4__.store; }, PromptExamples: _PromptExamples_vue__WEBPACK_IMPORTED_MODULE_6__["default"], get i18n() { return _assets_i18n__WEBPACK_IMPORTED_MODULE_7__.i18n; } };
         Object.defineProperty(__returned__, '__isScriptSetup', { enumerable: false, value: true });
         return __returned__;
     }
@@ -1431,14 +1549,14 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
                         (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)(" display error message "),
                         ($setup.error)
                             ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_6, [
-                                (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("h2", null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($setup.i18n('ERROR')), 1 /* TEXT */),
+                                (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("h2", null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($setup.i18n("ERROR")), 1 /* TEXT */),
                                 (0,vue__WEBPACK_IMPORTED_MODULE_0__.createTextVNode)(" " + (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($setup.error) + " ", 1 /* TEXT */),
                                 _cache[3] || (_cache[3] = (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("br", null, null, -1 /* CACHED */)),
                                 (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_7, [
-                                    (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("button", { onClick: $setup.reset }, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($setup.i18n('RESET')), 1 /* TEXT */),
+                                    (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("button", { onClick: $setup.reset }, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($setup.i18n("RESET")), 1 /* TEXT */),
                                     (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("button", {
                                         onClick: _cache[0] || (_cache[0] = ($event) => ($setup.error = ''))
-                                    }, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($setup.i18n('OK')), 1 /* TEXT */)
+                                    }, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($setup.i18n("OK")), 1 /* TEXT */)
                                 ])
                             ]))
                             : ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, { key: 1 }, [
@@ -1554,25 +1672,26 @@ const _hoisted_1 = {
     ref: "chat-list",
     class: "chat-list"
 };
-const _hoisted_2 = {
+const _hoisted_2 = ["title"];
+const _hoisted_3 = {
     key: 0,
     class: "spinner-border",
     role: "status"
 };
-const _hoisted_3 = ["innerHTML"];
-const _hoisted_4 = {
+const _hoisted_4 = ["innerHTML"];
+const _hoisted_5 = {
     action: "#",
     ref: "input-form",
     id: "input-form"
 };
-const _hoisted_5 = ["placeholder"];
-const _hoisted_6 = ["disabled"];
-const _hoisted_7 = {
+const _hoisted_6 = ["placeholder"];
+const _hoisted_7 = ["disabled"];
+const _hoisted_8 = {
     key: 0,
     class: "spinner-border",
     role: "status"
 };
-const _hoisted_8 = { key: 1 };
+const _hoisted_9 = { key: 1 };
 function render(_ctx, _cache, $props, $setup, $data, $options) {
     return ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, [
         (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("ul", _hoisted_1, [
@@ -1581,36 +1700,43 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
                     class: (0,vue__WEBPACK_IMPORTED_MODULE_0__.normalizeClass)('message-bubble chat-' + message.role),
                     style: (0,vue__WEBPACK_IMPORTED_MODULE_0__.normalizeStyle)(message.percent != undefined && message.percent < 100 && $setup.isLastMessage(i)
                         ? $setup.loadingStyle
-                        : '')
+                        : ''),
+                    title: i == $setup.store.getVisibleMessages().length - 1 && message.role == $setup.USER_ROLE.AI
+                        ? $setup.usageInfo
+                        : ''
                 }, [
                     (message.loading)
-                        ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_2, [...(_cache[1] || (_cache[1] = [
+                        ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_3, [...(_cache[1] || (_cache[1] = [
                                 (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", { class: "visually-hidden" }, "Loading...", -1 /* CACHED */)
                             ]))]))
                         : ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", {
                             key: 1,
                             innerHTML: $setup.md.render(message.content)
-                        }, null, 8 /* PROPS */, _hoisted_3))
-                ], 6 /* CLASS, STYLE */));
+                        }, null, 8 /* PROPS */, _hoisted_4))
+                ], 14 /* CLASS, STYLE, PROPS */, _hoisted_2));
             }), 256 /* UNKEYED_FRAGMENT */)),
             _cache[2] || (_cache[2] = (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("li", { style: { "height": "10em", "color": "white", "box-shadow": "0 0 0 white" } }, null, -1 /* CACHED */))
         ], 512 /* NEED_PATCH */),
-        (!$setup.store.isPedalling() && $setup.store.getExamplePrompts().length > 0 && $setup.store.examplePromptsVisible)
+        (!$setup.store.isPedalling() &&
+            $setup.store.getExamplePrompts().length > 0 &&
+            $setup.store.examplePromptsVisible)
             ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)($setup["PromptExamples"], {
                 key: 0,
                 onOnSelectPrompt: $setup.setPrompt,
                 "user-inputting": $setup.userInput
             }, null, 8 /* PROPS */, ["user-inputting"]))
             : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true),
-        (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("form", _hoisted_4, [
+        (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("form", _hoisted_5, [
             (0,vue__WEBPACK_IMPORTED_MODULE_0__.withDirectives)((0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("input", {
                 autofocus: "",
                 type: "text",
                 "onUpdate:modelValue": _cache[0] || (_cache[0] = ($event) => (($setup.store.textInput) = $event)),
-                placeholder: $setup.i18n($setup.store.getExamplePrompts().length > 0 ? 'CHAT_PLACEHOLDER_PROMPTS' : 'CHAT_PLACEHOLDER'),
+                placeholder: $setup.i18n($setup.store.getExamplePrompts().length > 0
+                    ? 'CHAT_PLACEHOLDER_PROMPTS'
+                    : 'CHAT_PLACEHOLDER'),
                 onInput: $setup.inputting,
                 ref: "chatInput"
-            }, null, 40 /* PROPS, NEED_HYDRATION */, _hoisted_5), [
+            }, null, 40 /* PROPS, NEED_HYDRATION */, _hoisted_6), [
                 [vue__WEBPACK_IMPORTED_MODULE_0__.vModelText, $setup.store.textInput]
             ]),
             (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("button", {
@@ -1620,11 +1746,11 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
                 class: (0,vue__WEBPACK_IMPORTED_MODULE_0__.normalizeClass)({ disabled: $setup.store.isPedalling() })
             }, [
                 ($setup.store.isPedalling())
-                    ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_7, [...(_cache[3] || (_cache[3] = [
+                    ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_8, [...(_cache[3] || (_cache[3] = [
                             (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", { class: "visually-hidden" }, "...", -1 /* CACHED */)
                         ]))]))
-                    : ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("span", _hoisted_8, "⬆︎"))
-            ], 10 /* CLASS, PROPS */, _hoisted_6)
+                    : ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("span", _hoisted_9, "⬆︎"))
+            ], 10 /* CLASS, PROPS */, _hoisted_7)
         ], 512 /* NEED_PATCH */)
     ], 64 /* STABLE_FRAGMENT */));
 }
@@ -2042,7 +2168,7 @@ class AntService {
             }));
         }
         else {
-            console.warn('No target set yet, do not notify subscribers!');
+            // console.warn('No target set yet, do not notify subscribers!');
         }
     }
     /**
@@ -2337,6 +2463,14 @@ const KEYS = {
     GO: {
         de: 'LOS!',
         fr: 'PARTEZ !'
+    },
+    TOOL_USE_ON: {
+        de: 'Suchtools aktivieren',
+        fr: 'Activer les outils de recherche'
+    },
+    TOOL_USE_OFF: {
+        de: 'Suchtools deaktivieren',
+        fr: 'Desactiver les outils de recherche'
     }
 };
 
@@ -2537,19 +2671,49 @@ const QUIZ = [
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   getSystemPrompt: () => (/* binding */ getSystemPrompt)
+/* harmony export */   getSystemPrompts: () => (/* binding */ getSystemPrompts)
 /* harmony export */ });
 /* harmony import */ var _models__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @/models */ "./src/models.ts");
 
-function getSystemPrompt(l) {
-    return SYSTEM_PROMPT;
+function getSystemPrompts(l, toolUse) {
+    const systemPromps = [GENERAL_INSTRUCTIONS[l], DATE_INFO[l]];
+    if (!toolUse)
+        systemPromps.push(STUDI_INFO[l]);
+    return systemPromps;
 }
-const SYSTEM_PROMPT = {
-    role: _models__WEBPACK_IMPORTED_MODULE_0__.USER_ROLE.SYSTEM,
-    content: `
-    Beantworte die Fragen nicht allzu ausführlich, ausser du wirst explizit darum gebeten. Du bist mit dem User per du.
-    Vermeide LaTeX-Formeln, diese werden in der Anzeige nicht unterstützt.
-    Wenn du zum Thema Medizininformatik-Studium oder Studium in Biel gefragt wirst, beachte folgende Informationen:
+const GENERAL_INSTRUCTIONS = {
+    de: {
+        role: _models__WEBPACK_IMPORTED_MODULE_0__.USER_ROLE.SYSTEM,
+        content: `Beantworte die Fragen nicht allzu ausführlich, ausser du wirst explizit darum gebeten. 
+              Nutze die Suche, wenn du etwas nicht weisst.
+              Antworte in der Sprache, in der der User dich angesprochen hat.
+              Du bist mit dem User per du.
+              Du bist enerKI, das interaktive Experiment um die von KI verbrauchte Energie erfahrbar zu machen. Um die Antwort auf eine Frage zu sehen, müssen User*innen auf einem Fahrradergometer die verbrauchte Energie selber erarbeiten - oder sprichwörtlich "erfahren". Mehr Informationen unter https://enerki.ti.bfh.ch/. Erwähne das aber nur, wenn du explizit danach gefragt wirst.
+              Vermeide LaTeX-Formeln, diese werden in der Anzeige nicht unterstützt.`
+    },
+    fr: {
+        role: _models__WEBPACK_IMPORTED_MODULE_0__.USER_ROLE.SYSTEM,
+        content: `Ne réponds pas de manière trop détaillée aux questions, sauf si on te le demande explicitement.
+              Utilise la fonction de recherche si tu ne connais pas la réponse.
+              Tu es en termes familiers avec l'utilisateur.
+              Tu es enerKI, l'expérience interactive qui permet de prendre conscience de l'énergie consommée par l'IA. Pour voir la réponse à une question, les utilisateurs doivent produire eux-mêmes l’énergie consommée sur un vélo d’appartement – ou, pour ainsi dire, « en faire l’expérience ». Plus d’informations sur https://enerki.ti.bfh.ch/. Mais n'en parle que si on te le demande explicitement.
+              Évite les formules LaTeX, elles ne sont pas prises en charge par l’affichage.`
+    }
+};
+const DATE_INFO = {
+    de: {
+        role: _models__WEBPACK_IMPORTED_MODULE_0__.USER_ROLE.SYSTEM,
+        content: 'Das heutige Datum ist ' + new Date().toLocaleDateString() + '.'
+    },
+    fr: {
+        role: _models__WEBPACK_IMPORTED_MODULE_0__.USER_ROLE.SYSTEM,
+        content: 'La date d\'aujourd\'hui est ' + new Date().toLocaleDateString() + '.'
+    }
+};
+const STUDI_INFO = {
+    de: {
+        role: _models__WEBPACK_IMPORTED_MODULE_0__.USER_ROLE.SYSTEM,
+        content: `Falls du zum Thema Medizininformatik-Studium oder Studium in Biel gefragt wirst, beachte folgende Informationen:
     # Bachelor of Science Medizininformatik Berner Fachhochschule BFH
     Sie wollen die digitale Zukunft des Gesundheitswesens mitgestalten? In diesem Studium lernen Sie, wie mithilfe der Medizininformatik mehr Sicherheit, Effizienz und Behandlungsqualität für Patient*innen entsteht.
     Der schweizweit einzigartige Bachelor kombiniert medizinisches Prozesswissen, Informatik und Managementkompetenzen und macht Sie zur sehr gesuchten Fachperson. Sie studieren praxisnah mittels Projektarbeiten in Voll- oder Teilzeit, teilweise im Hybrid- und Online-Unterricht.
@@ -2618,6 +2782,74 @@ const SYSTEM_PROMPT = {
      - Teilzeitstudium: Das Teilzeitstudium dauert 8 Semester. Der Unterricht findet jeweils am Mittwochnachmittag (i.d.R. ab 14:20 Uhr) sowie ganztägig am Donnerstag und Freitag in Biel statt. Parallel zum Studium können Sie auch eine Berufstätigkeit ausüben.
      ### Praxisintegriertes Bachelor-Studium PiBS
      Falls Sie über eine eidgenössische oder eidgenössisch anerkannte gymnasiale Maturität, aber keine berufliche Erfahrung verfügen, können Sie das Bachelor-Studium mit einem gleichzeitigen Berufspraktikum im Modell Praxisintegrierten Bachelor-Studium (PiBS) kombinieren. Das PiBS dauert vier Jahre. Der Praxisanteil beträgt 40% und setzt sich zusammen aus dem Praktikum im Unternehmen, den Projektarbeiten und der Bachelorarbeit. Die Struktur des Studiums ist identisch mit dem Teilzeitstudium.`
+    },
+    fr: {
+        role: _models__WEBPACK_IMPORTED_MODULE_0__.USER_ROLE.SYSTEM,
+        content: `Si l’on vous pose des questions sur les études en informatique médicale ou sur les études à Bienne, veuillez tenir compte des informations suivantes :
+    # Bachelor of Science en informatique médicale à la Haute école spécialisée bernoise (BFH)
+    Vous souhaitez contribuer à façonner l’avenir numérique du secteur de la santé ? Dans le cadre de ce cursus, vous apprendrez comment l’informatique médicale permet d’améliorer la sécurité, l’efficacité et la qualité des soins prodigués aux patient·e·s.
+    Ce bachelor, unique en Suisse, allie la connaissance des processus médicaux, l’informatique et les compétences en gestion, et fait de vous un·e professionnel·le très recherché·e. Vous étudiez de manière pratique à travers des projets, à temps plein ou à temps partiel, avec des cours partiellement en présentiel, en hybride et en ligne.
+
+    ## Fiche descriptive
+    - Titre/diplôme : Bachelor of Science en informatique médicale (BSc)
+    - Spécialisations
+      - Traitement avancé des données
+      - Design Thinking
+    - Mode d’études
+      - Temps plein (6 semestres)
+      - Temps partiel ou cursus de bachelor intégré à la pratique (PiBS) (8 semestres)
+    - Début des études : septembre (semaine 38)
+    - Date limite d’inscription : 31 juillet
+    - Nombre d'ECTS : 180 ECTS
+    - Langue d'enseignement : allemand
+    - Lieu d'études : Bienne
+    - Département : Technique et informatique
+    - Contact : Prof. Michael Lehmann, responsable de l'informatique médicale, +41 32 321 64 36, michael.lehmann@bfh.ch
+    - URL : https://www.bfh.ch/de/studium/bachelor/medizininformatik/
+    
+    
+    ## Axes de formation
+    La médecine fondée sur les données et la convivialité des applications intelligentes dans les hôpitaux, les cabinets médicaux ou les foyers privés constituent deux de nos axes prioritaires. Les fondements de cette formation : la médecine, l’informatique, le design et les processus.
+    ### Ce que vous apporte cette formation
+    Vous concevez des solutions informatiques et de numérisation d’avenir pour notre système de santé, et vous développez et mettez en œuvre des prototypes. Vous suivrez une formation axée sur la pratique, en exclusivité en Suisse, au sein d’un « Living Lab » unique en son genre qui regroupe tous les maillons du système de santé.
+    Votre future activité professionnelle s’inscrira dans le cadre d’équipes de chefs de projet ou dans la gestion et le développement d’applications médicales.
+    Vos employeurs seront des hôpitaux, des entreprises, des administrations et des cabinets de conseil.
+    ### Les spécialisations
+    Organisez vos études en fonction de vos centres d’intérêt et de votre disponibilité : à temps partiel, à temps plein ou en alternance.
+
+    #### Traitement avancé des données
+    En mettant l’accent sur les mathématiques spécifiques à la science des données, à la Business Intelligence (BI), au Deep Learning et à la mHealth, vous apprendrez les méthodes de l’« ingénierie des données », de la collecte à l’analyse en passant par le traitement des données.
+    ##### Contenus
+    - Définition et traitement d’un cas d’application spécifique à la mHealth
+    - Analyse des données à l’aide de méthodes de science des données
+    - Compréhension des données médicales
+
+    #### Design Thinking
+    En mettant l'accent sur l'ingénierie des systèmes, l'ingénierie des processus métier et les méthodes de projet agiles, vous apprendrez comment procéder à une décomposition, une planification et une mise en œuvre structurées et axées sur le travail d'équipe dans le cadre de grands projets TIC complexes. Vous acquerrez également une connaissance approfondie des thèmes liés à la conception centrée sur l'utilisateur, à la gestion de projet professionnelle et innovante, ainsi qu'à la gestion agile des applications.
+    ##### Contenus
+    - Concevoir des processus médicaux
+    - Découvrir des méthodes créatives
+    - Gestion de projet moderne et agile
+    - Conception de solutions détaillées dans le cadre d’une vision d’ensemble   
+    
+    ## Perspectives professionnelles
+    En tant que titulaire d'une licence en informatique médicale, vous concevez des logiciels médicaux et des architectures TIC, vous êtes responsable de l'exploitation et du développement d'applications médicales ou de la mise en œuvre de projets d'intégration de divers logiciels hospitaliers.
+    Vous maîtrisez les processus médicaux et les associez à vos compétences en informatique, en numérisation et en gestion pour occuper des postes de direction de projet, de développement et de gestion au sein d’hôpitaux, dans l’industrie, au sein des administrations, dans le secteur des assurances et dans la recherche. Grâce à l’institut de recherche intégré, vous bénéficiez également du vaste réseau de la BFH.
+    
+    - Master en ingénierie (MSc) : spécialisation en ingénierie médicale : en tant que titulaire d'un Master of Science en ingénierie avec spécialisation en ingénierie médicale, vous contribuez à améliorer la qualité de vie de nombreux patient·e·s grâce à vos connaissances approfondies en ingénierie médicale.
+    - Master en ingénierie (MSc) : spécialisation en ingénierie de gestion : en tant que titulaire d’un Master of Science en ingénierie avec une spécialisation en ingénierie de gestion, vous concevez, développez et mettez en œuvre des produits et des services.
+    - Master en ingénierie (MSc) : spécialisation en informatique : en tant que titulaire d’un Master of Science en ingénierie avec une spécialisation en informatique, vous développez des systèmes et des architectures TIC innovants en étroite collaboration avec les utilisateurs finaux et les parties prenantes.
+    
+    ## Durée et contenu des études
+     Choisissez la formule d'études qui correspond à vos besoins professionnels et personnels. Ce bachelor est dispensé en allemand et propose les spécialisations « Advanced Data Processing » et « Design Thinking ».
+     ### Études à temps plein ou à temps partiel
+     - Études à temps plein : vous étudiez à Bienne et obtenez le diplôme de bachelor après une durée minimale de 6 semestres.
+     - Études à temps partiel : les études à temps partiel durent 8 semestres. Les cours ont lieu le mercredi après-midi (en général à partir de 14 h 20) ainsi que toute la journée le jeudi et le vendredi à Bienne. Vous pouvez exercer une activité professionnelle parallèlement à vos études.
+    
+    ### Cursus de licence intégré à la pratique (PiBS)
+     Si vous êtes titulaire d'une maturité gymnasiale fédérale ou reconnue au niveau fédéral, mais que vous n'avez pas d'expérience professionnelle, vous pouvez combiner le cursus de licence avec un stage professionnel parallèle dans le cadre du modèle de cursus de licence intégré à la pratique (PiBS). Le PiBS dure quatre ans. La partie pratique représente 40 % du cursus et se compose du stage en entreprise, des travaux de projet et du mémoire de licence. La structure du cursus est identique à celle du cursus à temps partiel.
+     `
+    }
 };
 
 
@@ -2654,6 +2886,7 @@ app.mount('#app');
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   TOOL_TYPE: () => (/* binding */ TOOL_TYPE),
 /* harmony export */   USER_ROLE: () => (/* binding */ USER_ROLE)
 /* harmony export */ });
 var USER_ROLE;
@@ -2662,11 +2895,17 @@ var USER_ROLE;
     USER_ROLE["AI"] = "assistant";
     USER_ROLE["DEV"] = "developer";
     USER_ROLE["SYSTEM"] = "system";
+    USER_ROLE["TOOL"] = "tool";
 })(USER_ROLE || (USER_ROLE = {}));
 ;
 ;
 ;
 ;
+var TOOL_TYPE;
+(function (TOOL_TYPE) {
+    TOOL_TYPE["SEARCH"] = "web_search";
+    TOOL_TYPE["SITE"] = "web_site";
+})(TOOL_TYPE || (TOOL_TYPE = {}));
 
 
 /***/ },
@@ -2743,6 +2982,7 @@ var STORE_KEY;
 })(STORE_KEY || (STORE_KEY = {}));
 ;
 ;
+const USE_TOOLS = false;
 const storeObj = {
     power: new _antService__WEBPACK_IMPORTED_MODULE_1__.PowerService({ debug: false }),
     heartRate: new _antService__WEBPACK_IMPORTED_MODULE_1__.HeartRateService(),
@@ -2754,7 +2994,8 @@ const storeObj = {
     textInput: '',
     examplePromptsVisible: true,
     isDebug: false,
-    chatMessages: [(0,_assets_systemprompt__WEBPACK_IMPORTED_MODULE_5__.getSystemPrompt)(LANG.DE)],
+    useTools: USE_TOOLS,
+    chatMessages: [...(0,_assets_systemprompt__WEBPACK_IMPORTED_MODULE_5__.getSystemPrompts)(LANG.DE, USE_TOOLS)],
     lang: LANG.DE,
     connection: { ..._env__WEBPACK_IMPORTED_MODULE_4__.ENV[0] },
     setExamplePromptsVisible(v) {
@@ -2794,7 +3035,7 @@ const storeObj = {
      * Resets the chat log and everything, when a new user is using the device
      */
     resetUser() {
-        this.chatMessages = [(0,_assets_systemprompt__WEBPACK_IMPORTED_MODULE_5__.getSystemPrompt)(this.lang)];
+        this.chatMessages = [...(0,_assets_systemprompt__WEBPACK_IMPORTED_MODULE_5__.getSystemPrompts)(this.lang, this.useTools)];
         this.toasts = [];
         this.activeCard = _quizService__WEBPACK_IMPORTED_MODULE_3__["default"].drawRandomQuizCard();
         this.cardDrawn = false;
@@ -2895,8 +3136,17 @@ const storeObj = {
             return false;
         }
     },
+    toggleUseTools() {
+        this.useTools = !this.useTools;
+    },
+    getUseTools() {
+        return this.useTools;
+    },
+    /**
+     *
+     * @param newConnection
+     */
     setConnection(newConnection) {
-        console.log('set connection', newConnection);
         this.connection = newConnection;
         console.log(this);
     }
@@ -2964,10 +3214,13 @@ function getPersisted(key) {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "default": () => (/* binding */ ToastService)
+/* harmony export */   "default": () => (/* binding */ ToastService),
+/* harmony export */   getKiloCalsFromWatthour: () => (/* binding */ getKiloCalsFromWatthour)
 /* harmony export */ });
 /* harmony import */ var _assets_i18n__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./assets/i18n */ "./src/assets/i18n.ts");
-/* harmony import */ var _store__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./store */ "./src/store.ts");
+/* harmony import */ var _models__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./models */ "./src/models.ts");
+/* harmony import */ var _store__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./store */ "./src/store.ts");
+
 
 
 var Replacer;
@@ -3125,6 +3378,22 @@ const energyUsed = {
         'Ouf ! Tu viens de brûler plus de ' + Replacer.KCAL + ' kcal !'
     ]
 };
+const webSearch = {
+    de: [
+        'enerKI ruft eine Website ab...'
+    ],
+    fr: [
+        'enerKI accède à un site web...'
+    ]
+};
+const webSite = {
+    de: [
+        'enerKI führt eine Internetsuche durch...'
+    ],
+    fr: [
+        'enerKI effectue une recherche sur Internet...'
+    ]
+};
 let lastToast = 0;
 function lastToastExpired(override = false) {
     const expired = Date.now() - MINIMAL_TIME_BETWEEN_TOASTS > lastToast;
@@ -3150,12 +3419,12 @@ class ToastService {
     static done = false;
     static async startToast() {
         return new Promise((resolve) => {
-            lastToastExpired() && _store__WEBPACK_IMPORTED_MODULE_1__.store.addToast(getRandom(_store__WEBPACK_IMPORTED_MODULE_1__.store.isDebug ? startDebug[_store__WEBPACK_IMPORTED_MODULE_1__.store.lang] : start[_store__WEBPACK_IMPORTED_MODULE_1__.store.lang]), 3000);
+            lastToastExpired() && _store__WEBPACK_IMPORTED_MODULE_2__.store.addToast(getRandom(_store__WEBPACK_IMPORTED_MODULE_2__.store.isDebug ? startDebug[_store__WEBPACK_IMPORTED_MODULE_2__.store.lang] : start[_store__WEBPACK_IMPORTED_MODULE_2__.store.lang]), 3000);
             this.done = false;
             const interval = 2000;
             ['READY', 'STEADY', 'GO'].forEach((key, i) => {
                 setTimeout(() => {
-                    _store__WEBPACK_IMPORTED_MODULE_1__.store.addToast((0,_assets_i18n__WEBPACK_IMPORTED_MODULE_0__.i18n)(key), interval - 50);
+                    _store__WEBPACK_IMPORTED_MODULE_2__.store.addToast((0,_assets_i18n__WEBPACK_IMPORTED_MODULE_0__.i18n)(key), interval - 50);
                 }, (i + 1) * interval);
             });
             setTimeout(() => {
@@ -3164,7 +3433,7 @@ class ToastService {
         });
     }
     static stillPedalingToast() {
-        lastToastExpired(true) && _store__WEBPACK_IMPORTED_MODULE_1__.store.addToast(getRandom(reallyDone[_store__WEBPACK_IMPORTED_MODULE_1__.store.lang]), 3000);
+        lastToastExpired(true) && _store__WEBPACK_IMPORTED_MODULE_2__.store.addToast(getRandom(reallyDone[_store__WEBPACK_IMPORTED_MODULE_2__.store.lang]), 3000);
     }
     static progressToast(percent, loaded, currentWatts) {
         if (this.done)
@@ -3173,52 +3442,58 @@ class ToastService {
             this.highPowerTimeout = true;
             // wait 20 seconds before we trigger this toast again
             window.setTimeout(() => this.highPowerTimeout = false, 20000);
-            return lastToastExpired() && _store__WEBPACK_IMPORTED_MODULE_1__.store.addToast(getRandom(highPower[_store__WEBPACK_IMPORTED_MODULE_1__.store.lang], Replacer.WATT, currentWatts.toString()), 3000);
+            return lastToastExpired() && _store__WEBPACK_IMPORTED_MODULE_2__.store.addToast(getRandom(highPower[_store__WEBPACK_IMPORTED_MODULE_2__.store.lang], Replacer.WATT, currentWatts.toString()), 3000);
         }
         else if (currentWatts < 10) {
             if (!this.lowPowerTimeout) {
                 this.lowPowerTimeout = true;
                 // wait 10 seconds before we trigger this toast again
                 window.setTimeout(() => this.lowPowerTimeout = false, 10000);
-                return lastToastExpired() && _store__WEBPACK_IMPORTED_MODULE_1__.store.addToast(getRandom(getStarted[_store__WEBPACK_IMPORTED_MODULE_1__.store.lang]), 5000);
+                return lastToastExpired() && _store__WEBPACK_IMPORTED_MODULE_2__.store.addToast(getRandom(getStarted[_store__WEBPACK_IMPORTED_MODULE_2__.store.lang]), 5000);
             }
         }
         else if (!loaded) {
             if (percent >= 100) {
                 // user completed before response from AI arrived
-                return lastToastExpired() && _store__WEBPACK_IMPORTED_MODULE_1__.store.addToast(getRandom(tooFast[_store__WEBPACK_IMPORTED_MODULE_1__.store.lang]), 5000);
+                return lastToastExpired() && _store__WEBPACK_IMPORTED_MODULE_2__.store.addToast(getRandom(tooFast[_store__WEBPACK_IMPORTED_MODULE_2__.store.lang]), 5000);
             }
             else if (!this.notLoadedTimeout) {
                 this.notLoadedTimeout = true;
                 // wait 6 seconds before we trigger this toast again
                 window.setTimeout(() => this.notLoadedTimeout = false, 6000);
-                return lastToastExpired() && _store__WEBPACK_IMPORTED_MODULE_1__.store.addToast(getRandom(notLoaded[_store__WEBPACK_IMPORTED_MODULE_1__.store.lang], Replacer.WATT, currentWatts.toString()), 3000);
+                return lastToastExpired() && _store__WEBPACK_IMPORTED_MODULE_2__.store.addToast(getRandom(notLoaded[_store__WEBPACK_IMPORTED_MODULE_2__.store.lang], Replacer.WATT, currentWatts.toString()), 3000);
             }
         }
         else {
             if (percent == 100 && !this.done) {
                 this.done = true;
-                return lastToastExpired() && _store__WEBPACK_IMPORTED_MODULE_1__.store.addToast(getRandom(done[_store__WEBPACK_IMPORTED_MODULE_1__.store.lang]), 5000);
+                return lastToastExpired() && _store__WEBPACK_IMPORTED_MODULE_2__.store.addToast(getRandom(done[_store__WEBPACK_IMPORTED_MODULE_2__.store.lang]), 5000);
             }
             else if (percent > 80) {
-                return lastToastExpired() && _store__WEBPACK_IMPORTED_MODULE_1__.store.addToast(getRandom(lastPercents[_store__WEBPACK_IMPORTED_MODULE_1__.store.lang], Replacer.PERCENT, (100 - percent).toFixed(0)));
+                return lastToastExpired() && _store__WEBPACK_IMPORTED_MODULE_2__.store.addToast(getRandom(lastPercents[_store__WEBPACK_IMPORTED_MODULE_2__.store.lang], Replacer.PERCENT, (100 - percent).toFixed(0)));
             }
             else if (percent > 55) {
-                return lastToastExpired() && _store__WEBPACK_IMPORTED_MODULE_1__.store.addToast(getRandom(highPercents[_store__WEBPACK_IMPORTED_MODULE_1__.store.lang], Replacer.PERCENT, percent.toFixed(0)));
+                return lastToastExpired() && _store__WEBPACK_IMPORTED_MODULE_2__.store.addToast(getRandom(highPercents[_store__WEBPACK_IMPORTED_MODULE_2__.store.lang], Replacer.PERCENT, percent.toFixed(0)));
             }
             else if (percent > 45) {
-                return lastToastExpired() && _store__WEBPACK_IMPORTED_MODULE_1__.store.addToast(getRandom(halfPercents[_store__WEBPACK_IMPORTED_MODULE_1__.store.lang], Replacer.PERCENT, percent.toFixed(0)));
+                return lastToastExpired() && _store__WEBPACK_IMPORTED_MODULE_2__.store.addToast(getRandom(halfPercents[_store__WEBPACK_IMPORTED_MODULE_2__.store.lang], Replacer.PERCENT, percent.toFixed(0)));
             }
             else {
-                return lastToastExpired() && _store__WEBPACK_IMPORTED_MODULE_1__.store.addToast(getRandom(lowPercents[_store__WEBPACK_IMPORTED_MODULE_1__.store.lang], Replacer.PERCENT, percent.toFixed(0)));
+                return lastToastExpired() && _store__WEBPACK_IMPORTED_MODULE_2__.store.addToast(getRandom(lowPercents[_store__WEBPACK_IMPORTED_MODULE_2__.store.lang], Replacer.PERCENT, percent.toFixed(0)));
             }
+        }
+    }
+    static toolToast(type) {
+        switch (type) {
+            case _models__WEBPACK_IMPORTED_MODULE_1__.TOOL_TYPE.SITE: return _store__WEBPACK_IMPORTED_MODULE_2__.store.addToast(getRandom(webSite[_store__WEBPACK_IMPORTED_MODULE_2__.store.lang]), 2000);
+            case _models__WEBPACK_IMPORTED_MODULE_1__.TOOL_TYPE.SEARCH: return _store__WEBPACK_IMPORTED_MODULE_2__.store.addToast(getRandom(webSearch[_store__WEBPACK_IMPORTED_MODULE_2__.store.lang]), 2000);
         }
     }
     static abort() {
         this.done = true;
     }
     static energyToast(wh) {
-        _store__WEBPACK_IMPORTED_MODULE_1__.store.addToast(getRandom(energyUsed[_store__WEBPACK_IMPORTED_MODULE_1__.store.lang], Replacer.KCAL, getKiloCalsFromWatthour(wh)), 10000);
+        _store__WEBPACK_IMPORTED_MODULE_2__.store.addToast(getRandom(energyUsed[_store__WEBPACK_IMPORTED_MODULE_2__.store.lang], Replacer.KCAL, getKiloCalsFromWatthour(wh)), 10000);
     }
 }
 
@@ -4286,7 +4561,7 @@ module.exports = __webpack_require__.p + "assets/images/logo.5d5014ba3e4201b16dd
 (module) {
 
 "use strict";
-module.exports = /*#__PURE__*/JSON.parse('{"name":"enerki","version":"0.9.0","private":true,"license":"MIT","scripts":{"dev":"webpack serve --config webpack.config.js","build":"webpack --config webpack.config.js","lint":"eslint ./src --ext .js,.vue","ignore-env":"git update-index --assume-unchanged env.ts","lint:fix":"eslint ./src --ext .js,.vue --fix","format":"prettier \'src/**/*.{js,vue,css,md,json}\' --write","chrome":"open -n -a \\"Google Chrome\\" --args --disable-web-security --user-data-dir=\\"/tmp/chrome_dev_test\\" http://localhost:4200/enerki/","start":"npm run dev & npm run chrome"},"dependencies":{"ant-plus-next":"^0.4.0","axios":"^1.11.0","bootstrap":"^5.3.7","file-loader":"^6.2.0","markdown-it":"^15.0.2","vue":"^3.4.26"},"devDependencies":{"@babel/core":"^7.24.5","@babel/preset-env":"^7.24.5","@types/markdown-it":"^14.2.0","@types/node":"^26.6.4","@vue/compiler-sfc":"^3.5.18","babel-loader":"^10.0.0","css-loader":"^7.1.2","globals":"^16.0.0","html-webpack-plugin":"^5.6.8","prettier":"^3.9.9","ts-loader":"^9.5.2","typescript":"^5.8.3","vue-loader":"^17.4.2","vue-style-loader":"^4.1.3","vue-tsc":"^3.0.3","webpack":"^5.91.0","webpack-bundle-analyzer":"^5.4.0","webpack-cli":"^7.2.3","webpack-dev-server":"^6.0.0"}}');
+module.exports = /*#__PURE__*/JSON.parse('{"name":"enerki","version":"0.10.0","private":true,"license":"MIT","scripts":{"dev":"webpack serve --config webpack.config.js","build":"webpack --config webpack.config.js","lint":"eslint ./src --ext .js,.vue","ignore-env":"git update-index --assume-unchanged env.ts","lint:fix":"eslint ./src --ext .js,.vue --fix","format":"prettier \'src/**/*.{js,vue,css,md,json}\' --write","chrome":"open -n -a \\"Google Chrome\\" --args --disable-web-security --user-data-dir=\\"/tmp/chrome_dev_test\\" http://localhost:4200/enerki/","start":"npm run dev & npm run chrome"},"dependencies":{"ant-plus-next":"^0.4.0","axios":"^1.11.0","bootstrap":"^5.3.7","file-loader":"^6.2.0","markdown-it":"^15.0.2","vue":"^3.4.26"},"devDependencies":{"@babel/core":"^7.24.5","@babel/preset-env":"^7.24.5","@types/markdown-it":"^14.2.0","@types/node":"^26.6.4","@vue/compiler-sfc":"^3.5.18","babel-loader":"^10.0.0","css-loader":"^7.1.2","globals":"^16.0.0","html-webpack-plugin":"^5.6.8","prettier":"^3.9.9","ts-loader":"^9.5.2","typescript":"^5.8.3","vue-loader":"^17.4.2","vue-style-loader":"^4.1.3","vue-tsc":"^3.0.3","webpack":"^5.91.0","webpack-bundle-analyzer":"^5.4.0","webpack-cli":"^7.2.3","webpack-dev-server":"^6.0.0"}}');
 
 /***/ }
 
