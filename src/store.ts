@@ -122,7 +122,6 @@ const storeObj: Store = {
    * Draws a new Quizcard
    */
   drawQuizCard(newCard = false) {
-
     if (newCard || !this.cardDrawn) {
       const card = QuizService.drawRandomQuizCard();
       this.activeCard = card;

@@ -177,7 +177,7 @@ export abstract class AntService {
                 percent: Math.round(this.total / this.target * 1000) / 10
             }));
         } else {
-            console.warn('No target set yet, do not notify subscribers!');
+            // console.warn('No target set yet, do not notify subscribers!');
         }
     }
 
