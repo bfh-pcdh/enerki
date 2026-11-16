@@ -1,4 +1,5 @@
 import { i18n } from "./assets/i18n";
+import { TOOL_TYPE } from "./models";
 import { store } from "./store";
 
 enum Replacer {
@@ -170,6 +171,24 @@ const energyUsed = {
     ]
 };
 
+const webSearch = {
+    de: [
+        'enerKI ruft eine Website ab...'
+    ],
+    fr: [
+        'enerKI accède à un site web...'
+    ]
+};
+
+const webSite = {
+    de: [
+        'enerKI führt eine Internetsuche durch...'
+    ],
+    fr: [
+        'enerKI effectue une recherche sur Internet...'
+    ]
+};
+
 
 let lastToast = 0;
 
@@ -253,6 +272,13 @@ export default class ToastService {
             } else {
                 return lastToastExpired() && store.addToast(getRandom(lowPercents[store.lang], Replacer.PERCENT, percent.toFixed(0)));
             } 
+        }
+    }
+
+    static toolToast(type: TOOL_TYPE) {
+        switch (type) {
+            case TOOL_TYPE.SITE: return store.addToast(getRandom(webSite[store.lang]), 2000);
+            case TOOL_TYPE.SEARCH: return store.addToast(getRandom(webSearch[store.lang]), 2000);
         }
     }
 

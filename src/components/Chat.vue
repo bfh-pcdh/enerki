@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, ShallowRef, useTemplateRef } from 'vue';
-import { ExamplePrompt, type Message, USER_ROLE } from '@/models';
+import { API_BODY, ExamplePrompt, type Message, TOOL_TYPE, USER_ROLE } from '@/models';
 import axios from 'axios';
 import markdownit from 'markdown-it';
 import { store } from '../store';
@@ -91,7 +91,7 @@ function getUsageInfoString(usage: {input_tokens: number, output_tokens: number}
   return '- Input tokens: ' + usage.input_tokens + BR +
          '- Output tokens: ' + usage.output_tokens + BR +
          '- ' + duration + ' s' + BR +
-         '- ' + wh.toFixed(1) + ' Wh' + BR +
+         '- ' + wh.toFixed(2) + ' Wh' + BR +
          '- ~' + getKiloCalsFromWatthour(wh) + ' kcal'
 }
 
@@ -118,40 +118,13 @@ function fetchUrl(url: string): Promise<string> {
  * for tool use
  */
 async function sendWithTools(): Promise<any> {
-  type Tool = {
-    type: string;
-    function: {
-      name: string;
-      description: string;
-      parameters: {
-        type: string;
-        properties: {
-          query: { type: string; description: string };
-        };
-        required: string[];
-      };
-    };
-  };
-
   const MAX_TOOL_CALLS = 5;
 
-  type API_BODY = {
-    model: string;
-    messages: Message[];
-    reasoning?: {
-      effort: string;
-    };
-    tools?: Tool[];
-    tool_choice?: 'auto';
-    'background-tasks'?: {
-      follow_up_generation: boolean;
-    };
-  };
 
   const SEARCH_TOOL = {
     type: 'function',
     function: {
-      name: 'web_search',
+      name: TOOL_TYPE.SEARCH,
       description: 'Searches the web for current informations',
       parameters: {
         type: 'object',
@@ -166,7 +139,7 @@ async function sendWithTools(): Promise<any> {
   const WEBSITE_TOOL = {
     type: 'function',
     function: {
-      name: 'web_site',
+      name: TOOL_TYPE.SITE,
       description: 'Loads a website from a given URL',
       parameters: {
         type: 'object',
@@ -225,14 +198,16 @@ async function sendWithTools(): Promise<any> {
     for (const call of msg.tool_calls) {
       const args = JSON.parse(call.function.arguments);
       switch (call.function.name) {
-        case 'web_search':
+        case TOOL_TYPE.SEARCH:
+          ToastService.toolToast(TOOL_TYPE.SEARCH)
           messages.push({
             role: USER_ROLE.TOOL,
             tool_call_id: call.id,
             content: await runSearch(args.query)
           });
           break;
-        case 'web_site':
+        case TOOL_TYPE.SITE:
+          ToastService.toolToast(TOOL_TYPE.SITE)
           messages.push({
             role: USER_ROLE.TOOL,
             tool_call_id: call.id,
