@@ -82,16 +82,17 @@ function isLastMessage(index: number): boolean {
   return store.getVisibleMessages().length - index === 1;
 }
 
-function getUsageInfoString(usage: {input_tokens: number, output_tokens: number}): string {
+function getUsageInfoString(usage: {input_tokens: number, output_tokens: number}, duration: number): string {
   const BR = '\n';
   const wh = estimateEnergyUsage(
     usage.input_tokens,
     usage.output_tokens
   );
-  return 'Input tokens: ' + usage.input_tokens + BR +
-         'Output tokens: ' + usage.output_tokens + BR +
-         wh.toFixed(1) + ' Wh' + BR +
-         getKiloCalsFromWatthour(wh) + ' kcal'
+  return '- Input tokens: ' + usage.input_tokens + BR +
+         '- Output tokens: ' + usage.output_tokens + BR +
+         '- ' + duration + ' s' + BR +
+         '- ' + wh.toFixed(1) + ' Wh' + BR +
+         '- ~' + getKiloCalsFromWatthour(wh) + ' kcal'
 }
 
 /**
@@ -301,7 +302,7 @@ function send() {
           result.data.usage.output_tokens
         );
         store.setTarget(usage);
-        usageInfo.value = getUsageInfoString(result.data.usage);
+        usageInfo.value = getUsageInfoString(result.data.usage, duration);
 
         console.log(
           'Energie verbraucht: ' +
