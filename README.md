@@ -29,6 +29,7 @@ npm run build
 - Add tool use (duckduckgo search, url fetch)
 - Add toggle for tool use
 - Add tooltip that shows usage stats
+- Better estimates for energy usage (based on measurements of actual hardware)
 - Removed 1 vulnerability from dependencies
 
 ### 2026-10-26 V0.9.0
