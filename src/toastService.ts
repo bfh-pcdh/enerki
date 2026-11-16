@@ -186,7 +186,7 @@ function getRandom(arr: string[], replacer?: Replacer, replacement: string = '')
         : arr[i];
 }
 
-function getKiloCalsFromWatthour(wh: number): string {
+export function getKiloCalsFromWatthour(wh: number): string {
     const kcalWhFactor = 0.8598452279;
     const bodyEfficiencyFactor = 0.25;
     return (wh * kcalWhFactor / bodyEfficiencyFactor).toFixed(1);

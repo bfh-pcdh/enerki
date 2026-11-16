@@ -5,7 +5,7 @@ import axios from 'axios';
 import markdownit from 'markdown-it';
 import { store } from '../store';
 import { AntSubscription } from '@/antService';
-import ToastService from '@/toastService';
+import ToastService, { getKiloCalsFromWatthour } from '@/toastService';
 import PromptExamples from './PromptExamples.vue';
 import { i18n } from '@/assets/i18n';
 
@@ -32,6 +32,8 @@ const userInput = ref(false);
 const chatInput = ref(null);
 let usage = -1;
 let inputTimeout = -1;
+
+const usageInfo = ref('');
 
 const loadingStyle = computed(() => {
   return (
@@ -78,6 +80,18 @@ function preEstimateUsage() {
  */
 function isLastMessage(index: number): boolean {
   return store.getVisibleMessages().length - index === 1;
+}
+
+function getUsageInfoString(usage: {input_tokens: number, output_tokens: number}): string {
+  const BR = '\n';
+  const wh = estimateEnergyUsage(
+    usage.input_tokens,
+    usage.output_tokens
+  );
+  return 'Input tokens: ' + usage.input_tokens + BR +
+         'Output tokens: ' + usage.output_tokens + BR +
+         wh.toFixed(1) + ' Wh' + BR +
+         getKiloCalsFromWatthour(wh) + ' kcal'
 }
 
 /**
@@ -241,6 +255,7 @@ function send() {
     loading: false
   };
   loadingPercent.value = 0;
+  usageInfo.value = '';
 
   store.chatMessages.push(message);
 
@@ -259,6 +274,8 @@ function send() {
   chat.value.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'end' });
 
   const time = Date.now();
+
+
   Promise.all([
     ToastService.startToast().then(() => {
       store.startAndSubscribe(usage === -1 ? preEstimateUsage() : usage, (ant: AntSubscription) => {
@@ -284,6 +301,7 @@ function send() {
           result.data.usage.output_tokens
         );
         store.setTarget(usage);
+        usageInfo.value = getUsageInfoString(result.data.usage);
 
         console.log(
           'Energie verbraucht: ' +
@@ -347,6 +365,11 @@ function setPrompt(prompt: ExamplePrompt) {
       :style="
         message.percent != undefined && message.percent < 100 && isLastMessage(i)
           ? loadingStyle
+          : ''
+      "
+      :title="
+        i == store.getVisibleMessages().length - 1 && message.role == USER_ROLE.AI
+          ? usageInfo
           : ''
       "
     >
