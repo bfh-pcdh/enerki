@@ -25,6 +25,12 @@ npm run build
 ```
 
 ## Changelog
+### 2026-11-16 V0.10.0
+- Add tool use (duckduckgo search, url fetch)
+- Add toggle for tool use
+- Add tooltip that shows usage stats
+- Removed 1 vulnerability from dependencies
+
 ### 2026-10-26 V0.9.0
 - freshen up the design
 - fix for new MLMP endpoint urls

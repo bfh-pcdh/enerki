@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed, ref, ShallowRef, useTemplateRef } from 'vue';
-import { ExamplePrompt, type Message, USER_ROLE } from '@/models';
+import { API_BODY, ExamplePrompt, type Message, TOOL_TYPE, USER_ROLE } from '@/models';
 import axios from 'axios';
 import markdownit from 'markdown-it';
 import { store } from '../store';
 import { AntSubscription } from '@/antService';
-import ToastService from '@/toastService';
+import ToastService, { getKiloCalsFromWatthour } from '@/toastService';
 import PromptExamples from './PromptExamples.vue';
 import { i18n } from '@/assets/i18n';
 
@@ -33,6 +33,8 @@ const chatInput = ref(null);
 let usage = -1;
 let inputTimeout = -1;
 
+const usageInfo = ref('');
+
 const loadingStyle = computed(() => {
   return (
     'filter: blur(' +
@@ -44,24 +46,20 @@ const loadingStyle = computed(() => {
 });
 
 /**
- * Estimates the energy usage for an answer, based on the number of output tokens. Samsi et al. estimated the energy usage with 3 - 4 Joule per token, which equals to ~0.001 Wh
- * @see Paper       Samsi et al. (2023): From Words to Watts: Benchmarking the Energy Costs of Large Language Model Inference. https://doi.org/10.48550/arXiv.2310.03003
- * @see Blogpost    gpt-oss uses around 8.3 Wh per 100 output token, which seems way too high https://huggingface.co/blog/sasha/gpt-oss-energy
- * @see YouTube     https://www.youtube.com/watch?v=zjG9TkfWd0o&t=143s
- * @param tokens    number of output tokens of the answer
- * @param tps       token per seconds generated, defaults to 70
- * @returns         an estimation of energy (in Wh), based on the number of output tokens
+ * Estimates the energy usage for an answer, based on the number of input and output tokens.
+ * We measured the energy usage for inference on a M3Ultra Mac Studio
+ * Legacy: Samsi et al. estimated the energy usage with 3 - 4 Joule per token, which equals to ~0.001 Wh
+ * @see Paper           Samsi et al. (2023): From Words to Watts: Benchmarking the Energy Costs of Large Language Model Inference. https://doi.org/10.48550/arXiv.2310.03003
+ * @see Blogpost        gpt-oss uses around 8.3 Wh per 100 output token, which seems way too high https://huggingface.co/blog/sasha/gpt-oss-energy
+ * @see YouTube         https://www.youtube.com/watch?v=zjG9TkfWd0o&t=143s
+ * @param inputTokens   number of input tokens given to the llm
+ * @param outputTokens  number of output tokens given to the llm
+ * @returns             an estimation of energy (in Wh), based on the number of in- and output tokens
  */
-function estimateEnergyUsage(tokens: number, tps = 70) {
-  // Mac Studio M3Utra uses up to 480W. That is 0.1333 Wh per second in full load (480 / 3600).
-  // however, he measures 120W: https://www.youtube.com/watch?v=zjG9TkfWd0o&t=143s TODO: own measurements
-  // we use the Watt per Token stored in ENV setup
-  const whPerSecond = Number(store.connection.WATT_CONSUMPTION) / 3600;
-  // With gpt-oss:120b, it generates around 70 token/s.
-  const whPerToken = whPerSecond / tps;
-  const estimate = tokens * whPerToken;
-  return estimate;
-  // old samsi et al estimate: return (tokens * 3.5) / 3600; // 3.5 joules per token; 3600 J = 1 Wh
+function estimateEnergyUsage(inputTokens: number, outputTokens: number) {
+  const joule = inputTokens * Number(store.connection.JOULE_PER_INPUT_TOKEN) +
+                outputTokens * Number(store.connection.JOULE_PER_OUTPUT_TOKEN)
+  return joule / 3600; // 1 J is a Ws, so 1 Wh has 3600 J
 }
 
 /**
@@ -69,7 +67,9 @@ function estimateEnergyUsage(tokens: number, tps = 70) {
  * @returns         an estimation of energy (in Wh)
  */
 function preEstimateUsage() {
-  return usage > 1 ? usage : 1;
+  if (usage > 1) return usage;
+  // with tool use activated, we assume more energy consumption
+  return store.getUseTools() ? 3 : 1;
 }
 
 /**
@@ -80,6 +80,143 @@ function preEstimateUsage() {
  */
 function isLastMessage(index: number): boolean {
   return store.getVisibleMessages().length - index === 1;
+}
+
+function getUsageInfoString(usage: {input_tokens: number, output_tokens: number}, duration: number): string {
+  const BR = '\n';
+  const wh = estimateEnergyUsage(
+    usage.input_tokens,
+    usage.output_tokens
+  );
+  return '- Input tokens: ' + usage.input_tokens + BR +
+         '- Output tokens: ' + usage.output_tokens + BR +
+         '- ' + duration + ' s' + BR +
+         '- ' + wh.toFixed(2) + ' Wh' + BR +
+         '- ~' + getKiloCalsFromWatthour(wh) + ' kcal'
+}
+
+/**
+ * Runs a search on duck duck go with a given query
+ * @param query the search string to query
+ */
+function runSearch(query: string): Promise<string> {
+  return axios
+    .get(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`)
+    .then((res) => JSON.stringify(res.data));
+}
+
+/**
+ * Fetches the website from an url
+ * @param url the url to fetch
+ */
+function fetchUrl(url: string): Promise<string> {
+  return axios.get(url).then((res) => res.data.replace(/<(style|script)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, ''));
+}
+
+/**
+ * Sends a request to the inference service, and then performs the action needed
+ * for tool use
+ */
+async function sendWithTools(): Promise<any> {
+  const MAX_TOOL_CALLS = 5;
+
+
+  const SEARCH_TOOL = {
+    type: 'function',
+    function: {
+      name: TOOL_TYPE.SEARCH,
+      description: 'Searches the web for current informations',
+      parameters: {
+        type: 'object',
+        properties: {
+          query: { type: 'string', description: 'The search query.' }
+        },
+        required: ['query']
+      }
+    }
+  };
+
+  const WEBSITE_TOOL = {
+    type: 'function',
+    function: {
+      name: TOOL_TYPE.SITE,
+      description: 'Loads a website from a given URL',
+      parameters: {
+        type: 'object',
+        properties: {
+          query: { type: 'string', description: 'The url to load.' }
+        },
+        required: ['query']
+      }
+    }
+  };
+
+  const body: API_BODY = {
+    model: store.connection.MODEL,
+    messages: [...store.chatMessages],
+    tools: store.getUseTools() ? [
+      SEARCH_TOOL,
+      WEBSITE_TOOL
+    ] : [],
+    tool_choice: 'auto',
+    reasoning: {
+      effort: store.connection.REASONING
+    },
+    'background-tasks': {
+      follow_up_generation: false
+    }
+  };
+
+  // chatGPT does not like these params
+  if (!store.connection.REASONING) {
+    delete body.reasoning;
+    delete body['background-tasks'];
+  }
+
+  const config = {
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: 'Bearer ' + props.token,
+      'Cache-Control': 'no-cache, no-store'
+    }
+  };
+
+  const url = store.connection.BASE_URL + store.connection.ENDPOINT;
+
+  let messages = [...store.chatMessages];
+
+  // loop for maximum tool calls
+  for (let i = 0; i < MAX_TOOL_CALLS; i++) {
+    const result = await axios.post(url, { ...body, messages }, config);
+    const msg = result.data.choices[0].message;
+    messages.push(msg);
+
+    if (!msg.tool_calls?.length) {
+      return result;
+    }
+
+    for (const call of msg.tool_calls) {
+      const args = JSON.parse(call.function.arguments);
+      switch (call.function.name) {
+        case TOOL_TYPE.SEARCH:
+          ToastService.toolToast(TOOL_TYPE.SEARCH)
+          messages.push({
+            role: USER_ROLE.TOOL,
+            tool_call_id: call.id,
+            content: await runSearch(args.query)
+          });
+          break;
+        case TOOL_TYPE.SITE:
+          ToastService.toolToast(TOOL_TYPE.SITE)
+          messages.push({
+            role: USER_ROLE.TOOL,
+            tool_call_id: call.id,
+            content: await fetchUrl(args.url)
+          });
+          break;
+      }
+    }
+  }
 }
 
 /**
@@ -94,36 +231,9 @@ function send() {
     loading: false
   };
   loadingPercent.value = 0;
+  usageInfo.value = '';
 
   store.chatMessages.push(message);
-
-  type API_BODY = {
-    model: string;
-    messages: Message[];
-    reasoning?: {
-      effort: string;
-    };
-    'background-tasks'?: {
-      follow_up_generation: boolean;
-    };
-  };
-
-  const body: API_BODY = {
-    model: store.connection.MODEL,
-    messages: [...store.chatMessages],
-    reasoning: {
-      effort: store.connection.REASONING
-    },
-    'background-tasks': {
-      follow_up_generation: false
-    }
-  };
-
-  // chatGPT does not like these params
-  if (!store.connection.REASONING) {
-    delete body.reasoning;
-    delete body['background-tasks'];
-  }
 
   store.textInput = '';
 
@@ -140,6 +250,8 @@ function send() {
   chat.value.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'end' });
 
   const time = Date.now();
+
+
   Promise.all([
     ToastService.startToast().then(() => {
       store.startAndSubscribe(usage === -1 ? preEstimateUsage() : usage, (ant: AntSubscription) => {
@@ -157,21 +269,15 @@ function send() {
         }
       });
     }),
-    axios
-      .post(store.connection.BASE_URL + store.connection.ENDPOINT, body, {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: 'Bearer ' + props.token,
-          'Cache-Control': 'no-cache, no-store'
-        }
-      })
+    sendWithTools()
       .then((result) => {
         const duration = Math.round((Date.now() - time) / 1000);
         usage = estimateEnergyUsage(
-          result.data.usage.completion_tokens,
-          result.data.usage.generation_tokens_per_second
+          result.data.usage.input_tokens,
+          result.data.usage.output_tokens
         );
         store.setTarget(usage);
+        usageInfo.value = getUsageInfoString(result.data.usage, duration);
 
         console.log(
           'Energie verbraucht: ' +
@@ -237,6 +343,11 @@ function setPrompt(prompt: ExamplePrompt) {
           ? loadingStyle
           : ''
       "
+      :title="
+        i == store.getVisibleMessages().length - 1 && message.role == USER_ROLE.AI
+          ? usageInfo
+          : ''
+      "
     >
       <div v-if="message.loading" class="spinner-border" role="status">
         <span class="visually-hidden">Loading...</span>
@@ -250,7 +361,9 @@ function setPrompt(prompt: ExamplePrompt) {
     @on-select-prompt="setPrompt"
     :user-inputting="userInput"
     v-if="
-      !store.isPedalling() && store.getExamplePrompts().length > 0 && store.examplePromptsVisible
+      !store.isPedalling() &&
+      store.getExamplePrompts().length > 0 &&
+      store.examplePromptsVisible
     "
   />
 
@@ -260,7 +373,11 @@ function setPrompt(prompt: ExamplePrompt) {
       type="text"
       v-model="store.textInput"
       :placeholder="
-        i18n(store.getExamplePrompts().length > 0 ? 'CHAT_PLACEHOLDER_PROMPTS' : 'CHAT_PLACEHOLDER')
+        i18n(
+          store.getExamplePrompts().length > 0
+            ? 'CHAT_PLACEHOLDER_PROMPTS'
+            : 'CHAT_PLACEHOLDER'
+        )
       "
       @input="inputting"
       ref="chatInput"
@@ -297,9 +414,7 @@ li:first-child {
   border-radius: 1em;
   width: 75%;
   margin-top: 1em;
-  transition:
-    opacity 1.2s ease,
-    filter 1.2s ease;
+  transition: opacity 1.2s ease, filter 1.2s ease;
 }
 .chat-user {
   background-color: #64788b;
