@@ -651,7 +651,7 @@ const ENV = [
         REASONING: 'low',
         JOULE_PER_INPUT_TOKEN: '0.1601',
         JOULE_PER_OUTPUT_TOKEN: '1.9598',
-        TOKEN: 'sk-X1LqFq8EQtUJWOlGm6FDyw' // insert your TOKEN here
+        TOKEN: '' // insert your TOKEN here
     },
     {
         NAME: 'BFH MLMP gemma (für extern)',
