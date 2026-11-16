@@ -96,13 +96,29 @@ function getUsageInfoString(usage: {input_tokens: number, output_tokens: number}
 }
 
 /**
- * Runs a search on duck duck go with a given query
+ * Runs a web search with a given query
  * @param query the search string to query
  */
 function runSearch(query: string): Promise<string> {
-  return axios
-    .get(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`)
-    .then((res) => JSON.stringify(res.data));
+  return axios.post(
+    'https://api.tavily.com/search',
+    {
+      query: query,
+      search_depth: 'basic',
+      include_favicon: false,
+      include_usage: true,
+    },
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${store.connection.TAVILY_KEY}`,
+      },
+      timeout: 0,
+    }
+  ).then((res) => JSON.stringify(res.data));
+  // return axios
+  //   .get(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`)
+  //   .then((res) => JSON.stringify(res.data));
 }
 
 /**
