@@ -10,7 +10,7 @@ export const ENV = [
     TOKEN: '', // insert your TOKEN here,
     SEARCH_URL: 'https://api.tavily.com/search',
     SEARCH_KEY: '',
-
+    MAX_TOOL_CALLS: 5
   },
   {
     NAME: 'BFH MLMP gemma (extern)',
@@ -23,19 +23,21 @@ export const ENV = [
     TOKEN: '', // insert your TOKEN here
     SEARCH_URL: 'https://api.tavily.com/search',
     SEARCH_KEY: '',
+    MAX_TOOL_CALLS: 3
   },
-  {
-    NAME: 'BFH MLMP (intern)',
-    BASE_URL: 'https://inference.mlmp.ti.bfh.ch',
-    ENDPOINT: '/v1/chat/completions',
-    MODEL: 'gpt-oss:120b',
-    REASONING: 'low',
-    JOULE_PER_INPUT_TOKEN: '0.1601',
-    JOULE_PER_OUTPUT_TOKEN: '1.9598',
-    TOKEN: '', // insert your TOKEN here
-    SEARCH_URL: 'https://api.tavily.com/search',
-    SEARCH_KEY: '',
-  },
+  // {
+  //   NAME: 'BFH MLMP (intern)',
+  //   BASE_URL: 'https://inference.mlmp.ti.bfh.ch',
+  //   ENDPOINT: '/v1/chat/completions',
+  //   MODEL: 'gpt-oss:120b',
+  //   REASONING: 'low',
+  //   JOULE_PER_INPUT_TOKEN: '0.1601',
+  //   JOULE_PER_OUTPUT_TOKEN: '1.9598',
+  //   TOKEN: '', // insert your TOKEN here
+  //   SEARCH_URL: 'https://api.tavily.com/search',
+  //   SEARCH_KEY: '',
+  //   MAX_TOOL_CALLS: 5
+  // },
   {
     NAME: 'LM Studio (lokal)',
     BASE_URL: 'http://localhost:1234',
@@ -47,6 +49,7 @@ export const ENV = [
     TOKEN: '', // insert your TOKEN here
     SEARCH_URL: '',
     SEARCH_KEY: '',
+    MAX_TOOL_CALLS: 5
   },
   {
     NAME: 'OpenAI (ChatGPT)',
@@ -59,5 +62,6 @@ export const ENV = [
     TOKEN: '', // insert your TOKEN here
     SEARCH_URL: 'https://api.tavily.com/search',
     SEARCH_KEY: '',
+    MAX_TOOL_CALLS: 5
   }
 ];

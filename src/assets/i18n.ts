@@ -134,7 +134,7 @@ const KEYS: {[key: string]: {de: string, fr: string}} = {
         fr: 'enerKI version :'
     },
     SELECT_AI: {
-        de: 'KI-Anbieter wählen',
+        de: 'KI-Modell wählen',
         fr: 'choisir l\'IA'
     },
     CLOSE: {

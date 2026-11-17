@@ -133,9 +133,6 @@ function fetchUrl(url: string): Promise<string> {
  * for tool use
  */
 async function sendWithTools(): Promise<any> {
-  const MAX_TOOL_CALLS = 5;
-
-
   const SEARCH_TOOL = {
     type: 'function',
     function: {
@@ -201,7 +198,7 @@ async function sendWithTools(): Promise<any> {
   let messages = [...store.chatMessages];
 
   // loop for maximum tool calls
-  for (let i = 0; i < MAX_TOOL_CALLS; i++) {
+  for (let i = 0; i < store.connection.MAX_TOOL_CALLS; i++) {
     const result = await axios.post(url, { ...body, messages }, config);
     const msg = result.data.choices[0].message;
     messages.push(msg);
