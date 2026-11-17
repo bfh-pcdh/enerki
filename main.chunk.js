@@ -54,7 +54,6 @@ header h1[data-v-7ba5bd90] {
   margin: 0.2em;
 }
 .header-buttons[data-v-7ba5bd90] {
-  width: 8em;
   margin-left: auto;
   justify-content: space-evenly;
   display: flex;
@@ -85,59 +84,7 @@ header h1[data-v-7ba5bd90] {
   width: 60%;
   margin-left: 20%;
 }
-`, "",{"version":3,"sources":["webpack://./src/App.vue"],"names":[],"mappings":";AAiPA;EACE,wBAAwB;EACxB,YAAY;EACZ,WAAW;EACX,cAAc;EACd,oBAAoB;AACtB;AACA;EACE,8BAA8B;AAChC;AACA;EACE,cAAc;EACd,aAAa;EACb,mBAAmB;AACrB;AAEA;EACE,kBAAkB;EAClB,gBAAgB;AAClB;AAEA;EACE,gBAAgB;EAChB,iBAAiB;AACnB;AACA;EACE,kBAAkB;EAClB,cAAc;EACd,cAAc;AAChB;AACA;EACE,aAAa;AACf;AACA;EACE,UAAU;EACV,iBAAiB;EACjB,6BAA6B;EAC7B,aAAa;AACf;AACA;EACE,eAAe;EACf,qBAAqB;EACrB,cAAc;EACd,cAAc;EACd,gBAAgB;EAChB,kBAAkB;AACpB;AACA;EACE,8BAA8B;AAChC;AAEA;EACE,cAAc;EACd,8BAA8B;AAChC;AAEA;EACE,aAAa;EACb,cAAc;AAChB;AAEA;EACE,qBAAqB;EACrB,eAAe;EACf,WAAW;EACX,UAAU;EACV,gBAAgB;AAClB","sourcesContent":["<script setup lang=\"ts\">\nimport { ref } from \"vue\";\nimport { ENV } from \"../env\";\nimport AuthForm from \"./components/AuthForm.vue\";\nimport ConnectModal from \"./components/ConnectModal.vue\";\nimport Settings from \"./components/Settings.vue\";\nimport Chat from \"./components/Chat.vue\";\nimport { getPersisted, LANG, persist, store, STORE_KEY } from \"./store\";\nimport PowerSimulator from \"./components/PowerSimulator.vue\";\nimport QuizCardModal from \"./components/QuizCardModal.vue\";\nimport { i18n } from \"./assets/i18n\";\n\nconst version = require(\"../package.json\").version;\n\nconst token = ref(getPersisted<string>(STORE_KEY.TOKEN) || ENV[0].TOKEN);\n\nconst error = ref<string | undefined>();\n\nconst percent = ref<number>(0);\n\nconst showCardModal = ref(false);\n\nconst showSettings = ref(false);\n\ndocument.addEventListener(\"keydown\", function (event) {\n  if (showCardModal.value && event.key == \"Enter\") {\n    showCardModal.value = false;\n  } else if (event.key == \"Enter\" && store.textInput == \"\") {\n    showCard();\n  }\n});\n\n// fast hack for displaying settings\nshowSettings.value = window.location.search.includes(\"settings=true\");\n\n/**\n * Calculates the header buttons\n * <div\n        class=\"toggle-button\"\n        @click=\"store.toggleUseTools()\"\n        :class=\"{ active: store.getUseTools() }\"\n        :title=\"store.getUseTools() ? i18n('TOOL_USE_OFF') : i18n('TOOL_USE_ON')\"\n      >\n        🔍\n      </div>\n */\nfunction getHeaderButtons() {\n  return [\n    {\n      icon: \"🀙\",\n      title: store.cardDrawn ? i18n(\"NEW_CARD\") : i18n(\"SHOW_CARD\"),\n      action: showCard,\n      style: store.cardDrawn\n        ? \"text-shadow: #fac300 0px 0 3px; line-height: 1.8em;\"\n        : \"line-height: 1.8em;\",\n    },\n    {\n      icon: \"⟲\",\n      title: i18n(\"RESET\"),\n      action: resetUser,\n      style: \"\",\n    },\n    {\n      icon: \"🔍\",\n      title: store.getUseTools() ? i18n(\"TOOL_USE_OFF\") : i18n(\"TOOL_USE_ON\"),\n      action: () => store.toggleUseTools(),\n      style: store.getUseTools()\n        ? \"line-height: 2.8em; font-size: 1.5em; text-shadow: rgb(250, 195, 0) 0px 0px 3px; margin-right: 0.2em;\"\n        : \"line-height: 2.8em; font-size: 1.5em; filter: saturate(0); margin-right: 0.2em;\",\n    },\n    {\n      icon: store.lang === LANG.DE ? \"🇩🇪\" : \"🇫🇷\",\n      title: i18n(\"LANGUAGE\"),\n      action: toggleLanguage,\n      style: \"filter: saturate(0)\",\n    },\n    // {\n    //   icon: '⚙︎',\n    //   title: 'Einstellungen',\n    //   action: () => (showSettings.value = !showSettings.value),\n    //   style: '',\n    // },\n  ];\n}\n\n/**\n * Sets the token recieved from authentication\n * @param t    object with the new token and a boolean value\n *             that defines if the token should be persistet to local storage\n */\nfunction setToken(t: { token: string; persist: boolean }) {\n  token.value = t.token;\n  if (t.persist) {\n    persist(STORE_KEY.TOKEN, token.value);\n  }\n}\n\n/**\n * Toggles the language between DE and FR\n */\nfunction toggleLanguage() {\n  switch (store.lang) {\n    case LANG.DE:\n      store.lang = LANG.FR;\n      break;\n    case LANG.FR:\n      store.lang = LANG.DE;\n      break;\n  }\n}\n\n/**\n * Resets the app to start with a new user\n */\nfunction resetUser() {\n  if (confirm(i18n(\"RESET_USER\"))) {\n    store.resetUser();\n  }\n}\n\n/**\n * Resets the whole app\n */\nfunction reset() {\n  store.resetUser();\n  error.value = undefined;\n  token.value = ENV[0].TOKEN;\n}\n\n/**\n * Draws a new quiz card and sets the example prompts.\n */\nfunction showCard() {\n  store.drawQuizCard();\n  store.setExamplePromptsVisible(true);\n  showCardModal.value = true;\n}\n\n/**\n * Closes the settings window\n */\nfunction closeSettings() {\n  showSettings.value = false;\n  window.location.search = \"settings=\" + showSettings.value;\n}\n\n/**\n * Handles an error and displays it to the user\n * @param error   the error message to display to the user\n */\nfunction handleError(e: string = i18n(\"UNKNOWN_ERROR\")) {\n  error.value = e;\n}\n\n/**\n * Calculates the css opacity for a given toast message\n * @param i the position of the toast message\n */\nfunction getToastOpacity(i: number): string {\n  return \"opacity: \" + (i + 1) / store.toasts.length;\n}\n</script>\n\n<template>\n  <header>\n    <img\n      :src=\"require('@/assets/logo.png')\"\n      alt=\"Logo Berner Fachhochschule\"\n      class=\"logo\"\n      :title=\"\n        'enerKI Version: ' +\n        version +\n        '\\nModel: ' +\n        store.connection.BASE_URL +\n        ' > ' +\n        store.connection.MODEL\n      \"\n    />\n    <h1>enerKI</h1>\n    <div class=\"header-buttons\">\n      <a\n        v-for=\"b of getHeaderButtons()\"\n        @click=\"b.action\"\n        :title=\"b.title\"\n        class=\"header-button\"\n        :style=\"b.style\"\n        >{{ b.icon }}</a\n      >\n    </div>\n  </header>\n  <Settings v-if=\"showSettings\" @on-close=\"closeSettings\" />\n  <div v-else>\n    <!-- if no token is set, we show the auth form -->\n    <auth-form v-if=\"token?.length == 0\" @on-token=\"setToken\" @on-error=\"handleError\" />\n\n    <main v-else>\n      <!-- display error message -->\n      <div class=\"error\" v-if=\"error\">\n        <h2>{{ i18n(\"ERROR\") }}</h2>\n        {{ error }}\n        <br />\n        <div class=\"error-buttons\">\n          <button @click=\"reset\">{{ i18n(\"RESET\") }}</button>\n          <button @click=\"error = ''\">{{ i18n(\"OK\") }}</button>\n        </div>\n      </div>\n\n      <!-- chat window -->\n      <chat v-else :token=\"token\" :percent=\"percent\" @on-error=\"handleError\" />\n\n      <!-- window for power simulation / debug -->\n      <PowerSimulator\n        v-if=\"store.connected && store.isPedalling() && !error\"\n        :debug=\"store.isDebug\"\n        :watt=\"Math.round(store.power.getValues().value)\"\n      />\n    </main>\n\n    <ConnectModal v-if=\"!store.connected\" @on-error=\"handleError\" />\n    <QuizCardModal\n      v-if=\"store.activeCard && showCardModal\"\n      :card=\"store.activeCard\"\n      @on-close=\"showCardModal = false\"\n    />\n\n    <ul class=\"toast-list\">\n      <!--li v-for=\"(toast, i) of store.toasts\" :style=\"getToastOpacity(i)\">\n        <div class=\"alert alert-info\" role=\"alert\">\n          {{ toast }}\n        </div>\n      </li-->\n      <li v-if=\"store.toasts.length > 0\">\n        <div class=\"alert alert-info\" role=\"alert\">\n          {{ store.toasts.at(-1) }}\n        </div>\n      </li>\n    </ul>\n  </div>\n</template>\n\n<style scoped>\n.error {\n  background-color: salmon;\n  color: white;\n  margin: 1em;\n  padding: 0.5em;\n  border-radius: 0.5em;\n}\n.alert {\n  box-shadow: 0 0 20px lightgray;\n}\nheader {\n  color: #697d91;\n  display: flex;\n  flex-direction: row;\n}\n\nheader h1 {\n  line-height: 1.6em;\n  margin-left: 1em;\n}\n\n.error h2 {\n  font-size: 1.5em;\n  font-weight: bold;\n}\n.error-buttons {\n  width: fit-content;\n  margin: 0 auto;\n  display: block;\n}\n.error button {\n  margin: 0.2em;\n}\n.header-buttons {\n  width: 8em;\n  margin-left: auto;\n  justify-content: space-evenly;\n  display: flex;\n}\n.header-button {\n  cursor: pointer;\n  text-decoration: none;\n  color: #c1c9d1;\n  font-size: 2em;\n  line-height: 2em;\n  margin-left: 0.2em;\n}\n.glow {\n  text-shadow: #fac300 0px 0 3px;\n}\n\n.header-button:hover {\n  color: #697d91;\n  filter: saturate(1) !important;\n}\n\n.logo {\n  height: 2.5em;\n  margin: 0.75em;\n}\n\n.toast-list {\n  list-style-type: none;\n  position: fixed;\n  bottom: 30%;\n  width: 60%;\n  margin-left: 20%;\n}\n</style>\n"],"sourceRoot":""}]);
-// Exports
-/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
-
-
-/***/ },
-
-/***/ "./node_modules/css-loader/dist/cjs.js!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/vue-loader/dist/index.js??ruleSet[1].rules[9].use[0]!./src/components/AuthForm.vue?vue&type=style&index=0&id=2bd044bc&scoped=true&lang=css"
-/*!*********************************************************************************************************************************************************************************************************************************************************!*\
-  !*** ./node_modules/css-loader/dist/cjs.js!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/vue-loader/dist/index.js??ruleSet[1].rules[9].use[0]!./src/components/AuthForm.vue?vue&type=style&index=0&id=2bd044bc&scoped=true&lang=css ***!
-  \*********************************************************************************************************************************************************************************************************************************************************/
-(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
-/* harmony export */ });
-/* harmony import */ var _node_modules_css_loader_dist_runtime_sourceMaps_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../node_modules/css-loader/dist/runtime/sourceMaps.js */ "./node_modules/css-loader/dist/runtime/sourceMaps.js");
-/* harmony import */ var _node_modules_css_loader_dist_runtime_sourceMaps_js__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_css_loader_dist_runtime_sourceMaps_js__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var _node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../node_modules/css-loader/dist/runtime/api.js */ "./node_modules/css-loader/dist/runtime/api.js");
-/* harmony import */ var _node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(_node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_1__);
-// Imports
-
-
-var ___CSS_LOADER_EXPORT___ = _node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_1___default()((_node_modules_css_loader_dist_runtime_sourceMaps_js__WEBPACK_IMPORTED_MODULE_0___default()));
-// Module
-___CSS_LOADER_EXPORT___.push([module.id, `
-form[data-v-2bd044bc] {
-  display: flex;
-  margin: 5em 1em !important;
-  flex-direction: column;
-}
-div[data-v-2bd044bc] {
-  display: flex;
-  width: 100%;
-  margin-top: 1em;
-}
-.token-box input[data-v-2bd044bc] {
-  width: 80%;
-}
-.persist-box[data-v-2bd044bc] {
-  width: 50%;
-  margin-left: auto;
-  margin-right: auto;
-}
-.persist-box input[data-v-2bd044bc] {
-  margin-right: 0.5em;
-}
-button[data-v-2bd044bc] {
-  width: 20%;
-}
-`, "",{"version":3,"sources":["webpack://./src/components/AuthForm.vue"],"names":[],"mappings":";AAuDA;EACE,aAAa;EACb,0BAA0B;EAC1B,sBAAsB;AACxB;AACA;EACE,aAAa;EACb,WAAW;EACX,eAAe;AACjB;AACA;EACE,UAAU;AACZ;AACA;EACE,UAAU;EACV,iBAAiB;EACjB,kBAAkB;AACpB;AACA;EACE,mBAAmB;AACrB;AACA;EACE,UAAU;AACZ","sourcesContent":["<script setup lang=\"ts\">\nimport { i18n } from '@/assets/i18n';\nimport { ref } from 'vue';\nimport { store } from '../store';\n\nconst emit = defineEmits(['onToken', 'onError']);\n\nconst token = ref('');\nconst persist = ref(false);\n\n// TODO: very basic validation, update this later\nfunction isValid(token: string): Promise<boolean> {\n  return Promise.resolve(token.length > 0);\n}\n\nfunction setToken() {\n  isValid(token.value).then((valid) => {\n    if (valid) {\n      emit('onToken', {\n        token: token.value,\n        persist: persist.value\n      });\n    }\n  });\n}\nfunction togglePersist() {\n  if (persist.value) {\n    persist.value = false;\n  } else {\n    const confirm = window.confirm(i18n('AUTH_CONFIRM'));\n    window.setTimeout(() => (persist.value = confirm), 1); // hack necessary to set negative answer when user checked checkbox and said no in prompt\n  }\n}\n</script>\n\n<template>\n  <form action=\"#\">\n    <div class=\"token-box\">\n      <input\n        type=\"text\"\n        v-model=\"token\"\n        :placeholder=\"i18n('ENTER_TOKEN') + store.connection.NAME\"\n        style=\"width: 100%\"\n      />\n      <button @click=\"setToken\" type=\"submit\" :disabled=\"token.length == 0\">\n        {{ i18n('SAVE').toUpperCase() }}\n      </button>\n    </div>\n    <div class=\"persist-box\">\n      <input type=\"checkbox\" v-model=\"persist\" @click=\"togglePersist\" />{{ i18n('AUTH_PERSIST') }}\n    </div>\n  </form>\n</template>\n\n<style scoped>\nform {\n  display: flex;\n  margin: 5em 1em !important;\n  flex-direction: column;\n}\ndiv {\n  display: flex;\n  width: 100%;\n  margin-top: 1em;\n}\n.token-box input {\n  width: 80%;\n}\n.persist-box {\n  width: 50%;\n  margin-left: auto;\n  margin-right: auto;\n}\n.persist-box input {\n  margin-right: 0.5em;\n}\nbutton {\n  width: 20%;\n}\n</style>\n"],"sourceRoot":""}]);
+`, "",{"version":3,"sources":["webpack://./src/App.vue"],"names":[],"mappings":";AAyNA;EACE,wBAAwB;EACxB,YAAY;EACZ,WAAW;EACX,cAAc;EACd,oBAAoB;AACtB;AACA;EACE,8BAA8B;AAChC;AACA;EACE,cAAc;EACd,aAAa;EACb,mBAAmB;AACrB;AAEA;EACE,kBAAkB;EAClB,gBAAgB;AAClB;AAEA;EACE,gBAAgB;EAChB,iBAAiB;AACnB;AAEA;EACE,kBAAkB;EAClB,cAAc;EACd,cAAc;AAChB;AAEA;EACE,aAAa;AACf;AAEA;EACE,iBAAiB;EACjB,6BAA6B;EAC7B,aAAa;AACf;AAEA;EACE,eAAe;EACf,qBAAqB;EACrB,cAAc;EACd,cAAc;EACd,gBAAgB;EAChB,kBAAkB;AACpB;AAEA;EACE,8BAA8B;AAChC;AAEA;EACE,cAAc;EACd,8BAA8B;AAChC;AAEA;EACE,aAAa;EACb,cAAc;AAChB;AAEA;EACE,qBAAqB;EACrB,eAAe;EACf,WAAW;EACX,UAAU;EACV,gBAAgB;AAClB","sourcesContent":["<script setup lang=\"ts\">\nimport { ref } from \"vue\";\nimport ConnectModal from \"./components/ConnectModal.vue\";\nimport Settings from \"./components/Settings.vue\";\nimport Chat from \"./components/Chat.vue\";\nimport { LANG, store } from \"./store\";\nimport PowerSimulator from \"./components/PowerSimulator.vue\";\nimport QuizCardModal from \"./components/QuizCardModal.vue\";\nimport { i18n } from \"./assets/i18n\";\n\nconst version = require(\"../package.json\").version;\n\nconst error = ref<string | undefined>();\n\nconst percent = ref<number>(0);\n\nconst showCardModal = ref(false);\n\nconst showSettings = ref(false);\n\ndocument.addEventListener(\"keydown\", function (event) {\n  if (showCardModal.value && event.key == \"Enter\") {\n    showCardModal.value = false;\n  } else if (event.key == \"Enter\" && store.textInput == \"\") {\n    showCard();\n  }\n});\n\n/**\n * Calculates the header buttons\n * <div\n        class=\"toggle-button\"\n        @click=\"store.toggleUseTools()\"\n        :class=\"{ active: store.getUseTools() }\"\n        :title=\"store.getUseTools() ? i18n('TOOL_USE_OFF') : i18n('TOOL_USE_ON')\"\n      >\n        🔍\n      </div>\n */\nfunction getHeaderButtons() {\n  const CARD = {\n    icon: \"🀙\",\n    title: store.cardDrawn ? i18n(\"NEW_CARD\") : i18n(\"SHOW_CARD\"),\n    action: showCard,\n    style: store.cardDrawn\n      ? \"text-shadow: #fac300 0px 0 3px; line-height: 1.8em;\"\n      : \"line-height: 1.8em;\",\n  };\n  const RESET = {\n    icon: \"⟲\",\n    title: i18n(\"RESET\"),\n    action: resetUser,\n    style: \"\",\n  };\n  const TOOL = {\n    icon: \"🔍\",\n    title: store.getUseTools() ? i18n(\"TOOL_USE_OFF\") : i18n(\"TOOL_USE_ON\"),\n    action: () => store.toggleUseTools(),\n    style: store.getUseTools()\n      ? \"line-height: 2.8em; font-size: 1.5em; text-shadow: rgb(250, 195, 0) 0px 0px 3px; margin-right: 0.2em;\"\n      : \"line-height: 2.8em; font-size: 1.5em; filter: saturate(0); margin-right: 0.2em;\",\n  };\n  const LANGUAGE = {\n    icon: store.lang === LANG.DE ? \"🇩🇪\" : \"🇫🇷\",\n    title: i18n(\"LANGUAGE\"),\n    action: toggleLanguage,\n    style: \"filter: saturate(0)\",\n  };\n  const SETTINGS = {\n    icon: \"⚙︎\",\n    title: i18n(\"SETTINGS\"),\n    action: () => (showSettings.value = !showSettings.value),\n    style: \"\",\n  };\n  return store.connection.SEARCH_URL == \"\"\n    ? [CARD, RESET, LANGUAGE, SETTINGS]\n    : [CARD, RESET, TOOL, LANGUAGE, SETTINGS];\n}\n\n/**\n * Toggles the language between DE and FR\n */\nfunction toggleLanguage() {\n  switch (store.lang) {\n    case LANG.DE:\n      store.lang = LANG.FR;\n      break;\n    case LANG.FR:\n      store.lang = LANG.DE;\n      break;\n  }\n}\n\n/**\n * Resets the app to start with a new user\n */\nfunction resetUser() {\n  if (confirm(i18n(\"RESET_USER\"))) {\n    store.resetUser();\n  }\n}\n\n/**\n * Resets the whole app\n */\nfunction reset() {\n  store.resetUser();\n  error.value = undefined;\n}\n\n/**\n * Draws a new quiz card and sets the example prompts.\n */\nfunction showCard() {\n  store.drawQuizCard();\n  store.setExamplePromptsVisible(true);\n  showCardModal.value = true;\n}\n\n/**\n * Closes the settings window\n */\nfunction closeSettings() {\n  showSettings.value = false;\n}\n\n/**\n * Handles an error and displays it to the user\n * @param error   the error message to display to the user\n */\nfunction handleError(e: string = i18n(\"UNKNOWN_ERROR\")) {\n  error.value = e;\n}\n\n/**\n * Calculates the css opacity for a given toast message\n * @param i the position of the toast message\n */\nfunction getToastOpacity(i: number): string {\n  return \"opacity: \" + (i + 1) / store.toasts.length;\n}\n</script>\n\n<template>\n  <header>\n    <img\n      :src=\"require('@/assets/logo.png')\"\n      alt=\"Logo Berner Fachhochschule\"\n      class=\"logo\"\n      :title=\"\n        'enerKI Version: ' +\n        version +\n        '\\nModel: ' +\n        store.connection.BASE_URL +\n        ' > ' +\n        store.connection.MODEL\n      \"\n    />\n    <h1>enerKI</h1>\n    <div class=\"header-buttons\">\n      <a\n        v-for=\"b of getHeaderButtons()\"\n        @click=\"b.action\"\n        :title=\"b.title\"\n        class=\"header-button\"\n        :style=\"b.style\"\n        >{{ b.icon }}</a\n      >\n    </div>\n  </header>\n  <Settings v-if=\"showSettings\" @on-close=\"closeSettings\" />\n\n  <main v-else>\n    <!-- display error message -->\n    <div class=\"error\" v-if=\"error\">\n      <h2>{{ i18n(\"ERROR\") }}</h2>\n      {{ error }}\n      <br />\n      <div class=\"error-buttons\">\n        <button @click=\"reset\">{{ i18n(\"RESET\") }}</button>\n        <button @click=\"error = ''\">{{ i18n(\"OK\") }}</button>\n      </div>\n    </div>\n\n    <!-- chat window -->\n    <chat v-else :percent=\"percent\" @on-error=\"handleError\" />\n\n    <!-- window for power simulation / debug -->\n    <PowerSimulator\n      v-if=\"store.connected && store.isPedalling() && !error\"\n      :debug=\"store.isDebug\"\n      :watt=\"Math.round(store.power.getValues().value)\"\n    />\n  </main>\n\n  <ConnectModal v-if=\"!store.connected\" @on-error=\"handleError\" />\n  <QuizCardModal\n    v-if=\"store.activeCard && showCardModal\"\n    :card=\"store.activeCard\"\n    @on-close=\"showCardModal = false\"\n  />\n\n  <ul class=\"toast-list\">\n    <!--li v-for=\"(toast, i) of store.toasts\" :style=\"getToastOpacity(i)\">\n        <div class=\"alert alert-info\" role=\"alert\">\n          {{ toast }}\n        </div>\n      </li-->\n    <li v-if=\"store.toasts.length > 0\">\n      <div class=\"alert alert-info\" role=\"alert\">\n        {{ store.toasts.at(-1) }}\n      </div>\n    </li>\n  </ul>\n</template>\n\n<style scoped>\n.error {\n  background-color: salmon;\n  color: white;\n  margin: 1em;\n  padding: 0.5em;\n  border-radius: 0.5em;\n}\n.alert {\n  box-shadow: 0 0 20px lightgray;\n}\nheader {\n  color: #697d91;\n  display: flex;\n  flex-direction: row;\n}\n\nheader h1 {\n  line-height: 1.6em;\n  margin-left: 1em;\n}\n\n.error h2 {\n  font-size: 1.5em;\n  font-weight: bold;\n}\n\n.error-buttons {\n  width: fit-content;\n  margin: 0 auto;\n  display: block;\n}\n\n.error button {\n  margin: 0.2em;\n}\n\n.header-buttons {\n  margin-left: auto;\n  justify-content: space-evenly;\n  display: flex;\n}\n\n.header-button {\n  cursor: pointer;\n  text-decoration: none;\n  color: #c1c9d1;\n  font-size: 2em;\n  line-height: 2em;\n  margin-left: 0.2em;\n}\n\n.glow {\n  text-shadow: #fac300 0px 0 3px;\n}\n\n.header-button:hover {\n  color: #697d91;\n  filter: saturate(1) !important;\n}\n\n.logo {\n  height: 2.5em;\n  margin: 0.75em;\n}\n\n.toast-list {\n  list-style-type: none;\n  position: fixed;\n  bottom: 30%;\n  width: 60%;\n  margin-left: 20%;\n}\n</style>\n"],"sourceRoot":""}]);
 // Exports
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
 
@@ -266,7 +213,7 @@ button .spinner-border[data-v-2bc3d388] {
   height: 4em;
   color: white;
 }
-`, "",{"version":3,"sources":["webpack://./src/components/Chat.vue"],"names":[],"mappings":";AA+YA;EACE,gBAAgB;EAChB,aAAa;EACb,gBAAgB;EAChB,YAAY;EACZ,iBAAiB;AACnB;AACA;EACE,eAAe;AACjB;AACA;EACE,iCAAiC;EACjC,gBAAgB;EAChB,mBAAmB;EACnB,kBAAkB;EAClB,UAAU;EACV,eAAe;EACf,+CAA+C;AACjD;AACA;EACE,yBAAyB;EACzB,cAAc;EACd,gBAAgB;EAChB,iCAAiC;AACnC;AACA;EACE,yBAAyB;EACzB,cAAc;EACd,iBAAiB;EACjB,gCAAgC;AAClC;AACA;;EAEE,aAAa;AACf;AAEA;EACE,cAAc;EACd,WAAW;EACX,UAAU;EACV,iBAAiB;EACjB,kBAAkB;AACpB;AAEA;EACE,SAAS;EACT,OAAO;EACP,iBAAiB;AACnB;AAEA;EACE,gBAAgB;EAChB,aAAa;AACf;AAEA;EACE,kCAAkC;EAClC,aAAa;EACb,aAAa;EACb,gCAAgC;EAChC,6BAA6B;EAC7B,iCAAiC;EACjC,8BAA8B;AAChC;AAEA;EACE,8BAA8B;EAC9B,2BAA2B;EAC3B,+BAA+B;EAC/B,4BAA4B;EAC5B,yBAAyB;EACzB,YAAY;EACZ,aAAa;EACb,WAAW;EACX,WAAW;EACX,UAAU;AACZ;AAEA;EACE,yBAAyB;EACzB,cAAc;AAChB;AAEA;EACE,cAAc;EACd,aAAa;EACb,2BAA2B;AAC7B;AAEA;EACE,oBAAoB;EACpB,YAAY;EACZ,aAAa;AACf;AAEA;EACE,WAAW;EACX,eAAe;EACf,cAAc;EACd,kBAAkB;EAClB,eAAe;AACjB;AAEA;EACE,eAAe;EACf,kBAAkB;AACpB;AACA;EACE,WAAW;EACX,YAAY;AACd","sourcesContent":["<script setup lang=\"ts\">\nimport { computed, ref, ShallowRef, useTemplateRef } from 'vue';\nimport { API_BODY, ExamplePrompt, type Message, TOOL_TYPE, USER_ROLE } from '@/models';\nimport axios from 'axios';\nimport markdownit from 'markdown-it';\nimport { store } from '../store';\nimport { AntSubscription } from '@/antService';\nimport ToastService, { getKiloCalsFromWatthour } from '@/toastService';\nimport PromptExamples from './PromptExamples.vue';\nimport { i18n } from '@/assets/i18n';\n\n// define props\nconst props = defineProps<{\n  token: string;\n  percent: number;\n}>();\n\nconst md = markdownit({\n  html: true,\n  linkify: true,\n  typographer: true\n});\n\n// define events\nconst emit = defineEmits(['onAnswer', 'onError']);\n\nconst chat: ShallowRef = useTemplateRef('chat-list');\n\nconst loadingPercent = ref(0);\n\nconst userInput = ref(false);\nconst chatInput = ref(null);\nlet usage = -1;\nlet inputTimeout = -1;\n\nconst usageInfo = ref('');\n\nconst loadingStyle = computed(() => {\n  return (\n    'filter: blur(' +\n    (10 - Math.round(loadingPercent.value / 10)) +\n    'px);opacity:' +\n    (0.009 * loadingPercent.value + 0.1).toFixed(2) +\n    ';'\n  );\n});\n\n/**\n * Estimates the energy usage for an answer, based on the number of input and output tokens.\n * We measured the energy usage for inference on a M3Ultra Mac Studio\n * Legacy: Samsi et al. estimated the energy usage with 3 - 4 Joule per token, which equals to ~0.001 Wh\n * @see Paper           Samsi et al. (2023): From Words to Watts: Benchmarking the Energy Costs of Large Language Model Inference. https://doi.org/10.48550/arXiv.2310.03003\n * @see Blogpost        gpt-oss uses around 8.3 Wh per 100 output token, which seems way too high https://huggingface.co/blog/sasha/gpt-oss-energy\n * @see YouTube         https://www.youtube.com/watch?v=zjG9TkfWd0o&t=143s\n * @param inputTokens   number of input tokens given to the llm\n * @param outputTokens  number of output tokens given to the llm\n * @returns             an estimation of energy (in Wh), based on the number of in- and output tokens\n */\nfunction estimateEnergyUsage(inputTokens: number, outputTokens: number) {\n  const joule = inputTokens * Number(store.connection.JOULE_PER_INPUT_TOKEN) +\n                outputTokens * Number(store.connection.JOULE_PER_OUTPUT_TOKEN)\n  return joule / 3600; // 1 J is a Ws, so 1 Wh has 3600 J\n}\n\n/**\n * Estimates the energy usage before knowing the answer\n * @returns         an estimation of energy (in Wh)\n */\nfunction preEstimateUsage() {\n  if (usage > 1) return usage;\n  // with tool use activated, we assume more energy consumption\n  return store.getUseTools() ? 3 : 1;\n}\n\n/**\n * Checks if a message is currently the last\n * @param index   the index of the message\n * @returns       TRUE if the message is the last in the array\n *                FALSE if there are more messages after it in the array\n */\nfunction isLastMessage(index: number): boolean {\n  return store.getVisibleMessages().length - index === 1;\n}\n\nfunction getUsageInfoString(usage: {input_tokens: number, output_tokens: number}, duration: number): string {\n  const BR = '\\n';\n  const wh = estimateEnergyUsage(\n    usage.input_tokens,\n    usage.output_tokens\n  );\n  return '- Input tokens: ' + usage.input_tokens + BR +\n         '- Output tokens: ' + usage.output_tokens + BR +\n         '- ' + duration + ' s' + BR +\n         '- ' + wh.toFixed(2) + ' Wh' + BR +\n         '- ~' + getKiloCalsFromWatthour(wh) + ' kcal'\n}\n\n/**\n * Runs a search on duck duck go with a given query\n * @param query the search string to query\n */\nfunction runSearch(query: string): Promise<string> {\n  return axios\n    .get(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`)\n    .then((res) => JSON.stringify(res.data));\n}\n\n/**\n * Fetches the website from an url\n * @param url the url to fetch\n */\nfunction fetchUrl(url: string): Promise<string> {\n  return axios.get(url).then((res) => res.data.replace(/<(style|script)\\b[^>]*>[\\s\\S]*?<\\/\\1\\s*>/gi, ''));\n}\n\n/**\n * Sends a request to the inference service, and then performs the action needed\n * for tool use\n */\nasync function sendWithTools(): Promise<any> {\n  const MAX_TOOL_CALLS = 5;\n\n\n  const SEARCH_TOOL = {\n    type: 'function',\n    function: {\n      name: TOOL_TYPE.SEARCH,\n      description: 'Searches the web for current informations',\n      parameters: {\n        type: 'object',\n        properties: {\n          query: { type: 'string', description: 'The search query.' }\n        },\n        required: ['query']\n      }\n    }\n  };\n\n  const WEBSITE_TOOL = {\n    type: 'function',\n    function: {\n      name: TOOL_TYPE.SITE,\n      description: 'Loads a website from a given URL',\n      parameters: {\n        type: 'object',\n        properties: {\n          query: { type: 'string', description: 'The url to load.' }\n        },\n        required: ['query']\n      }\n    }\n  };\n\n  const body: API_BODY = {\n    model: store.connection.MODEL,\n    messages: [...store.chatMessages],\n    tools: store.getUseTools() ? [\n      SEARCH_TOOL,\n      WEBSITE_TOOL\n    ] : [],\n    tool_choice: 'auto',\n    reasoning: {\n      effort: store.connection.REASONING\n    },\n    'background-tasks': {\n      follow_up_generation: false\n    }\n  };\n\n  // chatGPT does not like these params\n  if (!store.connection.REASONING) {\n    delete body.reasoning;\n    delete body['background-tasks'];\n  }\n\n  const config = {\n    headers: {\n      'Content-Type': 'application/json',\n      Authorization: 'Bearer ' + props.token,\n      'Cache-Control': 'no-cache, no-store'\n    }\n  };\n\n  const url = store.connection.BASE_URL + store.connection.ENDPOINT;\n\n  let messages = [...store.chatMessages];\n\n  // loop for maximum tool calls\n  for (let i = 0; i < MAX_TOOL_CALLS; i++) {\n    const result = await axios.post(url, { ...body, messages }, config);\n    const msg = result.data.choices[0].message;\n    messages.push(msg);\n\n    if (!msg.tool_calls?.length) {\n      return result;\n    }\n\n    for (const call of msg.tool_calls) {\n      const args = JSON.parse(call.function.arguments);\n      switch (call.function.name) {\n        case TOOL_TYPE.SEARCH:\n          ToastService.toolToast(TOOL_TYPE.SEARCH)\n          messages.push({\n            role: USER_ROLE.TOOL,\n            tool_call_id: call.id,\n            content: await runSearch(args.query)\n          });\n          break;\n        case TOOL_TYPE.SITE:\n          ToastService.toolToast(TOOL_TYPE.SITE)\n          messages.push({\n            role: USER_ROLE.TOOL,\n            tool_call_id: call.id,\n            content: await fetchUrl(args.url)\n          });\n          break;\n      }\n    }\n  }\n}\n\n/**\n * Sends a message to the model, with all previous messages as context\n */\nfunction send() {\n  if (store.textInput == '') return;\n\n  const message: Message = {\n    role: USER_ROLE.USER,\n    content: store.textInput,\n    loading: false\n  };\n  loadingPercent.value = 0;\n  usageInfo.value = '';\n\n  store.chatMessages.push(message);\n\n  store.textInput = '';\n\n  const answerMessage = {\n    role: USER_ROLE.AI,\n    content: '...',\n    loading: true,\n    percent: 0\n  };\n\n  store.chatMessages.push(answerMessage);\n  usage = -1;\n\n  chat.value.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'end' });\n\n  const time = Date.now();\n\n\n  Promise.all([\n    ToastService.startToast().then(() => {\n      store.startAndSubscribe(usage === -1 ? preEstimateUsage() : usage, (ant: AntSubscription) => {\n        answerMessage.percent = Math.min(ant.percent, 100);\n        loadingPercent.value = Math.min(ant.percent, 100);\n\n        ToastService.progressToast(\n          answerMessage.percent,\n          answerMessage.content !== '...',\n          ant.value\n        );\n        if (ant.percent >= 100 && usage > 0) {\n          ToastService.energyToast(usage);\n          usage = -1;\n        }\n      });\n    }),\n    sendWithTools()\n      .then((result) => {\n        const duration = Math.round((Date.now() - time) / 1000);\n        usage = estimateEnergyUsage(\n          result.data.usage.input_tokens,\n          result.data.usage.output_tokens\n        );\n        store.setTarget(usage);\n        usageInfo.value = getUsageInfoString(result.data.usage, duration);\n\n        console.log(\n          'Energie verbraucht: ' +\n            usage.toFixed(2) +\n            ' Wh in ' +\n            duration +\n            ' Sekunden. \\nDas benötigt eine Durchschnittsleistung von ' +\n            Math.round((3600 * usage) / duration) +\n            ' Watt.'\n        );\n\n        answerMessage.content = (result.data.choices[0].message.content as string).replaceAll(\n          'ß',\n          'ss'\n        );\n        answerMessage.loading = false;\n\n        // we need to do this, or vue won't detect the update...\n        store.chatMessages.pop();\n        store.chatMessages.push(answerMessage);\n\n        chat.value.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'end' });\n        emit('onAnswer', answerMessage);\n      })\n      .catch((e) => {\n        console.error(e);\n        ToastService.abort();\n        emit('onError', JSON.stringify(e, null, 2));\n      })\n  ]);\n}\n\n/**\n * Sets a 1 second timeout in which we don't listen to hotkey inputs\n */\nfunction inputting() {\n  userInput.value = true;\n  if (inputTimeout > 0) {\n    window.clearTimeout(inputTimeout);\n  }\n  inputTimeout = window.setTimeout(() => {\n    userInput.value = false;\n  }, 1000);\n}\n\nfunction setPrompt(prompt: ExamplePrompt) {\n  if (!store.chatMessages[store.chatMessages.length - 1]?.loading) {\n    store.textInput = prompt[store.lang];\n    usage = prompt.estimateFactor;\n    store.setTarget(usage);\n    (chatInput.value as any)?.focus();\n  }\n}\n</script>\n\n<template>\n  <ul ref=\"chat-list\" class=\"chat-list\">\n    <li\n      v-for=\"(message, i) of store.getVisibleMessages()\"\n      :class=\"'message-bubble chat-' + message.role\"\n      :style=\"\n        message.percent != undefined && message.percent < 100 && isLastMessage(i)\n          ? loadingStyle\n          : ''\n      \"\n      :title=\"\n        i == store.getVisibleMessages().length - 1 && message.role == USER_ROLE.AI\n          ? usageInfo\n          : ''\n      \"\n    >\n      <div v-if=\"message.loading\" class=\"spinner-border\" role=\"status\">\n        <span class=\"visually-hidden\">Loading...</span>\n      </div>\n      <div v-else v-html=\"md.render(message.content)\" />\n    </li>\n    <li style=\"height: 10em; color: white; box-shadow: 0 0 0 white\"></li>\n  </ul>\n\n  <PromptExamples\n    @on-select-prompt=\"setPrompt\"\n    :user-inputting=\"userInput\"\n    v-if=\"\n      !store.isPedalling() &&\n      store.getExamplePrompts().length > 0 &&\n      store.examplePromptsVisible\n    \"\n  />\n\n  <form action=\"#\" ref=\"input-form\" id=\"input-form\">\n    <input\n      autofocus\n      type=\"text\"\n      v-model=\"store.textInput\"\n      :placeholder=\"\n        i18n(\n          store.getExamplePrompts().length > 0\n            ? 'CHAT_PLACEHOLDER_PROMPTS'\n            : 'CHAT_PLACEHOLDER'\n        )\n      \"\n      @input=\"inputting\"\n      ref=\"chatInput\"\n    />\n    <button\n      @click=\"send\"\n      type=\"submit\"\n      :disabled=\"store.isPedalling()\"\n      :class=\"{ disabled: store.isPedalling() }\"\n    >\n      <div v-if=\"store.isPedalling()\" class=\"spinner-border\" role=\"status\">\n        <span class=\"visually-hidden\">...</span>\n      </div>\n      <span v-else>⬆︎</span>\n    </button>\n  </form>\n</template>\n\n<style scoped>\nul.chat-list {\n  overflow: scroll;\n  height: 100vh;\n  margin-bottom: 0;\n  padding: 1em;\n  padding-top: 10em;\n}\nli:first-child {\n  margin-top: 3em;\n}\n.message-bubble {\n  box-shadow: 2px 2px 5px lightgray;\n  list-style: none;\n  padding: 0.25em 1em;\n  border-radius: 1em;\n  width: 75%;\n  margin-top: 1em;\n  transition: opacity 1.2s ease, filter 1.2s ease;\n}\n.chat-user {\n  background-color: #64788b;\n  color: #eff1f3;\n  margin-left: 25%;\n  border-bottom-right-radius: 0.5em;\n}\n.chat-assistant {\n  background-color: #e0e4e8;\n  color: #4b647d;\n  margin-right: 25%;\n  border-bottom-left-radius: 0.5em;\n}\n.chat-developer,\n.chat-system {\n  display: none;\n}\n\n.spinner-border {\n  display: block;\n  height: 1em;\n  width: 1em;\n  margin-left: auto;\n  margin-right: auto;\n}\n\ninput {\n  border: 0;\n  flex: 1;\n  margin: 0.2em 1em;\n}\n\ninput:focus {\n  outline-width: 0;\n  outline: none;\n}\n\n#input-form {\n  box-shadow: 0px 0px 10px lightgray;\n  display: flex;\n  height: 2.4em;\n  border-bottom-left-radius: 1.2em;\n  border-top-left-radius: 1.2em;\n  border-bottom-right-radius: 1.2em;\n  border-top-right-radius: 1.2em;\n}\n\nbutton {\n  border-bottom-left-radius: 1em;\n  border-top-left-radius: 1em;\n  border-bottom-right-radius: 1em;\n  border-top-right-radius: 1em;\n  background-color: #f5be41;\n  color: white;\n  margin: 0.2em;\n  border: 0px;\n  height: 2em;\n  width: 2em;\n}\n\nbutton:hover {\n  background-color: #f9b310;\n  color: #697d91;\n}\n\nbutton.disabled {\n  color: #697d91;\n  opacity: 0.75;\n  background-color: lightgray;\n}\n\nbutton .spinner-border {\n  margin: 0 !important;\n  width: 1.3em;\n  height: 1.3em;\n}\n\n.usage {\n  width: 100%;\n  margin-top: 1em;\n  display: block;\n  text-align: center;\n  color: darkgray;\n}\n\n.spinner-border {\n  margin-top: 2em;\n  margin-bottom: 2em;\n}\n.scroll-target {\n  height: 4em;\n  color: white;\n}\n</style>\n"],"sourceRoot":""}]);
+`, "",{"version":3,"sources":["webpack://./src/components/Chat.vue"],"names":[],"mappings":";AA2ZA;EACE,gBAAgB;EAChB,aAAa;EACb,gBAAgB;EAChB,YAAY;EACZ,iBAAiB;AACnB;AACA;EACE,eAAe;AACjB;AACA;EACE,iCAAiC;EACjC,gBAAgB;EAChB,mBAAmB;EACnB,kBAAkB;EAClB,UAAU;EACV,eAAe;EACf,+CAA+C;AACjD;AACA;EACE,yBAAyB;EACzB,cAAc;EACd,gBAAgB;EAChB,iCAAiC;AACnC;AACA;EACE,yBAAyB;EACzB,cAAc;EACd,iBAAiB;EACjB,gCAAgC;AAClC;AACA;;EAEE,aAAa;AACf;AAEA;EACE,cAAc;EACd,WAAW;EACX,UAAU;EACV,iBAAiB;EACjB,kBAAkB;AACpB;AAEA;EACE,SAAS;EACT,OAAO;EACP,iBAAiB;AACnB;AAEA;EACE,gBAAgB;EAChB,aAAa;AACf;AAEA;EACE,kCAAkC;EAClC,aAAa;EACb,aAAa;EACb,gCAAgC;EAChC,6BAA6B;EAC7B,iCAAiC;EACjC,8BAA8B;AAChC;AAEA;EACE,8BAA8B;EAC9B,2BAA2B;EAC3B,+BAA+B;EAC/B,4BAA4B;EAC5B,yBAAyB;EACzB,YAAY;EACZ,aAAa;EACb,WAAW;EACX,WAAW;EACX,UAAU;AACZ;AAEA;EACE,yBAAyB;EACzB,cAAc;AAChB;AAEA;EACE,cAAc;EACd,aAAa;EACb,2BAA2B;AAC7B;AAEA;EACE,oBAAoB;EACpB,YAAY;EACZ,aAAa;AACf;AAEA;EACE,WAAW;EACX,eAAe;EACf,cAAc;EACd,kBAAkB;EAClB,eAAe;AACjB;AAEA;EACE,eAAe;EACf,kBAAkB;AACpB;AACA;EACE,WAAW;EACX,YAAY;AACd","sourcesContent":["<script setup lang=\"ts\">\nimport { computed, ref, ShallowRef, useTemplateRef } from 'vue';\nimport { API_BODY, ExamplePrompt, type Message, TOOL_TYPE, USER_ROLE } from '@/models';\nimport axios from 'axios';\nimport markdownit from 'markdown-it';\nimport { store } from '../store';\nimport { AntSubscription } from '@/antService';\nimport ToastService, { getKiloCalsFromWatthour } from '@/toastService';\nimport PromptExamples from './PromptExamples.vue';\nimport { i18n } from '@/assets/i18n';\n\n// define props\nconst props = defineProps<{\n  percent: number;\n}>();\n\nconst md = markdownit({\n  html: true,\n  linkify: true,\n  typographer: true\n});\n\n// define events\nconst emit = defineEmits(['onAnswer', 'onError']);\n\nconst chat: ShallowRef = useTemplateRef('chat-list');\n\nconst loadingPercent = ref(0);\n\nconst userInput = ref(false);\nconst chatInput = ref(null);\nlet usage = -1;\nlet inputTimeout = -1;\n\nconst usageInfo = ref('');\n\nconst loadingStyle = computed(() => {\n  return (\n    'filter: blur(' +\n    (10 - Math.round(loadingPercent.value / 10)) +\n    'px);opacity:' +\n    (0.009 * loadingPercent.value + 0.1).toFixed(2) +\n    ';'\n  );\n});\n\n/**\n * Estimates the energy usage for an answer, based on the number of input and output tokens.\n * We measured the energy usage for inference on a M3Ultra Mac Studio\n * Legacy: Samsi et al. estimated the energy usage with 3 - 4 Joule per token, which equals to ~0.001 Wh\n * @see Paper           Samsi et al. (2023): From Words to Watts: Benchmarking the Energy Costs of Large Language Model Inference. https://doi.org/10.48550/arXiv.2310.03003\n * @see Blogpost        gpt-oss uses around 8.3 Wh per 100 output token, which seems way too high https://huggingface.co/blog/sasha/gpt-oss-energy\n * @see YouTube         https://www.youtube.com/watch?v=zjG9TkfWd0o&t=143s\n * @param inputTokens   number of input tokens given to the llm\n * @param outputTokens  number of output tokens given to the llm\n * @returns             an estimation of energy (in Wh), based on the number of in- and output tokens\n */\nfunction estimateEnergyUsage(inputTokens: number, outputTokens: number) {\n  const joule = inputTokens * Number(store.connection.JOULE_PER_INPUT_TOKEN) +\n                outputTokens * Number(store.connection.JOULE_PER_OUTPUT_TOKEN)\n  return joule / 3600; // 1 J is a Ws, so 1 Wh has 3600 J\n}\n\n/**\n * Estimates the energy usage before knowing the answer\n * @returns         an estimation of energy (in Wh)\n */\nfunction preEstimateUsage() {\n  if (usage > 1) return usage;\n  // with tool use activated, we assume more energy consumption\n  return store.getUseTools() ? 3 : 1;\n}\n\n/**\n * Checks if a message is currently the last\n * @param index   the index of the message\n * @returns       TRUE if the message is the last in the array\n *                FALSE if there are more messages after it in the array\n */\nfunction isLastMessage(index: number): boolean {\n  return store.getVisibleMessages().length - index === 1;\n}\n\nfunction getUsageInfoString(usage: {input_tokens: number, output_tokens: number}, duration: number): string {\n  const BR = '\\n';\n  const wh = estimateEnergyUsage(\n    usage.input_tokens,\n    usage.output_tokens\n  );\n  return '- Input tokens: ' + usage.input_tokens + BR +\n         '- Output tokens: ' + usage.output_tokens + BR +\n         '- ' + duration + ' s' + BR +\n         '- ' + wh.toFixed(2) + ' Wh' + BR +\n         '- ~' + getKiloCalsFromWatthour(wh) + ' kcal'\n}\n\n/**\n * Runs a web search with a given query\n * @param query the search string to query\n */\nfunction runSearch(query: string): Promise<string> {\n  return axios.post(\n    store.connection.SEARCH_URL,\n    {\n      query: query,\n      search_depth: 'basic',\n      include_favicon: false,\n      include_usage: true,\n    },\n    {\n      headers: {\n        'Content-Type': 'application/json',\n        Authorization: `Bearer ${store.connection.SEARCH_KEY}`,\n      },\n      timeout: 0,\n    }\n  ).then((res) => JSON.stringify(res.data));\n  // return axios\n  //   .get(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`)\n  //   .then((res) => JSON.stringify(res.data));\n}\n\n/**\n * Fetches the website from an url\n * @param url the url to fetch\n */\nfunction fetchUrl(url: string): Promise<string> {\n  return axios.get(url).then((res) => res.data.replace(/<(style|script)\\b[^>]*>[\\s\\S]*?<\\/\\1\\s*>/gi, ''));\n}\n\n/**\n * Sends a request to the inference service, and then performs the action needed\n * for tool use\n */\nasync function sendWithTools(): Promise<any> {\n  const SEARCH_TOOL = {\n    type: 'function',\n    function: {\n      name: TOOL_TYPE.SEARCH,\n      description: 'Searches the web for current informations',\n      parameters: {\n        type: 'object',\n        properties: {\n          query: { type: 'string', description: 'The search query.' }\n        },\n        required: ['query']\n      }\n    }\n  };\n\n  const WEBSITE_TOOL = {\n    type: 'function',\n    function: {\n      name: TOOL_TYPE.SITE,\n      description: 'Loads a website from a given URL',\n      parameters: {\n        type: 'object',\n        properties: {\n          query: { type: 'string', description: 'The url to load.' }\n        },\n        required: ['query']\n      }\n    }\n  };\n\n  const body: API_BODY = {\n    model: store.connection.MODEL,\n    messages: [...store.chatMessages],\n    tools: store.getUseTools() ? [\n      SEARCH_TOOL,\n      WEBSITE_TOOL\n    ] : [],\n    tool_choice: 'auto',\n    reasoning: {\n      effort: store.connection.REASONING\n    },\n    'background-tasks': {\n      follow_up_generation: false\n    }\n  };\n\n  // chatGPT does not like these params\n  if (!store.connection.REASONING) {\n    delete body.reasoning;\n    delete body['background-tasks'];\n  }\n\n  const config = {\n    headers: {\n      'Content-Type': 'application/json',\n      Authorization: 'Bearer ' + store.connection.TOKEN,\n      'Cache-Control': 'no-cache, no-store'\n    }\n  };\n\n  const url = store.connection.BASE_URL + store.connection.ENDPOINT;\n\n  let messages = [...store.chatMessages];\n\n  // loop for maximum tool calls\n  for (let i = 0; i < store.connection.MAX_TOOL_CALLS; i++) {\n    const result = await axios.post(url, { ...body, messages }, config);\n    const msg = result.data.choices[0].message;\n    messages.push(msg);\n\n    if (!msg.tool_calls?.length) {\n      return result;\n    }\n\n    for (const call of msg.tool_calls) {\n      const args = JSON.parse(call.function.arguments);\n      switch (call.function.name) {\n        case TOOL_TYPE.SEARCH:\n          ToastService.toolToast(TOOL_TYPE.SEARCH)\n          messages.push({\n            role: USER_ROLE.TOOL,\n            tool_call_id: call.id,\n            content: await runSearch(args.query)\n          });\n          break;\n        case TOOL_TYPE.SITE:\n          ToastService.toolToast(TOOL_TYPE.SITE)\n          messages.push({\n            role: USER_ROLE.TOOL,\n            tool_call_id: call.id,\n            content: await fetchUrl(args.url)\n          });\n          break;\n      }\n    }\n  }\n}\n\n/**\n * Sends a message to the model, with all previous messages as context\n */\nfunction send() {\n  if (store.textInput == '') return;\n\n  const message: Message = {\n    role: USER_ROLE.USER,\n    content: store.textInput,\n    loading: false\n  };\n  loadingPercent.value = 0;\n  usageInfo.value = '';\n\n  store.chatMessages.push(message);\n\n  store.textInput = '';\n\n  const answerMessage = {\n    role: USER_ROLE.AI,\n    content: '...',\n    loading: true,\n    percent: 0\n  };\n\n  store.chatMessages.push(answerMessage);\n  usage = -1;\n\n  chat.value.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'end' });\n\n  const time = Date.now();\n\n\n  Promise.all([\n    ToastService.startToast().then(() => {\n      store.startAndSubscribe(usage === -1 ? preEstimateUsage() : usage, (ant: AntSubscription) => {\n        answerMessage.percent = Math.min(ant.percent, 100);\n        loadingPercent.value = Math.min(ant.percent, 100);\n\n        ToastService.progressToast(\n          answerMessage.percent,\n          answerMessage.content !== '...',\n          ant.value\n        );\n        if (ant.percent >= 100 && usage > 0) {\n          ToastService.energyToast(usage);\n          usage = -1;\n        }\n      });\n    }),\n    sendWithTools()\n      .then((result) => {\n        const duration = Math.round((Date.now() - time) / 1000);\n        usage = estimateEnergyUsage(\n          result.data.usage.input_tokens,\n          result.data.usage.output_tokens\n        );\n        store.setTarget(usage);\n        usageInfo.value = getUsageInfoString(result.data.usage, duration);\n\n        console.log(\n          'Energie verbraucht: ' +\n            usage.toFixed(2) +\n            ' Wh in ' +\n            duration +\n            ' Sekunden. \\nDas benötigt eine Durchschnittsleistung von ' +\n            Math.round((3600 * usage) / duration) +\n            ' Watt.'\n        );\n\n        answerMessage.content = (result.data.choices[0].message.content as string).replaceAll(\n          'ß',\n          'ss'\n        );\n        answerMessage.loading = false;\n\n        // we need to do this, or vue won't detect the update...\n        store.chatMessages.pop();\n        store.chatMessages.push(answerMessage);\n\n        chat.value.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'end' });\n        emit('onAnswer', answerMessage);\n      })\n      .catch((e) => {\n        console.error(e);\n        ToastService.abort();\n        emit('onError', JSON.stringify(e, null, 2));\n      })\n  ]);\n}\n\n/**\n * Sets a 1 second timeout in which we don't listen to hotkey inputs\n */\nfunction inputting() {\n  userInput.value = true;\n  if (inputTimeout > 0) {\n    window.clearTimeout(inputTimeout);\n  }\n  inputTimeout = window.setTimeout(() => {\n    userInput.value = false;\n  }, 1000);\n}\n\nfunction setPrompt(prompt: ExamplePrompt) {\n  if (!store.chatMessages[store.chatMessages.length - 1]?.loading) {\n    store.textInput = prompt[store.lang];\n    usage = prompt.estimateFactor;\n    store.setTarget(usage);\n    (chatInput.value as any)?.focus();\n  }\n}\n</script>\n\n<template>\n  <ul ref=\"chat-list\" class=\"chat-list\">\n    <li\n      v-for=\"(message, i) of store.getVisibleMessages()\"\n      :class=\"'message-bubble chat-' + message.role\"\n      :style=\"\n        message.percent != undefined && message.percent < 100 && isLastMessage(i)\n          ? loadingStyle\n          : ''\n      \"\n      :title=\"\n        i == store.getVisibleMessages().length - 1 && message.role == USER_ROLE.AI\n          ? usageInfo\n          : ''\n      \"\n    >\n      <div v-if=\"message.loading\" class=\"spinner-border\" role=\"status\">\n        <span class=\"visually-hidden\">Loading...</span>\n      </div>\n      <div v-else v-html=\"md.render(message.content)\" />\n    </li>\n    <li style=\"height: 10em; color: white; box-shadow: 0 0 0 white\"></li>\n  </ul>\n\n  <PromptExamples\n    @on-select-prompt=\"setPrompt\"\n    :user-inputting=\"userInput\"\n    v-if=\"\n      !store.isPedalling() &&\n      store.getExamplePrompts().length > 0 &&\n      store.examplePromptsVisible\n    \"\n  />\n\n  <form action=\"#\" ref=\"input-form\" id=\"input-form\">\n    <input\n      autofocus\n      type=\"text\"\n      v-model=\"store.textInput\"\n      :placeholder=\"\n        i18n(\n          store.getExamplePrompts().length > 0\n            ? 'CHAT_PLACEHOLDER_PROMPTS'\n            : 'CHAT_PLACEHOLDER'\n        )\n      \"\n      @input=\"inputting\"\n      ref=\"chatInput\"\n    />\n    <button\n      @click=\"send\"\n      type=\"submit\"\n      :disabled=\"store.isPedalling()\"\n      :class=\"{ disabled: store.isPedalling() }\"\n    >\n      <div v-if=\"store.isPedalling()\" class=\"spinner-border\" role=\"status\">\n        <span class=\"visually-hidden\">...</span>\n      </div>\n      <span v-else>⬆︎</span>\n    </button>\n  </form>\n</template>\n\n<style scoped>\nul.chat-list {\n  overflow: scroll;\n  height: 100vh;\n  margin-bottom: 0;\n  padding: 1em;\n  padding-top: 10em;\n}\nli:first-child {\n  margin-top: 3em;\n}\n.message-bubble {\n  box-shadow: 2px 2px 5px lightgray;\n  list-style: none;\n  padding: 0.25em 1em;\n  border-radius: 1em;\n  width: 75%;\n  margin-top: 1em;\n  transition: opacity 1.2s ease, filter 1.2s ease;\n}\n.chat-user {\n  background-color: #64788b;\n  color: #eff1f3;\n  margin-left: 25%;\n  border-bottom-right-radius: 0.5em;\n}\n.chat-assistant {\n  background-color: #e0e4e8;\n  color: #4b647d;\n  margin-right: 25%;\n  border-bottom-left-radius: 0.5em;\n}\n.chat-developer,\n.chat-system {\n  display: none;\n}\n\n.spinner-border {\n  display: block;\n  height: 1em;\n  width: 1em;\n  margin-left: auto;\n  margin-right: auto;\n}\n\ninput {\n  border: 0;\n  flex: 1;\n  margin: 0.2em 1em;\n}\n\ninput:focus {\n  outline-width: 0;\n  outline: none;\n}\n\n#input-form {\n  box-shadow: 0px 0px 10px lightgray;\n  display: flex;\n  height: 2.4em;\n  border-bottom-left-radius: 1.2em;\n  border-top-left-radius: 1.2em;\n  border-bottom-right-radius: 1.2em;\n  border-top-right-radius: 1.2em;\n}\n\nbutton {\n  border-bottom-left-radius: 1em;\n  border-top-left-radius: 1em;\n  border-bottom-right-radius: 1em;\n  border-top-right-radius: 1em;\n  background-color: #f5be41;\n  color: white;\n  margin: 0.2em;\n  border: 0px;\n  height: 2em;\n  width: 2em;\n}\n\nbutton:hover {\n  background-color: #f9b310;\n  color: #697d91;\n}\n\nbutton.disabled {\n  color: #697d91;\n  opacity: 0.75;\n  background-color: lightgray;\n}\n\nbutton .spinner-border {\n  margin: 0 !important;\n  width: 1.3em;\n  height: 1.3em;\n}\n\n.usage {\n  width: 100%;\n  margin-top: 1em;\n  display: block;\n  text-align: center;\n  color: darkgray;\n}\n\n.spinner-border {\n  margin-top: 2em;\n  margin-bottom: 2em;\n}\n.scroll-target {\n  height: 4em;\n  color: white;\n}\n</style>\n"],"sourceRoot":""}]);
 // Exports
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
 
@@ -591,40 +538,152 @@ __webpack_require__.r(__webpack_exports__);
 var ___CSS_LOADER_EXPORT___ = _node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_1___default()((_node_modules_css_loader_dist_runtime_sourceMaps_js__WEBPACK_IMPORTED_MODULE_0___default()));
 // Module
 ___CSS_LOADER_EXPORT___.push([module.id, `
-h1[data-v-47aa12d3] {
-  margin-top: 3em;
-  margin-left: 2em;
+.settings-container[data-v-47aa12d3] {
+  width: 100%;
+  max-width: 850px;
+  margin: 7em auto 0 auto;
+  padding: 0 2em;
+  box-sizing: border-box;
+  color: var(--text-color, inherit);
 }
-p[data-v-47aa12d3] {
-  margin-left: 5em;
+.settings-header[data-v-47aa12d3] {
+  margin-bottom: 2em;
+  padding-bottom: 1em;
+  border-bottom: 1px solid var(--border-color, #ddd);
 }
-ul[data-v-47aa12d3] {
-  list-style: none;
-  margin: 0 5em 1em;
-  padding-left: 0;
-  flex: 3;
+.version[data-v-47aa12d3] {
+  margin: 0.4em 0 0;
+  font-size: 0.85em;
+  opacity: 0.65;
 }
-li[data-v-47aa12d3] {
-  margin: 2px;
-  padding: 2px;
+.settings-section[data-v-47aa12d3] {
+  margin-bottom: 1.5em;
+  padding: 1.5em;
+  border: 1px solid var(--border-color, #ddd);
+  border-radius: 10px;
+  background: var(--section-background, rgba(128, 128, 128, 0.04));
+}
+.form-group[data-v-47aa12d3] {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
+label[data-v-47aa12d3] {
+  font-size: 0.9em;
+  font-weight: 600;
+}
+select[data-v-47aa12d3],
+input[data-v-47aa12d3] {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: 0.7em 0.8em;
+  border: 1px solid var(--border-color, #ccc);
+  border-radius: 6px;
+  font: inherit;
+  background: var(--input-background, transparent);
+  color: inherit;
+}
+select[data-v-47aa12d3] {
   cursor: pointer;
 }
-#connections[data-v-47aa12d3] {
-  max-width: 800px;
+.token-line[data-v-47aa12d3] {
   display: flex;
-  gap: 1em;
-  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5em;
+  padding: 1em 0;
 }
-.connection-info[data-v-47aa12d3] {
-  font-size: smaller;
-  flex: 5;
+.token-line + .token-line[data-v-47aa12d3] {
+  border-top: 1px solid var(--border-color, #ddd);
+}
+.token-label[data-v-47aa12d3] {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35em;
+  flex: 1;
+}
+.token-label small[data-v-47aa12d3] {
+  font-size: 0.8em;
+  opacity: 0.6;
+}
+.token-input[data-v-47aa12d3] {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  flex: 2;
 }
 button[data-v-47aa12d3] {
-  margin: 0.5em auto;
-  width: 10em;
-  display: block;
+  padding: 0.7em 1.2em;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+  white-space: nowrap;
 }
-`, "",{"version":3,"sources":["webpack://./src/components/Settings.vue"],"names":[],"mappings":";AAgDA;EACE,eAAe;EACf,gBAAgB;AAClB;AACA;EACE,gBAAgB;AAClB;AACA;EACE,gBAAgB;EAChB,iBAAiB;EACjB,eAAe;EACf,OAAO;AACT;AACA;EACE,WAAW;EACX,YAAY;EACZ,eAAe;AACjB;AACA;EACE,gBAAgB;EAChB,aAAa;EACb,QAAQ;EACR,eAAe;AACjB;AACA;EACE,kBAAkB;EAClB,OAAO;AACT;AACA;EACE,kBAAkB;EAClB,WAAW;EACX,cAAc;AAChB","sourcesContent":["<script setup lang=\"ts\">\nimport { i18n } from '@/assets/i18n';\nimport { ref } from 'vue';\nimport { ENV } from '../../env';\nimport { Connection, store } from '../store';\nconst PACKAGE = require('../../package.json');\nconst version = PACKAGE.version;\nconst emit = defineEmits(['onClose']);\n\nconst settings: Connection[] = ENV;\nlet selected = ref<{ [key: string]: string }>(store.connection);\n\nfunction close(): void {\n  emit('onClose');\n}\n\nfunction select(c: Connection): void {\n  selected.value = c;\n  c && store.setConnection(c);\n}\n\nfunction isSelected(c: Connection): boolean {\n  return c.NAME === selected.value?.NAME;\n}\n\nfunction getField(key: string) {\n  return selected.value[key];\n}\n</script>\n\n<template>\n  <h1>{{ i18n('SETTINGS') }}</h1>\n  <p>{{ i18n('VERSION_LABEL') }} {{ version }}</p>\n  <div id=\"connections\">\n    <ul>\n      <li v-for=\"connection of settings\" @click=\"select(connection)\">\n        <input type=\"radio\" :checked=\"isSelected(connection)\" /> {{ connection.NAME }}\n      </li>\n    </ul>\n    <ul class=\"connection-info\">\n      <li v-for=\"key of Object.keys(selected)\">{{ key }}: {{ getField(key) }}</li>\n    </ul>\n  </div>\n\n  <button @click=\"close\">{{ i18n('CLOSE') }}</button>\n</template>\n\n<style scoped>\nh1 {\n  margin-top: 3em;\n  margin-left: 2em;\n}\np {\n  margin-left: 5em;\n}\nul {\n  list-style: none;\n  margin: 0 5em 1em;\n  padding-left: 0;\n  flex: 3;\n}\nli {\n  margin: 2px;\n  padding: 2px;\n  cursor: pointer;\n}\n#connections {\n  max-width: 800px;\n  display: flex;\n  gap: 1em;\n  flex-wrap: wrap;\n}\n.connection-info {\n  font-size: smaller;\n  flex: 5;\n}\nbutton {\n  margin: 0.5em auto;\n  width: 10em;\n  display: block;\n}\n</style>\n"],"sourceRoot":""}]);
+.token-input button[data-v-47aa12d3] {
+  min-width: 5em;
+}
+button[data-v-47aa12d3]:hover {
+  filter: brightness(0.9);
+}
+.connection-info[data-v-47aa12d3] {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+  font-size: 0.85em;
+}
+.info-row[data-v-47aa12d3] {
+  display: flex;
+  justify-content: space-between;
+  gap: 1em;
+  padding: 0.5em 0.7em;
+  border-radius: 5px;
+  background: var(--info-background, rgba(128, 128, 128, 0.08));
+}
+.info-key[data-v-47aa12d3] {
+  font-weight: 600;
+  opacity: 0.75;
+}
+.info-value[data-v-47aa12d3] {
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+.settings-footer[data-v-47aa12d3] {
+  display: flex;
+  justify-content: center;
+  padding: 0.5em 0 1em;
+}
+.close-button[data-v-47aa12d3] {
+  min-width: 10em;
+  background-color: #fac300;
+}
+@media (max-width: 600px) {
+.settings-container[data-v-47aa12d3] {
+    padding: 0 1em;
+    margin: 1em auto;
+}
+.settings-section[data-v-47aa12d3] {
+    padding: 1em;
+}
+.token-line[data-v-47aa12d3] {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.8em;
+}
+.token-input[data-v-47aa12d3] {
+    width: 100%;
+}
+.info-row[data-v-47aa12d3] {
+    flex-direction: column;
+    gap: 0.3em;
+}
+.info-value[data-v-47aa12d3] {
+    text-align: left;
+}
+}
+`, "",{"version":3,"sources":["webpack://./src/components/Settings.vue"],"names":[],"mappings":";AAiIA;EACE,WAAW;EACX,gBAAgB;EAChB,uBAAuB;EACvB,cAAc;EACd,sBAAsB;EACtB,iCAAiC;AACnC;AAEA;EACE,kBAAkB;EAClB,mBAAmB;EACnB,kDAAkD;AACpD;AAEA;EACE,iBAAiB;EACjB,iBAAiB;EACjB,aAAa;AACf;AAEA;EACE,oBAAoB;EACpB,cAAc;EACd,2CAA2C;EAC3C,mBAAmB;EACnB,gEAAgE;AAClE;AAEA;EACE,aAAa;EACb,sBAAsB;EACtB,UAAU;AACZ;AAEA;EACE,gBAAgB;EAChB,gBAAgB;AAClB;AAEA;;EAEE,sBAAsB;EACtB,WAAW;EACX,YAAY;EACZ,oBAAoB;EACpB,2CAA2C;EAC3C,kBAAkB;EAClB,aAAa;EACb,gDAAgD;EAChD,cAAc;AAChB;AAEA;EACE,eAAe;AACjB;AAEA;EACE,aAAa;EACb,mBAAmB;EACnB,8BAA8B;EAC9B,UAAU;EACV,cAAc;AAChB;AAEA;EACE,+CAA+C;AACjD;AAEA;EACE,aAAa;EACb,sBAAsB;EACtB,WAAW;EACX,OAAO;AACT;AAEA;EACE,gBAAgB;EAChB,YAAY;AACd;AAEA;EACE,aAAa;EACb,mBAAmB;EACnB,UAAU;EACV,OAAO;AACT;AAEA;EACE,oBAAoB;EACpB,YAAY;EACZ,kBAAkB;EAClB,eAAe;EACf,aAAa;EACb,gBAAgB;EAChB,mBAAmB;AACrB;AAEA;EACE,cAAc;AAChB;AAEA;EACE,uBAAuB;AACzB;AAEA;EACE,aAAa;EACb,sBAAsB;EACtB,UAAU;EACV,iBAAiB;AACnB;AAEA;EACE,aAAa;EACb,8BAA8B;EAC9B,QAAQ;EACR,oBAAoB;EACpB,kBAAkB;EAClB,6DAA6D;AAC/D;AAEA;EACE,gBAAgB;EAChB,aAAa;AACf;AAEA;EACE,iBAAiB;EACjB,uBAAuB;AACzB;AAEA;EACE,aAAa;EACb,uBAAuB;EACvB,oBAAoB;AACtB;AAEA;EACE,eAAe;EACf,yBAAyB;AAC3B;AAEA;AACE;IACE,cAAc;IACd,gBAAgB;AAClB;AAEA;IACE,YAAY;AACd;AAEA;IACE,sBAAsB;IACtB,oBAAoB;IACpB,UAAU;AACZ;AAEA;IACE,WAAW;AACb;AAEA;IACE,sBAAsB;IACtB,UAAU;AACZ;AAEA;IACE,gBAAgB;AAClB;AACF","sourcesContent":["<script setup lang=\"ts\">\nimport { i18n } from \"@/assets/i18n\";\nimport { ref, watch } from \"vue\";\nimport { ENV } from \"../../env\";\nimport { Connection, getPersisted, store, STORE_KEY, persist } from \"../store\";\nconst PACKAGE = require(\"../../package.json\");\nconst version = PACKAGE.version;\nconst emit = defineEmits([\"onClose\"]);\n\nconst settings: Connection[] = ENV;\n\nlet selected = ref<Connection>(store.connection);\nconst llm_token = ref(selected.value.TOKEN || \"\");\nconst search_token = ref(selected.value.SEARCH_KEY || \"\");\n\nwatch(selected, (n) => {\n  search_token.value = n.SEARCH_KEY;\n  llm_token.value = n.TOKEN;\n});\n\nfunction save(): void {\n  if (selected.value) {\n    store.setConnection(selected.value);\n  }\n  emit(\"onClose\");\n}\n\nfunction select(c: Connection): void {\n  // selected.value = c;\n  // c && store.setConnection(c);\n}\n\nfunction setToken(value: string, type: \"llm\" | \"search\") {\n  switch (type) {\n    case \"llm\":\n      selected.value.TOKEN = value;\n      break;\n    case \"search\":\n      selected.value.SEARCH_KEY = value;\n      break;\n  }\n}\n</script>\n\n<template>\n  <div class=\"settings-container\">\n    <section class=\"settings-section\">\n      <div>\n        <h1>{{ i18n(\"SETTINGS\") }}</h1>\n        <p class=\"version\">{{ i18n(\"VERSION_LABEL\") }} {{ version }}</p>\n      </div>\n    </section>\n\n    <section class=\"settings-section\">\n      <div class=\"form-group\">\n        <label for=\"connections\">{{ i18n(\"SELECT_AI\") }}</label>\n        <select\n          id=\"connections\"\n          name=\"connections\"\n          v-model=\"selected\"\n          @change=\"select(selected)\"\n        >\n          <option\n            v-for=\"connection of settings\"\n            :key=\"connection.NAME\"\n            :value=\"connection\"\n          >\n            {{ connection.NAME }}\n          </option>\n        </select>\n      </div>\n    </section>\n\n    <section class=\"settings-section\">\n      <div class=\"token-line\">\n        <div class=\"token-label\">\n          <label for=\"llm-token\"> {{ i18n(\"ENTER_TOKEN\") }} {{ selected.NAME }} </label>\n        </div>\n\n        <div class=\"token-input\">\n          <input\n            id=\"llm-token\"\n            name=\"llm-token\"\n            v-model=\"llm_token\"\n            :placeholder=\"i18n('ENTER_TOKEN') + selected.NAME\"\n          />\n          <button @click=\"setToken(llm_token, 'llm')\">\n            {{ i18n(\"SET\") }}\n          </button>\n        </div>\n      </div>\n\n      <div class=\"token-line\">\n        <div class=\"token-label\">\n          <label for=\"search-token\">Tavily API-Key</label>\n        </div>\n\n        <div class=\"token-input\">\n          <input\n            id=\"search-token\"\n            name=\"search-token\"\n            v-model=\"search_token\"\n            :placeholder=\"i18n('ENTER_TOKEN') + ' TAVILY'\"\n          />\n          <button @click=\"setToken(search_token, 'search')\">\n            {{ i18n(\"SET\") }}\n          </button>\n        </div>\n      </div>\n    </section>\n\n    <section class=\"settings-section connection-section\">\n      <div class=\"connection-info\">\n        <div v-for=\"[key, value] in Object.entries(selected)\" :key=\"key\" class=\"info-row\">\n          <span class=\"info-key\">{{ key }}</span>\n          <span class=\"info-value\">{{ value }}</span>\n        </div>\n      </div>\n    </section>\n\n    <footer class=\"settings-footer\">\n      <button class=\"close-button\" @click=\"save\">\n        {{ i18n(\"SAVE\") }}\n      </button>\n    </footer>\n  </div>\n</template>\n\n<style scoped>\n.settings-container {\n  width: 100%;\n  max-width: 850px;\n  margin: 7em auto 0 auto;\n  padding: 0 2em;\n  box-sizing: border-box;\n  color: var(--text-color, inherit);\n}\n\n.settings-header {\n  margin-bottom: 2em;\n  padding-bottom: 1em;\n  border-bottom: 1px solid var(--border-color, #ddd);\n}\n\n.version {\n  margin: 0.4em 0 0;\n  font-size: 0.85em;\n  opacity: 0.65;\n}\n\n.settings-section {\n  margin-bottom: 1.5em;\n  padding: 1.5em;\n  border: 1px solid var(--border-color, #ddd);\n  border-radius: 10px;\n  background: var(--section-background, rgba(128, 128, 128, 0.04));\n}\n\n.form-group {\n  display: flex;\n  flex-direction: column;\n  gap: 0.5em;\n}\n\nlabel {\n  font-size: 0.9em;\n  font-weight: 600;\n}\n\nselect,\ninput {\n  box-sizing: border-box;\n  width: 100%;\n  min-width: 0;\n  padding: 0.7em 0.8em;\n  border: 1px solid var(--border-color, #ccc);\n  border-radius: 6px;\n  font: inherit;\n  background: var(--input-background, transparent);\n  color: inherit;\n}\n\nselect {\n  cursor: pointer;\n}\n\n.token-line {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 1.5em;\n  padding: 1em 0;\n}\n\n.token-line + .token-line {\n  border-top: 1px solid var(--border-color, #ddd);\n}\n\n.token-label {\n  display: flex;\n  flex-direction: column;\n  gap: 0.35em;\n  flex: 1;\n}\n\n.token-label small {\n  font-size: 0.8em;\n  opacity: 0.6;\n}\n\n.token-input {\n  display: flex;\n  align-items: center;\n  gap: 0.5em;\n  flex: 2;\n}\n\nbutton {\n  padding: 0.7em 1.2em;\n  border: none;\n  border-radius: 6px;\n  cursor: pointer;\n  font: inherit;\n  font-weight: 600;\n  white-space: nowrap;\n}\n\n.token-input button {\n  min-width: 5em;\n}\n\nbutton:hover {\n  filter: brightness(0.9);\n}\n\n.connection-info {\n  display: flex;\n  flex-direction: column;\n  gap: 0.5em;\n  font-size: 0.85em;\n}\n\n.info-row {\n  display: flex;\n  justify-content: space-between;\n  gap: 1em;\n  padding: 0.5em 0.7em;\n  border-radius: 5px;\n  background: var(--info-background, rgba(128, 128, 128, 0.08));\n}\n\n.info-key {\n  font-weight: 600;\n  opacity: 0.75;\n}\n\n.info-value {\n  text-align: right;\n  overflow-wrap: anywhere;\n}\n\n.settings-footer {\n  display: flex;\n  justify-content: center;\n  padding: 0.5em 0 1em;\n}\n\n.close-button {\n  min-width: 10em;\n  background-color: #fac300;\n}\n\n@media (max-width: 600px) {\n  .settings-container {\n    padding: 0 1em;\n    margin: 1em auto;\n  }\n\n  .settings-section {\n    padding: 1em;\n  }\n\n  .token-line {\n    flex-direction: column;\n    align-items: stretch;\n    gap: 0.8em;\n  }\n\n  .token-input {\n    width: 100%;\n  }\n\n  .info-row {\n    flex-direction: column;\n    gap: 0.3em;\n  }\n\n  .info-value {\n    text-align: left;\n  }\n}\n</style>\n"],"sourceRoot":""}]);
 // Exports
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
 
@@ -644,35 +703,44 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 const ENV = [
     {
-        NAME: 'BFH MLMP (für extern)',
+        NAME: 'BFH MLMP GPT-oss (extern)',
         BASE_URL: 'https://inference.proxy.ti.bfh.ch',
         ENDPOINT: '/v1/chat/completions',
         MODEL: 'gpt-oss:120b',
         REASONING: 'low',
         JOULE_PER_INPUT_TOKEN: '0.1601',
         JOULE_PER_OUTPUT_TOKEN: '1.9598',
-        TOKEN: '' // insert your TOKEN here
+        TOKEN: '', // insert your TOKEN here,
+        SEARCH_URL: 'https://api.tavily.com/search',
+        SEARCH_KEY: '',
+        MAX_TOOL_CALLS: 5
     },
     {
-        NAME: 'BFH MLMP gemma (für extern)',
+        NAME: 'BFH MLMP gemma (extern)',
         BASE_URL: 'https://inference.proxy.ti.bfh.ch',
         ENDPOINT: '/v1/chat/completions',
         MODEL: 'gemma-4-26b',
         REASONING: 'low',
         JOULE_PER_INPUT_TOKEN: '0.0916',
         JOULE_PER_OUTPUT_TOKEN: '1.177',
-        TOKEN: '' // insert your TOKEN here
+        TOKEN: '', // insert your TOKEN here
+        SEARCH_URL: 'https://api.tavily.com/search',
+        SEARCH_KEY: '',
+        MAX_TOOL_CALLS: 3
     },
-    {
-        NAME: 'BFH MLMP (für intern)',
-        BASE_URL: 'https://inference.mlmp.ti.bfh.ch',
-        ENDPOINT: '/v1/chat/completions',
-        MODEL: 'gpt-oss:120b',
-        REASONING: 'low',
-        JOULE_PER_INPUT_TOKEN: '0.1601',
-        JOULE_PER_OUTPUT_TOKEN: '1.9598',
-        TOKEN: '' // insert your TOKEN here
-    },
+    // {
+    //   NAME: 'BFH MLMP (intern)',
+    //   BASE_URL: 'https://inference.mlmp.ti.bfh.ch',
+    //   ENDPOINT: '/v1/chat/completions',
+    //   MODEL: 'gpt-oss:120b',
+    //   REASONING: 'low',
+    //   JOULE_PER_INPUT_TOKEN: '0.1601',
+    //   JOULE_PER_OUTPUT_TOKEN: '1.9598',
+    //   TOKEN: '', // insert your TOKEN here
+    //   SEARCH_URL: 'https://api.tavily.com/search',
+    //   SEARCH_KEY: '',
+    //   MAX_TOOL_CALLS: 5
+    // },
     {
         NAME: 'LM Studio (lokal)',
         BASE_URL: 'http://localhost:1234',
@@ -681,7 +749,10 @@ const ENV = [
         REASONING: 'medium',
         JOULE_PER_INPUT_TOKEN: '0.2',
         JOULE_PER_OUTPUT_TOKEN: '2',
-        TOKEN: '' // 'not_needed_for_localhost'
+        TOKEN: '', // insert your TOKEN here
+        SEARCH_URL: '',
+        SEARCH_KEY: '',
+        MAX_TOOL_CALLS: 5
     },
     {
         NAME: 'OpenAI (ChatGPT)',
@@ -691,7 +762,10 @@ const ENV = [
         REASONING: '',
         JOULE_PER_INPUT_TOKEN: '0.2',
         JOULE_PER_OUTPUT_TOKEN: '2',
-        TOKEN: '' // insert token here
+        TOKEN: '', // insert your TOKEN here
+        SEARCH_URL: 'https://api.tavily.com/search',
+        SEARCH_KEY: '',
+        MAX_TOOL_CALLS: 5
     }
 ];
 
@@ -710,17 +784,13 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
 /* harmony import */ var vue__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! vue */ "./node_modules/vue/dist/vue.runtime.esm-bundler.js");
-/* harmony import */ var _env__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../env */ "./env.ts");
-/* harmony import */ var _components_AuthForm_vue__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./components/AuthForm.vue */ "./src/components/AuthForm.vue");
-/* harmony import */ var _components_ConnectModal_vue__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./components/ConnectModal.vue */ "./src/components/ConnectModal.vue");
-/* harmony import */ var _components_Settings_vue__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./components/Settings.vue */ "./src/components/Settings.vue");
-/* harmony import */ var _components_Chat_vue__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./components/Chat.vue */ "./src/components/Chat.vue");
-/* harmony import */ var _store__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./store */ "./src/store.ts");
-/* harmony import */ var _components_PowerSimulator_vue__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./components/PowerSimulator.vue */ "./src/components/PowerSimulator.vue");
-/* harmony import */ var _components_QuizCardModal_vue__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./components/QuizCardModal.vue */ "./src/components/QuizCardModal.vue");
-/* harmony import */ var _assets_i18n__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./assets/i18n */ "./src/assets/i18n.ts");
-
-
+/* harmony import */ var _components_ConnectModal_vue__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./components/ConnectModal.vue */ "./src/components/ConnectModal.vue");
+/* harmony import */ var _components_Settings_vue__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./components/Settings.vue */ "./src/components/Settings.vue");
+/* harmony import */ var _components_Chat_vue__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./components/Chat.vue */ "./src/components/Chat.vue");
+/* harmony import */ var _store__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./store */ "./src/store.ts");
+/* harmony import */ var _components_PowerSimulator_vue__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./components/PowerSimulator.vue */ "./src/components/PowerSimulator.vue");
+/* harmony import */ var _components_QuizCardModal_vue__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./components/QuizCardModal.vue */ "./src/components/QuizCardModal.vue");
+/* harmony import */ var _assets_i18n__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./assets/i18n */ "./src/assets/i18n.ts");
 
 
 
@@ -735,7 +805,6 @@ __webpack_require__.r(__webpack_exports__);
     setup(__props, { expose: __expose }) {
         __expose();
         const version = (__webpack_require__(/*! ../package.json */ "./package.json").version);
-        const token = (0,vue__WEBPACK_IMPORTED_MODULE_0__.ref)((0,_store__WEBPACK_IMPORTED_MODULE_6__.getPersisted)(_store__WEBPACK_IMPORTED_MODULE_6__.STORE_KEY.TOKEN) || _env__WEBPACK_IMPORTED_MODULE_1__.ENV[0].TOKEN);
         const error = (0,vue__WEBPACK_IMPORTED_MODULE_0__.ref)();
         const percent = (0,vue__WEBPACK_IMPORTED_MODULE_0__.ref)(0);
         const showCardModal = (0,vue__WEBPACK_IMPORTED_MODULE_0__.ref)(false);
@@ -744,12 +813,10 @@ __webpack_require__.r(__webpack_exports__);
             if (showCardModal.value && event.key == "Enter") {
                 showCardModal.value = false;
             }
-            else if (event.key == "Enter" && _store__WEBPACK_IMPORTED_MODULE_6__.store.textInput == "") {
+            else if (event.key == "Enter" && _store__WEBPACK_IMPORTED_MODULE_4__.store.textInput == "") {
                 showCard();
             }
         });
-        // fast hack for displaying settings
-        showSettings.value = window.location.search.includes("settings=true");
         /**
          * Calculates the header buttons
          * <div
@@ -762,64 +829,54 @@ __webpack_require__.r(__webpack_exports__);
               </div>
          */
         function getHeaderButtons() {
-            return [
-                {
-                    icon: "🀙",
-                    title: _store__WEBPACK_IMPORTED_MODULE_6__.store.cardDrawn ? (0,_assets_i18n__WEBPACK_IMPORTED_MODULE_9__.i18n)("NEW_CARD") : (0,_assets_i18n__WEBPACK_IMPORTED_MODULE_9__.i18n)("SHOW_CARD"),
-                    action: showCard,
-                    style: _store__WEBPACK_IMPORTED_MODULE_6__.store.cardDrawn
-                        ? "text-shadow: #fac300 0px 0 3px; line-height: 1.8em;"
-                        : "line-height: 1.8em;",
-                },
-                {
-                    icon: "⟲",
-                    title: (0,_assets_i18n__WEBPACK_IMPORTED_MODULE_9__.i18n)("RESET"),
-                    action: resetUser,
-                    style: "",
-                },
-                {
-                    icon: "🔍",
-                    title: _store__WEBPACK_IMPORTED_MODULE_6__.store.getUseTools() ? (0,_assets_i18n__WEBPACK_IMPORTED_MODULE_9__.i18n)("TOOL_USE_OFF") : (0,_assets_i18n__WEBPACK_IMPORTED_MODULE_9__.i18n)("TOOL_USE_ON"),
-                    action: () => _store__WEBPACK_IMPORTED_MODULE_6__.store.toggleUseTools(),
-                    style: _store__WEBPACK_IMPORTED_MODULE_6__.store.getUseTools()
-                        ? "line-height: 2.8em; font-size: 1.5em; text-shadow: rgb(250, 195, 0) 0px 0px 3px; margin-right: 0.2em;"
-                        : "line-height: 2.8em; font-size: 1.5em; filter: saturate(0); margin-right: 0.2em;",
-                },
-                {
-                    icon: _store__WEBPACK_IMPORTED_MODULE_6__.store.lang === _store__WEBPACK_IMPORTED_MODULE_6__.LANG.DE ? "🇩🇪" : "🇫🇷",
-                    title: (0,_assets_i18n__WEBPACK_IMPORTED_MODULE_9__.i18n)("LANGUAGE"),
-                    action: toggleLanguage,
-                    style: "filter: saturate(0)",
-                },
-                // {
-                //   icon: '⚙︎',
-                //   title: 'Einstellungen',
-                //   action: () => (showSettings.value = !showSettings.value),
-                //   style: '',
-                // },
-            ];
-        }
-        /**
-         * Sets the token recieved from authentication
-         * @param t    object with the new token and a boolean value
-         *             that defines if the token should be persistet to local storage
-         */
-        function setToken(t) {
-            token.value = t.token;
-            if (t.persist) {
-                (0,_store__WEBPACK_IMPORTED_MODULE_6__.persist)(_store__WEBPACK_IMPORTED_MODULE_6__.STORE_KEY.TOKEN, token.value);
-            }
+            const CARD = {
+                icon: "🀙",
+                title: _store__WEBPACK_IMPORTED_MODULE_4__.store.cardDrawn ? (0,_assets_i18n__WEBPACK_IMPORTED_MODULE_7__.i18n)("NEW_CARD") : (0,_assets_i18n__WEBPACK_IMPORTED_MODULE_7__.i18n)("SHOW_CARD"),
+                action: showCard,
+                style: _store__WEBPACK_IMPORTED_MODULE_4__.store.cardDrawn
+                    ? "text-shadow: #fac300 0px 0 3px; line-height: 1.8em;"
+                    : "line-height: 1.8em;",
+            };
+            const RESET = {
+                icon: "⟲",
+                title: (0,_assets_i18n__WEBPACK_IMPORTED_MODULE_7__.i18n)("RESET"),
+                action: resetUser,
+                style: "",
+            };
+            const TOOL = {
+                icon: "🔍",
+                title: _store__WEBPACK_IMPORTED_MODULE_4__.store.getUseTools() ? (0,_assets_i18n__WEBPACK_IMPORTED_MODULE_7__.i18n)("TOOL_USE_OFF") : (0,_assets_i18n__WEBPACK_IMPORTED_MODULE_7__.i18n)("TOOL_USE_ON"),
+                action: () => _store__WEBPACK_IMPORTED_MODULE_4__.store.toggleUseTools(),
+                style: _store__WEBPACK_IMPORTED_MODULE_4__.store.getUseTools()
+                    ? "line-height: 2.8em; font-size: 1.5em; text-shadow: rgb(250, 195, 0) 0px 0px 3px; margin-right: 0.2em;"
+                    : "line-height: 2.8em; font-size: 1.5em; filter: saturate(0); margin-right: 0.2em;",
+            };
+            const LANGUAGE = {
+                icon: _store__WEBPACK_IMPORTED_MODULE_4__.store.lang === _store__WEBPACK_IMPORTED_MODULE_4__.LANG.DE ? "🇩🇪" : "🇫🇷",
+                title: (0,_assets_i18n__WEBPACK_IMPORTED_MODULE_7__.i18n)("LANGUAGE"),
+                action: toggleLanguage,
+                style: "filter: saturate(0)",
+            };
+            const SETTINGS = {
+                icon: "⚙︎",
+                title: (0,_assets_i18n__WEBPACK_IMPORTED_MODULE_7__.i18n)("SETTINGS"),
+                action: () => (showSettings.value = !showSettings.value),
+                style: "",
+            };
+            return _store__WEBPACK_IMPORTED_MODULE_4__.store.connection.SEARCH_URL == ""
+                ? [CARD, RESET, LANGUAGE, SETTINGS]
+                : [CARD, RESET, TOOL, LANGUAGE, SETTINGS];
         }
         /**
          * Toggles the language between DE and FR
          */
         function toggleLanguage() {
-            switch (_store__WEBPACK_IMPORTED_MODULE_6__.store.lang) {
-                case _store__WEBPACK_IMPORTED_MODULE_6__.LANG.DE:
-                    _store__WEBPACK_IMPORTED_MODULE_6__.store.lang = _store__WEBPACK_IMPORTED_MODULE_6__.LANG.FR;
+            switch (_store__WEBPACK_IMPORTED_MODULE_4__.store.lang) {
+                case _store__WEBPACK_IMPORTED_MODULE_4__.LANG.DE:
+                    _store__WEBPACK_IMPORTED_MODULE_4__.store.lang = _store__WEBPACK_IMPORTED_MODULE_4__.LANG.FR;
                     break;
-                case _store__WEBPACK_IMPORTED_MODULE_6__.LANG.FR:
-                    _store__WEBPACK_IMPORTED_MODULE_6__.store.lang = _store__WEBPACK_IMPORTED_MODULE_6__.LANG.DE;
+                case _store__WEBPACK_IMPORTED_MODULE_4__.LANG.FR:
+                    _store__WEBPACK_IMPORTED_MODULE_4__.store.lang = _store__WEBPACK_IMPORTED_MODULE_4__.LANG.DE;
                     break;
             }
         }
@@ -827,24 +884,23 @@ __webpack_require__.r(__webpack_exports__);
          * Resets the app to start with a new user
          */
         function resetUser() {
-            if (confirm((0,_assets_i18n__WEBPACK_IMPORTED_MODULE_9__.i18n)("RESET_USER"))) {
-                _store__WEBPACK_IMPORTED_MODULE_6__.store.resetUser();
+            if (confirm((0,_assets_i18n__WEBPACK_IMPORTED_MODULE_7__.i18n)("RESET_USER"))) {
+                _store__WEBPACK_IMPORTED_MODULE_4__.store.resetUser();
             }
         }
         /**
          * Resets the whole app
          */
         function reset() {
-            _store__WEBPACK_IMPORTED_MODULE_6__.store.resetUser();
+            _store__WEBPACK_IMPORTED_MODULE_4__.store.resetUser();
             error.value = undefined;
-            token.value = _env__WEBPACK_IMPORTED_MODULE_1__.ENV[0].TOKEN;
         }
         /**
          * Draws a new quiz card and sets the example prompts.
          */
         function showCard() {
-            _store__WEBPACK_IMPORTED_MODULE_6__.store.drawQuizCard();
-            _store__WEBPACK_IMPORTED_MODULE_6__.store.setExamplePromptsVisible(true);
+            _store__WEBPACK_IMPORTED_MODULE_4__.store.drawQuizCard();
+            _store__WEBPACK_IMPORTED_MODULE_4__.store.setExamplePromptsVisible(true);
             showCardModal.value = true;
         }
         /**
@@ -852,13 +908,12 @@ __webpack_require__.r(__webpack_exports__);
          */
         function closeSettings() {
             showSettings.value = false;
-            window.location.search = "settings=" + showSettings.value;
         }
         /**
          * Handles an error and displays it to the user
          * @param error   the error message to display to the user
          */
-        function handleError(e = (0,_assets_i18n__WEBPACK_IMPORTED_MODULE_9__.i18n)("UNKNOWN_ERROR")) {
+        function handleError(e = (0,_assets_i18n__WEBPACK_IMPORTED_MODULE_7__.i18n)("UNKNOWN_ERROR")) {
             error.value = e;
         }
         /**
@@ -866,67 +921,9 @@ __webpack_require__.r(__webpack_exports__);
          * @param i the position of the toast message
          */
         function getToastOpacity(i) {
-            return "opacity: " + (i + 1) / _store__WEBPACK_IMPORTED_MODULE_6__.store.toasts.length;
+            return "opacity: " + (i + 1) / _store__WEBPACK_IMPORTED_MODULE_4__.store.toasts.length;
         }
-        const __returned__ = { version, token, error, percent, showCardModal, showSettings, getHeaderButtons, setToken, toggleLanguage, resetUser, reset, showCard, closeSettings, handleError, getToastOpacity, AuthForm: _components_AuthForm_vue__WEBPACK_IMPORTED_MODULE_2__["default"], ConnectModal: _components_ConnectModal_vue__WEBPACK_IMPORTED_MODULE_3__["default"], Settings: _components_Settings_vue__WEBPACK_IMPORTED_MODULE_4__["default"], Chat: _components_Chat_vue__WEBPACK_IMPORTED_MODULE_5__["default"], get store() { return _store__WEBPACK_IMPORTED_MODULE_6__.store; }, PowerSimulator: _components_PowerSimulator_vue__WEBPACK_IMPORTED_MODULE_7__["default"], QuizCardModal: _components_QuizCardModal_vue__WEBPACK_IMPORTED_MODULE_8__["default"], get i18n() { return _assets_i18n__WEBPACK_IMPORTED_MODULE_9__.i18n; } };
-        Object.defineProperty(__returned__, '__isScriptSetup', { enumerable: false, value: true });
-        return __returned__;
-    }
-}));
-
-
-/***/ },
-
-/***/ "./node_modules/ts-loader/index.js??clonedRuleSet-1!./node_modules/vue-loader/dist/index.js??ruleSet[1].rules[9].use[0]!./src/components/AuthForm.vue?vue&type=script&setup=true&lang=ts"
-/*!***********************************************************************************************************************************************************************************************!*\
-  !*** ./node_modules/ts-loader/index.js??clonedRuleSet-1!./node_modules/vue-loader/dist/index.js??ruleSet[1].rules[9].use[0]!./src/components/AuthForm.vue?vue&type=script&setup=true&lang=ts ***!
-  \***********************************************************************************************************************************************************************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
-/* harmony export */ });
-/* harmony import */ var vue__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! vue */ "./node_modules/vue/dist/vue.runtime.esm-bundler.js");
-/* harmony import */ var _assets_i18n__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @/assets/i18n */ "./src/assets/i18n.ts");
-/* harmony import */ var _store__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../store */ "./src/store.ts");
-
-
-
-
-/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (/*@__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.defineComponent)({
-    __name: 'AuthForm',
-    emits: ['onToken', 'onError'],
-    setup(__props, { expose: __expose, emit: __emit }) {
-        __expose();
-        const emit = __emit;
-        const token = (0,vue__WEBPACK_IMPORTED_MODULE_0__.ref)('');
-        const persist = (0,vue__WEBPACK_IMPORTED_MODULE_0__.ref)(false);
-        // TODO: very basic validation, update this later
-        function isValid(token) {
-            return Promise.resolve(token.length > 0);
-        }
-        function setToken() {
-            isValid(token.value).then((valid) => {
-                if (valid) {
-                    emit('onToken', {
-                        token: token.value,
-                        persist: persist.value
-                    });
-                }
-            });
-        }
-        function togglePersist() {
-            if (persist.value) {
-                persist.value = false;
-            }
-            else {
-                const confirm = window.confirm((0,_assets_i18n__WEBPACK_IMPORTED_MODULE_1__.i18n)('AUTH_CONFIRM'));
-                window.setTimeout(() => (persist.value = confirm), 1); // hack necessary to set negative answer when user checked checkbox and said no in prompt
-            }
-        }
-        const __returned__ = { emit, token, persist, isValid, setToken, togglePersist, get i18n() { return _assets_i18n__WEBPACK_IMPORTED_MODULE_1__.i18n; }, get store() { return _store__WEBPACK_IMPORTED_MODULE_2__.store; } };
+        const __returned__ = { version, error, percent, showCardModal, showSettings, getHeaderButtons, toggleLanguage, resetUser, reset, showCard, closeSettings, handleError, getToastOpacity, ConnectModal: _components_ConnectModal_vue__WEBPACK_IMPORTED_MODULE_1__["default"], Settings: _components_Settings_vue__WEBPACK_IMPORTED_MODULE_2__["default"], Chat: _components_Chat_vue__WEBPACK_IMPORTED_MODULE_3__["default"], get store() { return _store__WEBPACK_IMPORTED_MODULE_4__.store; }, PowerSimulator: _components_PowerSimulator_vue__WEBPACK_IMPORTED_MODULE_5__["default"], QuizCardModal: _components_QuizCardModal_vue__WEBPACK_IMPORTED_MODULE_6__["default"], get i18n() { return _assets_i18n__WEBPACK_IMPORTED_MODULE_7__.i18n; } };
         Object.defineProperty(__returned__, '__isScriptSetup', { enumerable: false, value: true });
         return __returned__;
     }
@@ -967,7 +964,6 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (/*@__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.defineComponent)({
     __name: 'Chat',
     props: {
-        token: { type: String, required: true },
         percent: { type: Number, required: true }
     },
     emits: ['onAnswer', 'onError'],
@@ -1040,13 +1036,25 @@ __webpack_require__.r(__webpack_exports__);
                 '- ~' + (0,_toastService__WEBPACK_IMPORTED_MODULE_5__.getKiloCalsFromWatthour)(wh) + ' kcal';
         }
         /**
-         * Runs a search on duck duck go with a given query
+         * Runs a web search with a given query
          * @param query the search string to query
          */
         function runSearch(query) {
-            return axios__WEBPACK_IMPORTED_MODULE_2__["default"]
-                .get(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`)
-                .then((res) => JSON.stringify(res.data));
+            return axios__WEBPACK_IMPORTED_MODULE_2__["default"].post(_store__WEBPACK_IMPORTED_MODULE_4__.store.connection.SEARCH_URL, {
+                query: query,
+                search_depth: 'basic',
+                include_favicon: false,
+                include_usage: true,
+            }, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${_store__WEBPACK_IMPORTED_MODULE_4__.store.connection.SEARCH_KEY}`,
+                },
+                timeout: 0,
+            }).then((res) => JSON.stringify(res.data));
+            // return axios
+            //   .get(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`)
+            //   .then((res) => JSON.stringify(res.data));
         }
         /**
          * Fetches the website from an url
@@ -1060,7 +1068,6 @@ __webpack_require__.r(__webpack_exports__);
          * for tool use
          */
         async function sendWithTools() {
-            const MAX_TOOL_CALLS = 5;
             const SEARCH_TOOL = {
                 type: 'function',
                 function: {
@@ -1112,14 +1119,14 @@ __webpack_require__.r(__webpack_exports__);
             const config = {
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: 'Bearer ' + props.token,
+                    Authorization: 'Bearer ' + _store__WEBPACK_IMPORTED_MODULE_4__.store.connection.TOKEN,
                     'Cache-Control': 'no-cache, no-store'
                 }
             };
             const url = _store__WEBPACK_IMPORTED_MODULE_4__.store.connection.BASE_URL + _store__WEBPACK_IMPORTED_MODULE_4__.store.connection.ENDPOINT;
             let messages = [..._store__WEBPACK_IMPORTED_MODULE_4__.store.chatMessages];
             // loop for maximum tool calls
-            for (let i = 0; i < MAX_TOOL_CALLS; i++) {
+            for (let i = 0; i < _store__WEBPACK_IMPORTED_MODULE_4__.store.connection.MAX_TOOL_CALLS; i++) {
                 const result = await axios__WEBPACK_IMPORTED_MODULE_2__["default"].post(url, { ...body, messages }, config);
                 const msg = result.data.choices[0].message;
                 messages.push(msg);
@@ -1447,7 +1454,7 @@ __webpack_require__.r(__webpack_exports__);
 
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (/*@__PURE__*/(0,vue__WEBPACK_IMPORTED_MODULE_0__.defineComponent)({
     __name: 'Settings',
-    emits: ['onClose'],
+    emits: ["onClose"],
     setup(__props, { expose: __expose, emit: __emit }) {
         __expose();
         const PACKAGE = __webpack_require__(/*! ../../package.json */ "./package.json");
@@ -1455,20 +1462,33 @@ __webpack_require__.r(__webpack_exports__);
         const emit = __emit;
         const settings = _env__WEBPACK_IMPORTED_MODULE_2__.ENV;
         let selected = (0,vue__WEBPACK_IMPORTED_MODULE_0__.ref)(_store__WEBPACK_IMPORTED_MODULE_3__.store.connection);
-        function close() {
-            emit('onClose');
+        const llm_token = (0,vue__WEBPACK_IMPORTED_MODULE_0__.ref)(selected.value.TOKEN || "");
+        const search_token = (0,vue__WEBPACK_IMPORTED_MODULE_0__.ref)(selected.value.SEARCH_KEY || "");
+        (0,vue__WEBPACK_IMPORTED_MODULE_0__.watch)(selected, (n) => {
+            search_token.value = n.SEARCH_KEY;
+            llm_token.value = n.TOKEN;
+        });
+        function save() {
+            if (selected.value) {
+                _store__WEBPACK_IMPORTED_MODULE_3__.store.setConnection(selected.value);
+            }
+            emit("onClose");
         }
         function select(c) {
-            selected.value = c;
-            c && _store__WEBPACK_IMPORTED_MODULE_3__.store.setConnection(c);
+            // selected.value = c;
+            // c && store.setConnection(c);
         }
-        function isSelected(c) {
-            return c.NAME === selected.value?.NAME;
+        function setToken(value, type) {
+            switch (type) {
+                case "llm":
+                    selected.value.TOKEN = value;
+                    break;
+                case "search":
+                    selected.value.SEARCH_KEY = value;
+                    break;
+            }
         }
-        function getField(key) {
-            return selected.value[key];
-        }
-        const __returned__ = { PACKAGE, version, emit, settings, get selected() { return selected; }, set selected(v) { selected = v; }, close, select, isSelected, getField, get i18n() { return _assets_i18n__WEBPACK_IMPORTED_MODULE_1__.i18n; } };
+        const __returned__ = { PACKAGE, version, emit, settings, get selected() { return selected; }, set selected(v) { selected = v; }, llm_token, search_token, save, select, setToken, get i18n() { return _assets_i18n__WEBPACK_IMPORTED_MODULE_1__.i18n; } };
         Object.defineProperty(__returned__, '__isScriptSetup', { enumerable: false, value: true });
         return __returned__;
     }
@@ -1494,15 +1514,14 @@ const _hoisted_1 = ["src", "title"];
 const _hoisted_2 = { class: "header-buttons" };
 const _hoisted_3 = ["onClick", "title"];
 const _hoisted_4 = { key: 1 };
-const _hoisted_5 = { key: 1 };
-const _hoisted_6 = {
+const _hoisted_5 = {
     key: 0,
     class: "error"
 };
-const _hoisted_7 = { class: "error-buttons" };
-const _hoisted_8 = { class: "toast-list" };
-const _hoisted_9 = { key: 0 };
-const _hoisted_10 = {
+const _hoisted_6 = { class: "error-buttons" };
+const _hoisted_7 = { class: "toast-list" };
+const _hoisted_8 = { key: 0 };
+const _hoisted_9 = {
     class: "alert alert-info",
     role: "alert"
 };
@@ -1537,119 +1556,58 @@ function render(_ctx, _cache, $props, $setup, $data, $options) {
                 key: 0,
                 onOnClose: $setup.closeSettings
             }))
-            : ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_4, [
-                (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)(" if no token is set, we show the auth form "),
-                ($setup.token?.length == 0)
-                    ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)($setup["AuthForm"], {
-                        key: 0,
-                        onOnToken: $setup.setToken,
-                        onOnError: $setup.handleError
-                    }))
-                    : ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("main", _hoisted_5, [
-                        (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)(" display error message "),
-                        ($setup.error)
-                            ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_6, [
-                                (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("h2", null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($setup.i18n("ERROR")), 1 /* TEXT */),
-                                (0,vue__WEBPACK_IMPORTED_MODULE_0__.createTextVNode)(" " + (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($setup.error) + " ", 1 /* TEXT */),
-                                _cache[3] || (_cache[3] = (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("br", null, null, -1 /* CACHED */)),
-                                (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_7, [
-                                    (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("button", { onClick: $setup.reset }, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($setup.i18n("RESET")), 1 /* TEXT */),
-                                    (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("button", {
-                                        onClick: _cache[0] || (_cache[0] = ($event) => ($setup.error = ''))
-                                    }, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($setup.i18n("OK")), 1 /* TEXT */)
-                                ])
-                            ]))
-                            : ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, { key: 1 }, [
-                                (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)(" chat window "),
-                                (0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)($setup["Chat"], {
-                                    token: $setup.token,
-                                    percent: $setup.percent,
-                                    onOnError: $setup.handleError
-                                }, null, 8 /* PROPS */, ["token", "percent"])
-                            ], 2112 /* STABLE_FRAGMENT, DEV_ROOT_FRAGMENT */)),
-                        (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)(" window for power simulation / debug "),
-                        ($setup.store.connected && $setup.store.isPedalling() && !$setup.error)
-                            ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)($setup["PowerSimulator"], {
-                                key: 2,
-                                debug: $setup.store.isDebug,
-                                watt: Math.round($setup.store.power.getValues().value)
-                            }, null, 8 /* PROPS */, ["debug", "watt"]))
-                            : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)
-                    ])),
-                (!$setup.store.connected)
-                    ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)($setup["ConnectModal"], {
+            : ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("main", _hoisted_4, [
+                (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)(" display error message "),
+                ($setup.error)
+                    ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_5, [
+                        (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("h2", null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($setup.i18n("ERROR")), 1 /* TEXT */),
+                        (0,vue__WEBPACK_IMPORTED_MODULE_0__.createTextVNode)(" " + (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($setup.error) + " ", 1 /* TEXT */),
+                        _cache[3] || (_cache[3] = (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("br", null, null, -1 /* CACHED */)),
+                        (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_6, [
+                            (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("button", { onClick: $setup.reset }, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($setup.i18n("RESET")), 1 /* TEXT */),
+                            (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("button", {
+                                onClick: _cache[0] || (_cache[0] = ($event) => ($setup.error = ''))
+                            }, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($setup.i18n("OK")), 1 /* TEXT */)
+                        ])
+                    ]))
+                    : ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, { key: 1 }, [
+                        (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)(" chat window "),
+                        (0,vue__WEBPACK_IMPORTED_MODULE_0__.createVNode)($setup["Chat"], {
+                            percent: $setup.percent,
+                            onOnError: $setup.handleError
+                        }, null, 8 /* PROPS */, ["percent"])
+                    ], 2112 /* STABLE_FRAGMENT, DEV_ROOT_FRAGMENT */)),
+                (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)(" window for power simulation / debug "),
+                ($setup.store.connected && $setup.store.isPedalling() && !$setup.error)
+                    ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)($setup["PowerSimulator"], {
                         key: 2,
-                        onOnError: $setup.handleError
-                    }))
-                    : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true),
-                ($setup.store.activeCard && $setup.showCardModal)
-                    ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)($setup["QuizCardModal"], {
-                        key: 3,
-                        card: $setup.store.activeCard,
-                        onOnClose: _cache[1] || (_cache[1] = ($event) => ($setup.showCardModal = false))
-                    }, null, 8 /* PROPS */, ["card"]))
-                    : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true),
-                (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("ul", _hoisted_8, [
-                    (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("li v-for=\"(toast, i) of store.toasts\" :style=\"getToastOpacity(i)\">\n        <div class=\"alert alert-info\" role=\"alert\">\n          {{ toast }}\n        </div>\n      </li"),
-                    ($setup.store.toasts.length > 0)
-                        ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("li", _hoisted_9, [
-                            (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_10, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($setup.store.toasts.at(-1)), 1 /* TEXT */)
-                        ]))
-                        : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)
-                ])
-            ]))
-    ], 64 /* STABLE_FRAGMENT */));
-}
-
-
-/***/ },
-
-/***/ "./node_modules/ts-loader/index.js??clonedRuleSet-1!./node_modules/vue-loader/dist/templateLoader.js??ruleSet[1].rules[3]!./node_modules/vue-loader/dist/index.js??ruleSet[1].rules[9].use[0]!./src/components/AuthForm.vue?vue&type=template&id=2bd044bc&scoped=true&ts=true"
-/*!************************************************************************************************************************************************************************************************************************************************************************************!*\
-  !*** ./node_modules/ts-loader/index.js??clonedRuleSet-1!./node_modules/vue-loader/dist/templateLoader.js??ruleSet[1].rules[3]!./node_modules/vue-loader/dist/index.js??ruleSet[1].rules[9].use[0]!./src/components/AuthForm.vue?vue&type=template&id=2bd044bc&scoped=true&ts=true ***!
-  \************************************************************************************************************************************************************************************************************************************************************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   render: () => (/* binding */ render)
-/* harmony export */ });
-/* harmony import */ var vue__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! vue */ "./node_modules/vue/dist/vue.runtime.esm-bundler.js");
-
-const _hoisted_1 = { action: "#" };
-const _hoisted_2 = { class: "token-box" };
-const _hoisted_3 = ["placeholder"];
-const _hoisted_4 = ["disabled"];
-const _hoisted_5 = { class: "persist-box" };
-function render(_ctx, _cache, $props, $setup, $data, $options) {
-    return ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("form", _hoisted_1, [
-        (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_2, [
-            (0,vue__WEBPACK_IMPORTED_MODULE_0__.withDirectives)((0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("input", {
-                type: "text",
-                "onUpdate:modelValue": _cache[0] || (_cache[0] = ($event) => (($setup.token) = $event)),
-                placeholder: $setup.i18n('ENTER_TOKEN') + $setup.store.connection.NAME,
-                style: { "width": "100%" }
-            }, null, 8 /* PROPS */, _hoisted_3), [
-                [vue__WEBPACK_IMPORTED_MODULE_0__.vModelText, $setup.token]
-            ]),
-            (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("button", {
-                onClick: $setup.setToken,
-                type: "submit",
-                disabled: $setup.token.length == 0
-            }, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($setup.i18n('SAVE').toUpperCase()), 9 /* TEXT, PROPS */, _hoisted_4)
-        ]),
-        (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_5, [
-            (0,vue__WEBPACK_IMPORTED_MODULE_0__.withDirectives)((0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("input", {
-                type: "checkbox",
-                "onUpdate:modelValue": _cache[1] || (_cache[1] = ($event) => (($setup.persist) = $event)),
-                onClick: $setup.togglePersist
-            }, null, 512 /* NEED_PATCH */), [
-                [vue__WEBPACK_IMPORTED_MODULE_0__.vModelCheckbox, $setup.persist]
-            ]),
-            (0,vue__WEBPACK_IMPORTED_MODULE_0__.createTextVNode)((0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($setup.i18n('AUTH_PERSIST')), 1 /* TEXT */)
+                        debug: $setup.store.isDebug,
+                        watt: Math.round($setup.store.power.getValues().value)
+                    }, null, 8 /* PROPS */, ["debug", "watt"]))
+                    : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)
+            ])),
+        (!$setup.store.connected)
+            ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)($setup["ConnectModal"], {
+                key: 2,
+                onOnError: $setup.handleError
+            }))
+            : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true),
+        ($setup.store.activeCard && $setup.showCardModal)
+            ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createBlock)($setup["QuizCardModal"], {
+                key: 3,
+                card: $setup.store.activeCard,
+                onOnClose: _cache[1] || (_cache[1] = ($event) => ($setup.showCardModal = false))
+            }, null, 8 /* PROPS */, ["card"]))
+            : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true),
+        (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("ul", _hoisted_7, [
+            (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("li v-for=\"(toast, i) of store.toasts\" :style=\"getToastOpacity(i)\">\n        <div class=\"alert alert-info\" role=\"alert\">\n          {{ toast }}\n        </div>\n      </li"),
+            ($setup.store.toasts.length > 0)
+                ? ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("li", _hoisted_8, [
+                    (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_9, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($setup.store.toasts.at(-1)), 1 /* TEXT */)
+                ]))
+                : (0,vue__WEBPACK_IMPORTED_MODULE_0__.createCommentVNode)("v-if", true)
         ])
-    ]));
+    ], 64 /* STABLE_FRAGMENT */));
 }
 
 
@@ -1966,36 +1924,113 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var vue__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! vue */ "./node_modules/vue/dist/vue.runtime.esm-bundler.js");
 
-const _hoisted_1 = { id: "connections" };
-const _hoisted_2 = ["onClick"];
-const _hoisted_3 = ["checked"];
-const _hoisted_4 = { class: "connection-info" };
+const _hoisted_1 = { class: "settings-container" };
+const _hoisted_2 = { class: "settings-section" };
+const _hoisted_3 = { class: "version" };
+const _hoisted_4 = { class: "settings-section" };
+const _hoisted_5 = { class: "form-group" };
+const _hoisted_6 = { for: "connections" };
+const _hoisted_7 = ["value"];
+const _hoisted_8 = { class: "settings-section" };
+const _hoisted_9 = { class: "token-line" };
+const _hoisted_10 = { class: "token-label" };
+const _hoisted_11 = { for: "llm-token" };
+const _hoisted_12 = { class: "token-input" };
+const _hoisted_13 = ["placeholder"];
+const _hoisted_14 = { class: "token-line" };
+const _hoisted_15 = { class: "token-input" };
+const _hoisted_16 = ["placeholder"];
+const _hoisted_17 = { class: "settings-section connection-section" };
+const _hoisted_18 = { class: "connection-info" };
+const _hoisted_19 = { class: "info-key" };
+const _hoisted_20 = { class: "info-value" };
+const _hoisted_21 = { class: "settings-footer" };
 function render(_ctx, _cache, $props, $setup, $data, $options) {
-    return ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, [
-        (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("h1", null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($setup.i18n('SETTINGS')), 1 /* TEXT */),
-        (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("p", null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($setup.i18n('VERSION_LABEL')) + " " + (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($setup.version), 1 /* TEXT */),
-        (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_1, [
-            (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("ul", null, [
-                ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.renderList)($setup.settings, (connection) => {
-                    return ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("li", {
-                        onClick: ($event) => ($setup.select(connection))
-                    }, [
-                        (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("input", {
-                            type: "radio",
-                            checked: $setup.isSelected(connection)
-                        }, null, 8 /* PROPS */, _hoisted_3),
-                        (0,vue__WEBPACK_IMPORTED_MODULE_0__.createTextVNode)(" " + (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)(connection.NAME), 1 /* TEXT */)
-                    ], 8 /* PROPS */, _hoisted_2));
-                }), 256 /* UNKEYED_FRAGMENT */))
-            ]),
-            (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("ul", _hoisted_4, [
-                ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.renderList)(Object.keys($setup.selected), (key) => {
-                    return ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("li", null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)(key) + ": " + (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($setup.getField(key)), 1 /* TEXT */));
-                }), 256 /* UNKEYED_FRAGMENT */))
+    return ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", _hoisted_1, [
+        (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("section", _hoisted_2, [
+            (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", null, [
+                (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("h1", null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($setup.i18n("SETTINGS")), 1 /* TEXT */),
+                (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("p", _hoisted_3, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($setup.i18n("VERSION_LABEL")) + " " + (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($setup.version), 1 /* TEXT */)
             ])
         ]),
-        (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("button", { onClick: $setup.close }, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($setup.i18n('CLOSE')), 1 /* TEXT */)
-    ], 64 /* STABLE_FRAGMENT */));
+        (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("section", _hoisted_4, [
+            (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_5, [
+                (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("label", _hoisted_6, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($setup.i18n("SELECT_AI")), 1 /* TEXT */),
+                (0,vue__WEBPACK_IMPORTED_MODULE_0__.withDirectives)((0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("select", {
+                    id: "connections",
+                    name: "connections",
+                    "onUpdate:modelValue": _cache[0] || (_cache[0] = ($event) => (($setup.selected) = $event)),
+                    onChange: _cache[1] || (_cache[1] = ($event) => ($setup.select($setup.selected)))
+                }, [
+                    ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.renderList)($setup.settings, (connection) => {
+                        return ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("option", {
+                            key: connection.NAME,
+                            value: connection
+                        }, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)(connection.NAME), 9 /* TEXT, PROPS */, _hoisted_7));
+                    }), 128 /* KEYED_FRAGMENT */))
+                ], 544 /* NEED_HYDRATION, NEED_PATCH */), [
+                    [vue__WEBPACK_IMPORTED_MODULE_0__.vModelSelect, $setup.selected]
+                ])
+            ])
+        ]),
+        (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("section", _hoisted_8, [
+            (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_9, [
+                (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_10, [
+                    (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("label", _hoisted_11, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($setup.i18n("ENTER_TOKEN")) + " " + (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($setup.selected.NAME), 1 /* TEXT */)
+                ]),
+                (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_12, [
+                    (0,vue__WEBPACK_IMPORTED_MODULE_0__.withDirectives)((0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("input", {
+                        id: "llm-token",
+                        name: "llm-token",
+                        "onUpdate:modelValue": _cache[2] || (_cache[2] = ($event) => (($setup.llm_token) = $event)),
+                        placeholder: $setup.i18n('ENTER_TOKEN') + $setup.selected.NAME
+                    }, null, 8 /* PROPS */, _hoisted_13), [
+                        [vue__WEBPACK_IMPORTED_MODULE_0__.vModelText, $setup.llm_token]
+                    ]),
+                    (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("button", {
+                        onClick: _cache[3] || (_cache[3] = ($event) => ($setup.setToken($setup.llm_token, 'llm')))
+                    }, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($setup.i18n("SET")), 1 /* TEXT */)
+                ])
+            ]),
+            (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_14, [
+                _cache[6] || (_cache[6] = (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", { class: "token-label" }, [
+                    (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("label", { for: "search-token" }, "Tavily API-Key")
+                ], -1 /* CACHED */)),
+                (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_15, [
+                    (0,vue__WEBPACK_IMPORTED_MODULE_0__.withDirectives)((0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("input", {
+                        id: "search-token",
+                        name: "search-token",
+                        "onUpdate:modelValue": _cache[4] || (_cache[4] = ($event) => (($setup.search_token) = $event)),
+                        placeholder: $setup.i18n('ENTER_TOKEN') + ' TAVILY'
+                    }, null, 8 /* PROPS */, _hoisted_16), [
+                        [vue__WEBPACK_IMPORTED_MODULE_0__.vModelText, $setup.search_token]
+                    ]),
+                    (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("button", {
+                        onClick: _cache[5] || (_cache[5] = ($event) => ($setup.setToken($setup.search_token, 'search')))
+                    }, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($setup.i18n("SET")), 1 /* TEXT */)
+                ])
+            ])
+        ]),
+        (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("section", _hoisted_17, [
+            (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("div", _hoisted_18, [
+                ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(true), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)(vue__WEBPACK_IMPORTED_MODULE_0__.Fragment, null, (0,vue__WEBPACK_IMPORTED_MODULE_0__.renderList)(Object.entries($setup.selected), ([key, value]) => {
+                    return ((0,vue__WEBPACK_IMPORTED_MODULE_0__.openBlock)(), (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementBlock)("div", {
+                        key: key,
+                        class: "info-row"
+                    }, [
+                        (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", _hoisted_19, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)(key), 1 /* TEXT */),
+                        (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("span", _hoisted_20, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)(value), 1 /* TEXT */)
+                    ]));
+                }), 128 /* KEYED_FRAGMENT */))
+            ])
+        ]),
+        (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("footer", _hoisted_21, [
+            (0,vue__WEBPACK_IMPORTED_MODULE_0__.createElementVNode)("button", {
+                class: "close-button",
+                onClick: $setup.save
+            }, (0,vue__WEBPACK_IMPORTED_MODULE_0__.toDisplayString)($setup.i18n("SAVE")), 1 /* TEXT */)
+        ])
+    ]));
 }
 
 
@@ -2366,6 +2401,10 @@ const KEYS = {
         de: 'OK',
         fr: 'OK'
     },
+    SET: {
+        de: 'setzen',
+        fr: 'définir'
+    },
     SAVE: {
         de: 'Speichern',
         fr: 'Enregistrer'
@@ -2447,6 +2486,10 @@ const KEYS = {
     VERSION_LABEL: {
         de: 'enerKI Version:',
         fr: 'enerKI version :'
+    },
+    SELECT_AI: {
+        de: 'KI-Modell wählen',
+        fr: 'choisir l\'IA'
     },
     CLOSE: {
         de: 'schliessen',
@@ -2676,12 +2719,30 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _models__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @/models */ "./src/models.ts");
 
 function getSystemPrompts(l, toolUse) {
-    const systemPromps = [GENERAL_INSTRUCTIONS[l], DATE_INFO[l]];
-    if (!toolUse)
-        systemPromps.push(STUDI_INFO[l]);
-    return systemPromps;
+    return toolUse
+        ? [GENERAL_INSTRUCTIONS_TOOL[l], DATE_INFO[l]]
+        : [GENERAL_INSTRUCTIONS[l], DATE_INFO[l], STUDI_INFO[l]];
 }
 const GENERAL_INSTRUCTIONS = {
+    de: {
+        role: _models__WEBPACK_IMPORTED_MODULE_0__.USER_ROLE.SYSTEM,
+        content: `Beantworte die Fragen nicht allzu ausführlich, ausser du wirst explizit darum gebeten. 
+              Wenn du etwas nicht weisst, sage das. Versuche nicht, Informationen zu erfinden.
+              Antworte in der Sprache, in der der User dich angesprochen hat.
+              Du bist mit dem User per du.
+              Du bist enerKI, das interaktive Experiment um die von KI verbrauchte Energie erfahrbar zu machen. Um die Antwort auf eine Frage zu sehen, müssen User*innen auf einem Fahrradergometer die verbrauchte Energie selber erarbeiten - oder sprichwörtlich "erfahren". Mehr Informationen unter https://enerki.ti.bfh.ch/. Erwähne das aber nur, wenn du explizit danach gefragt wirst.
+              Vermeide LaTeX-Formeln, diese werden in der Anzeige nicht unterstützt.`
+    },
+    fr: {
+        role: _models__WEBPACK_IMPORTED_MODULE_0__.USER_ROLE.SYSTEM,
+        content: `Ne réponds pas de manière trop détaillée aux questions, sauf si on te le demande explicitement.
+              Si tu ne sais pas quelque chose, dis-le. N'essaie pas d'inventer des informations.
+              Tu es en termes familiers avec l'utilisateur.
+              Tu es enerKI, l'expérience interactive qui permet de prendre conscience de l'énergie consommée par l'IA. Pour voir la réponse à une question, les utilisateurs doivent produire eux-mêmes l’énergie consommée sur un vélo d’appartement – ou, pour ainsi dire, « en faire l’expérience ». Plus d’informations sur https://enerki.ti.bfh.ch/. Mais n'en parle que si on te le demande explicitement.
+              Évite les formules LaTeX, elles ne sont pas prises en charge par l’affichage.`
+    }
+};
+const GENERAL_INSTRUCTIONS_TOOL = {
     de: {
         role: _models__WEBPACK_IMPORTED_MODULE_0__.USER_ROLE.SYSTEM,
         content: `Beantworte die Fragen nicht allzu ausführlich, ausser du wirst explizit darum gebeten. 
@@ -2703,7 +2764,7 @@ const GENERAL_INSTRUCTIONS = {
 const DATE_INFO = {
     de: {
         role: _models__WEBPACK_IMPORTED_MODULE_0__.USER_ROLE.SYSTEM,
-        content: 'Das heutige Datum ist ' + new Date().toLocaleDateString() + '.'
+        content: 'Das aktuelle Datum ist ' + new Date().toLocaleDateString() + '.'
     },
     fr: {
         role: _models__WEBPACK_IMPORTED_MODULE_0__.USER_ROLE.SYSTEM,
@@ -2978,11 +3039,32 @@ var LANG;
 var STORE_KEY;
 (function (STORE_KEY) {
     STORE_KEY["TOKEN"] = "enerki-token";
+    STORE_KEY["SEARCH_TOKEN"] = "tavily-token";
     STORE_KEY["TEMP"] = "enerki-temp-";
 })(STORE_KEY || (STORE_KEY = {}));
 ;
 ;
 const USE_TOOLS = false;
+/**
+ * Fetches tokens for a connection if available on the browser store
+ * @param c the connection without tokens
+ * @returns the same connection with matching tokens
+ */
+function getConnectionTokens(c) {
+    if (c.TOKEN) {
+        persist(STORE_KEY.TOKEN + getIdentifier(c), c.TOKEN);
+    }
+    else {
+        c.TOKEN = getPersisted(STORE_KEY.TOKEN + getIdentifier(c)) || '';
+    }
+    if (c.SEARCH_KEY) {
+        persist(STORE_KEY.SEARCH_TOKEN + getIdentifier(c), c.SEARCH_KEY);
+    }
+    else {
+        c.SEARCH_KEY = getPersisted(STORE_KEY.SEARCH_TOKEN + getIdentifier(c)) || '';
+    }
+    return c;
+}
 const storeObj = {
     power: new _antService__WEBPACK_IMPORTED_MODULE_1__.PowerService({ debug: false }),
     heartRate: new _antService__WEBPACK_IMPORTED_MODULE_1__.HeartRateService(),
@@ -2997,7 +3079,7 @@ const storeObj = {
     useTools: USE_TOOLS,
     chatMessages: [...(0,_assets_systemprompt__WEBPACK_IMPORTED_MODULE_5__.getSystemPrompts)(LANG.DE, USE_TOOLS)],
     lang: LANG.DE,
-    connection: { ..._env__WEBPACK_IMPORTED_MODULE_4__.ENV[0] },
+    connection: getConnectionTokens(_env__WEBPACK_IMPORTED_MODULE_4__.ENV[0]),
     setExamplePromptsVisible(v) {
         this.examplePromptsVisible = v;
     },
@@ -3143,14 +3225,17 @@ const storeObj = {
         return this.useTools;
     },
     /**
-     *
+     * Sets a connection and persists the tokens. if no tokens are provided but available in store
+     * the tokens are set to the connection
      * @param newConnection
      */
-    setConnection(newConnection) {
-        this.connection = newConnection;
-        console.log(this);
+    setConnection(c) {
+        this.connection = getConnectionTokens(c);
     }
 };
+function getIdentifier(c) {
+    return '-' + c.BASE_URL.split('https://')[1];
+}
 const store = (0,vue__WEBPACK_IMPORTED_MODULE_0__.reactive)(storeObj);
 const storePropsToPersist = [
     'activeCard',
@@ -3532,38 +3617,6 @@ if (false) // removed by dead control flow
 
 /***/ },
 
-/***/ "./src/components/AuthForm.vue"
-/*!*************************************!*\
-  !*** ./src/components/AuthForm.vue ***!
-  \*************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
-/* harmony export */ });
-/* harmony import */ var _AuthForm_vue_vue_type_template_id_2bd044bc_scoped_true_ts_true__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./AuthForm.vue?vue&type=template&id=2bd044bc&scoped=true&ts=true */ "./src/components/AuthForm.vue?vue&type=template&id=2bd044bc&scoped=true&ts=true");
-/* harmony import */ var _AuthForm_vue_vue_type_script_setup_true_lang_ts__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./AuthForm.vue?vue&type=script&setup=true&lang=ts */ "./src/components/AuthForm.vue?vue&type=script&setup=true&lang=ts");
-/* harmony import */ var _AuthForm_vue_vue_type_style_index_0_id_2bd044bc_scoped_true_lang_css__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./AuthForm.vue?vue&type=style&index=0&id=2bd044bc&scoped=true&lang=css */ "./src/components/AuthForm.vue?vue&type=style&index=0&id=2bd044bc&scoped=true&lang=css");
-/* harmony import */ var _node_modules_vue_loader_dist_exportHelper_js__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../../node_modules/vue-loader/dist/exportHelper.js */ "./node_modules/vue-loader/dist/exportHelper.js");
-
-
-
-
-;
-
-
-const __exports__ = /*#__PURE__*/(0,_node_modules_vue_loader_dist_exportHelper_js__WEBPACK_IMPORTED_MODULE_3__["default"])(_AuthForm_vue_vue_type_script_setup_true_lang_ts__WEBPACK_IMPORTED_MODULE_1__["default"], [['render',_AuthForm_vue_vue_type_template_id_2bd044bc_scoped_true_ts_true__WEBPACK_IMPORTED_MODULE_0__.render],['__scopeId',"data-v-2bd044bc"],['__file',"src/components/AuthForm.vue"]])
-/* hot reload */
-if (false) // removed by dead control flow
-{}
-
-
-/* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (__exports__);
-
-/***/ },
-
 /***/ "./src/components/Chat.vue"
 /*!*********************************!*\
   !*** ./src/components/Chat.vue ***!
@@ -3772,22 +3825,6 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ },
 
-/***/ "./src/components/AuthForm.vue?vue&type=script&setup=true&lang=ts"
-/*!************************************************************************!*\
-  !*** ./src/components/AuthForm.vue?vue&type=script&setup=true&lang=ts ***!
-  \************************************************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "default": () => (/* reexport safe */ _node_modules_ts_loader_index_js_clonedRuleSet_1_node_modules_vue_loader_dist_index_js_ruleSet_1_rules_9_use_0_AuthForm_vue_vue_type_script_setup_true_lang_ts__WEBPACK_IMPORTED_MODULE_0__["default"])
-/* harmony export */ });
-/* harmony import */ var _node_modules_ts_loader_index_js_clonedRuleSet_1_node_modules_vue_loader_dist_index_js_ruleSet_1_rules_9_use_0_AuthForm_vue_vue_type_script_setup_true_lang_ts__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! -!../../node_modules/ts-loader/index.js??clonedRuleSet-1!../../node_modules/vue-loader/dist/index.js??ruleSet[1].rules[9].use[0]!./AuthForm.vue?vue&type=script&setup=true&lang=ts */ "./node_modules/ts-loader/index.js??clonedRuleSet-1!./node_modules/vue-loader/dist/index.js??ruleSet[1].rules[9].use[0]!./src/components/AuthForm.vue?vue&type=script&setup=true&lang=ts");
- 
-
-/***/ },
-
 /***/ "./src/components/Chat.vue?vue&type=script&setup=true&lang=ts"
 /*!********************************************************************!*\
   !*** ./src/components/Chat.vue?vue&type=script&setup=true&lang=ts ***!
@@ -3900,22 +3937,6 @@ __webpack_require__.r(__webpack_exports__);
 
 /***/ },
 
-/***/ "./src/components/AuthForm.vue?vue&type=template&id=2bd044bc&scoped=true&ts=true"
-/*!***************************************************************************************!*\
-  !*** ./src/components/AuthForm.vue?vue&type=template&id=2bd044bc&scoped=true&ts=true ***!
-  \***************************************************************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   render: () => (/* reexport safe */ _node_modules_ts_loader_index_js_clonedRuleSet_1_node_modules_vue_loader_dist_templateLoader_js_ruleSet_1_rules_3_node_modules_vue_loader_dist_index_js_ruleSet_1_rules_9_use_0_AuthForm_vue_vue_type_template_id_2bd044bc_scoped_true_ts_true__WEBPACK_IMPORTED_MODULE_0__.render)
-/* harmony export */ });
-/* harmony import */ var _node_modules_ts_loader_index_js_clonedRuleSet_1_node_modules_vue_loader_dist_templateLoader_js_ruleSet_1_rules_3_node_modules_vue_loader_dist_index_js_ruleSet_1_rules_9_use_0_AuthForm_vue_vue_type_template_id_2bd044bc_scoped_true_ts_true__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! -!../../node_modules/ts-loader/index.js??clonedRuleSet-1!../../node_modules/vue-loader/dist/templateLoader.js??ruleSet[1].rules[3]!../../node_modules/vue-loader/dist/index.js??ruleSet[1].rules[9].use[0]!./AuthForm.vue?vue&type=template&id=2bd044bc&scoped=true&ts=true */ "./node_modules/ts-loader/index.js??clonedRuleSet-1!./node_modules/vue-loader/dist/templateLoader.js??ruleSet[1].rules[3]!./node_modules/vue-loader/dist/index.js??ruleSet[1].rules[9].use[0]!./src/components/AuthForm.vue?vue&type=template&id=2bd044bc&scoped=true&ts=true");
-
-
-/***/ },
-
 /***/ "./src/components/Chat.vue?vue&type=template&id=2bc3d388&scoped=true&ts=true"
 /*!***********************************************************************************!*\
   !*** ./src/components/Chat.vue?vue&type=template&id=2bc3d388&scoped=true&ts=true ***!
@@ -4024,23 +4045,6 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _node_modules_vue_style_loader_index_js_node_modules_css_loader_dist_cjs_js_node_modules_vue_loader_dist_stylePostLoader_js_node_modules_vue_loader_dist_index_js_ruleSet_1_rules_9_use_0_App_vue_vue_type_style_index_0_id_7ba5bd90_scoped_true_lang_css__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_vue_style_loader_index_js_node_modules_css_loader_dist_cjs_js_node_modules_vue_loader_dist_stylePostLoader_js_node_modules_vue_loader_dist_index_js_ruleSet_1_rules_9_use_0_App_vue_vue_type_style_index_0_id_7ba5bd90_scoped_true_lang_css__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony reexport (unknown) */ var __WEBPACK_REEXPORT_OBJECT__ = {};
 /* harmony reexport (unknown) */ for(const __WEBPACK_IMPORT_KEY__ in _node_modules_vue_style_loader_index_js_node_modules_css_loader_dist_cjs_js_node_modules_vue_loader_dist_stylePostLoader_js_node_modules_vue_loader_dist_index_js_ruleSet_1_rules_9_use_0_App_vue_vue_type_style_index_0_id_7ba5bd90_scoped_true_lang_css__WEBPACK_IMPORTED_MODULE_0__) if(__WEBPACK_IMPORT_KEY__ !== "default") __WEBPACK_REEXPORT_OBJECT__[__WEBPACK_IMPORT_KEY__] = () => _node_modules_vue_style_loader_index_js_node_modules_css_loader_dist_cjs_js_node_modules_vue_loader_dist_stylePostLoader_js_node_modules_vue_loader_dist_index_js_ruleSet_1_rules_9_use_0_App_vue_vue_type_style_index_0_id_7ba5bd90_scoped_true_lang_css__WEBPACK_IMPORTED_MODULE_0__[__WEBPACK_IMPORT_KEY__]
-/* harmony reexport (unknown) */ __webpack_require__.d(__webpack_exports__, __WEBPACK_REEXPORT_OBJECT__);
-
-
-/***/ },
-
-/***/ "./src/components/AuthForm.vue?vue&type=style&index=0&id=2bd044bc&scoped=true&lang=css"
-/*!*********************************************************************************************!*\
-  !*** ./src/components/AuthForm.vue?vue&type=style&index=0&id=2bd044bc&scoped=true&lang=css ***!
-  \*********************************************************************************************/
-(__unused_webpack_module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony import */ var _node_modules_vue_style_loader_index_js_node_modules_css_loader_dist_cjs_js_node_modules_vue_loader_dist_stylePostLoader_js_node_modules_vue_loader_dist_index_js_ruleSet_1_rules_9_use_0_AuthForm_vue_vue_type_style_index_0_id_2bd044bc_scoped_true_lang_css__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! -!../../node_modules/vue-style-loader/index.js!../../node_modules/css-loader/dist/cjs.js!../../node_modules/vue-loader/dist/stylePostLoader.js!../../node_modules/vue-loader/dist/index.js??ruleSet[1].rules[9].use[0]!./AuthForm.vue?vue&type=style&index=0&id=2bd044bc&scoped=true&lang=css */ "./node_modules/vue-style-loader/index.js!./node_modules/css-loader/dist/cjs.js!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/vue-loader/dist/index.js??ruleSet[1].rules[9].use[0]!./src/components/AuthForm.vue?vue&type=style&index=0&id=2bd044bc&scoped=true&lang=css");
-/* harmony import */ var _node_modules_vue_style_loader_index_js_node_modules_css_loader_dist_cjs_js_node_modules_vue_loader_dist_stylePostLoader_js_node_modules_vue_loader_dist_index_js_ruleSet_1_rules_9_use_0_AuthForm_vue_vue_type_style_index_0_id_2bd044bc_scoped_true_lang_css__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_node_modules_vue_style_loader_index_js_node_modules_css_loader_dist_cjs_js_node_modules_vue_loader_dist_stylePostLoader_js_node_modules_vue_loader_dist_index_js_ruleSet_1_rules_9_use_0_AuthForm_vue_vue_type_style_index_0_id_2bd044bc_scoped_true_lang_css__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony reexport (unknown) */ var __WEBPACK_REEXPORT_OBJECT__ = {};
-/* harmony reexport (unknown) */ for(const __WEBPACK_IMPORT_KEY__ in _node_modules_vue_style_loader_index_js_node_modules_css_loader_dist_cjs_js_node_modules_vue_loader_dist_stylePostLoader_js_node_modules_vue_loader_dist_index_js_ruleSet_1_rules_9_use_0_AuthForm_vue_vue_type_style_index_0_id_2bd044bc_scoped_true_lang_css__WEBPACK_IMPORTED_MODULE_0__) if(__WEBPACK_IMPORT_KEY__ !== "default") __WEBPACK_REEXPORT_OBJECT__[__WEBPACK_IMPORT_KEY__] = () => _node_modules_vue_style_loader_index_js_node_modules_css_loader_dist_cjs_js_node_modules_vue_loader_dist_stylePostLoader_js_node_modules_vue_loader_dist_index_js_ruleSet_1_rules_9_use_0_AuthForm_vue_vue_type_style_index_0_id_2bd044bc_scoped_true_lang_css__WEBPACK_IMPORTED_MODULE_0__[__WEBPACK_IMPORT_KEY__]
 /* harmony reexport (unknown) */ __webpack_require__.d(__webpack_exports__, __WEBPACK_REEXPORT_OBJECT__);
 
 
@@ -4164,28 +4168,6 @@ if(content.locals) module.exports = content.locals;
 // add the styles to the DOM
 var add = (__webpack_require__(/*! !../node_modules/vue-style-loader/lib/addStylesClient.js */ "./node_modules/vue-style-loader/lib/addStylesClient.js")["default"])
 var update = add("45d7b290", content, false, {});
-// Hot Module Replacement
-if(false) // removed by dead control flow
-{}
-
-/***/ },
-
-/***/ "./node_modules/vue-style-loader/index.js!./node_modules/css-loader/dist/cjs.js!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/vue-loader/dist/index.js??ruleSet[1].rules[9].use[0]!./src/components/AuthForm.vue?vue&type=style&index=0&id=2bd044bc&scoped=true&lang=css"
-/*!**************************************************************************************************************************************************************************************************************************************************************************************************!*\
-  !*** ./node_modules/vue-style-loader/index.js!./node_modules/css-loader/dist/cjs.js!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/vue-loader/dist/index.js??ruleSet[1].rules[9].use[0]!./src/components/AuthForm.vue?vue&type=style&index=0&id=2bd044bc&scoped=true&lang=css ***!
-  \**************************************************************************************************************************************************************************************************************************************************************************************************/
-(module, __unused_webpack_exports, __webpack_require__) {
-
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(/*! !!../../node_modules/css-loader/dist/cjs.js!../../node_modules/vue-loader/dist/stylePostLoader.js!../../node_modules/vue-loader/dist/index.js??ruleSet[1].rules[9].use[0]!./AuthForm.vue?vue&type=style&index=0&id=2bd044bc&scoped=true&lang=css */ "./node_modules/css-loader/dist/cjs.js!./node_modules/vue-loader/dist/stylePostLoader.js!./node_modules/vue-loader/dist/index.js??ruleSet[1].rules[9].use[0]!./src/components/AuthForm.vue?vue&type=style&index=0&id=2bd044bc&scoped=true&lang=css");
-if(content.__esModule) content = content.default;
-if(typeof content === 'string') content = [[module.id, content, '']];
-if(content.locals) module.exports = content.locals;
-// add the styles to the DOM
-var add = (__webpack_require__(/*! !../../node_modules/vue-style-loader/lib/addStylesClient.js */ "./node_modules/vue-style-loader/lib/addStylesClient.js")["default"])
-var update = add("4be7fbf9", content, false, {});
 // Hot Module Replacement
 if(false) // removed by dead control flow
 {}
@@ -4561,7 +4543,7 @@ module.exports = __webpack_require__.p + "assets/images/logo.5d5014ba3e4201b16dd
 (module) {
 
 "use strict";
-module.exports = /*#__PURE__*/JSON.parse('{"name":"enerki","version":"0.10.0","private":true,"license":"MIT","scripts":{"dev":"webpack serve --config webpack.config.js","build":"webpack --config webpack.config.js","lint":"eslint ./src --ext .js,.vue","ignore-env":"git update-index --assume-unchanged env.ts","lint:fix":"eslint ./src --ext .js,.vue --fix","format":"prettier \'src/**/*.{js,vue,css,md,json}\' --write","chrome":"open -n -a \\"Google Chrome\\" --args --disable-web-security --user-data-dir=\\"/tmp/chrome_dev_test\\" http://localhost:4200/enerki/","start":"npm run dev & npm run chrome"},"dependencies":{"ant-plus-next":"^0.4.0","axios":"^1.11.0","bootstrap":"^5.3.7","file-loader":"^6.2.0","markdown-it":"^15.0.2","vue":"^3.4.26"},"devDependencies":{"@babel/core":"^7.24.5","@babel/preset-env":"^7.24.5","@types/markdown-it":"^14.2.0","@types/node":"^26.6.4","@vue/compiler-sfc":"^3.5.18","babel-loader":"^10.0.0","css-loader":"^7.1.2","globals":"^16.0.0","html-webpack-plugin":"^5.6.8","prettier":"^3.9.9","ts-loader":"^9.5.2","typescript":"^5.8.3","vue-loader":"^17.4.2","vue-style-loader":"^4.1.3","vue-tsc":"^3.0.3","webpack":"^5.91.0","webpack-bundle-analyzer":"^5.4.0","webpack-cli":"^7.2.3","webpack-dev-server":"^6.0.0"}}');
+module.exports = /*#__PURE__*/JSON.parse('{"name":"enerki","version":"0.10.1","private":true,"license":"MIT","scripts":{"dev":"webpack serve --config webpack.config.js","build":"webpack --config webpack.config.js","lint":"eslint ./src --ext .js,.vue","ignore-env":"git update-index --assume-unchanged env.ts","lint:fix":"eslint ./src --ext .js,.vue --fix","format":"prettier \'src/**/*.{js,vue,css,md,json}\' --write","chrome":"open -n -a \\"Google Chrome\\" --args --disable-web-security --user-data-dir=\\"/tmp/chrome_dev_test\\" http://localhost:4200/enerki/","start":"npm run dev & npm run chrome"},"dependencies":{"ant-plus-next":"^0.4.0","axios":"^1.11.0","bootstrap":"^5.3.7","file-loader":"^6.2.0","markdown-it":"^15.0.2","vue":"^3.4.26"},"devDependencies":{"@babel/core":"^7.24.5","@babel/preset-env":"^7.24.5","@types/markdown-it":"^14.2.0","@types/node":"^26.6.4","@vue/compiler-sfc":"^3.5.18","babel-loader":"^10.0.0","css-loader":"^7.1.2","globals":"^16.0.0","html-webpack-plugin":"^5.6.8","prettier":"^3.9.9","ts-loader":"^9.5.2","typescript":"^5.8.3","vue-loader":"^17.4.2","vue-style-loader":"^4.1.3","vue-tsc":"^3.0.3","webpack":"^5.91.0","webpack-bundle-analyzer":"^5.4.0","webpack-cli":"^7.2.3","webpack-dev-server":"^6.0.0"}}');
 
 /***/ }
 
