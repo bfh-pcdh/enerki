@@ -14,6 +14,7 @@ export enum LANG {
 
 export enum STORE_KEY {
   TOKEN = 'enerki-token',
+  SEARCH_TOKEN = 'tavily-token',
   TEMP = 'enerki-temp-'
 }; 
 
@@ -53,6 +54,25 @@ interface Store {
 
 const USE_TOOLS = false;
 
+/**
+ * Fetches tokens for a connection if available on the browser store
+ * @param c the connection without tokens
+ * @returns the same connection with matching tokens
+ */
+function getConnectionTokens(c: Connection): Connection {
+  if (c.TOKEN) {
+      persist(STORE_KEY.TOKEN + getIdentifier(c), c.TOKEN);
+    } else {
+      c.TOKEN = getPersisted<string>(STORE_KEY.TOKEN + getIdentifier(c)) || '';
+    }
+    if (c.SEARCH_KEY) {
+      persist(STORE_KEY.SEARCH_TOKEN + getIdentifier(c), c.SEARCH_KEY);
+    } else {
+      c.SEARCH_KEY = getPersisted<string>(STORE_KEY.SEARCH_TOKEN + getIdentifier(c)) || '';
+    }
+    return c;
+}
+
 const storeObj: Store = {
   power: new PowerService({debug: false}),
   heartRate: new HeartRateService(),
@@ -67,7 +87,7 @@ const storeObj: Store = {
   useTools: USE_TOOLS,
   chatMessages: [...getSystemPrompts(LANG.DE, USE_TOOLS)],
   lang: LANG.DE,
-  connection: {...ENV[0]},
+  connection: getConnectionTokens(ENV[0]),
   setExamplePromptsVisible(v) {
     this.examplePromptsVisible = v;
   },
@@ -207,18 +227,23 @@ const storeObj: Store = {
     return this.useTools;
   },
   /**
-   * 
+   * Sets a connection and persists the tokens. if no tokens are provided but available in store
+   * the tokens are set to the connection
    * @param newConnection 
    */
-  setConnection(newConnection: Connection): void {
-    this.connection = newConnection;
-    console.log(this);
+  setConnection(c: Connection): void {
+    this.connection = getConnectionTokens(c);
   }
+}
+
+function getIdentifier(c: Connection): string {
+  return '-' + c.BASE_URL.split('https://')[1];
 }
 
 export const store = reactive(storeObj);
 
 type StoreKey = keyof typeof store;
+
 const storePropsToPersist: StoreKey[] = [
   'activeCard',
   'cardDrawn',

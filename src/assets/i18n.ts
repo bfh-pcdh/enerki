@@ -47,6 +47,10 @@ const KEYS: {[key: string]: {de: string, fr: string}} = {
         de: 'OK',
         fr: 'OK'
     },
+    SET: {
+        de: 'setzen',
+        fr: 'définir'
+    },
     SAVE: {
         de: 'Speichern',
         fr: 'Enregistrer'
@@ -128,6 +132,10 @@ const KEYS: {[key: string]: {de: string, fr: string}} = {
     VERSION_LABEL: {
         de: 'enerKI Version:',
         fr: 'enerKI version :'
+    },
+    SELECT_AI: {
+        de: 'KI-Anbieter wählen',
+        fr: 'choisir l\'IA'
     },
     CLOSE: {
         de: 'schliessen',

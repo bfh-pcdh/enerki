@@ -11,7 +11,6 @@ import { i18n } from '@/assets/i18n';
 
 // define props
 const props = defineProps<{
-  token: string;
   percent: number;
 }>();
 
@@ -101,7 +100,7 @@ function getUsageInfoString(usage: {input_tokens: number, output_tokens: number}
  */
 function runSearch(query: string): Promise<string> {
   return axios.post(
-    'https://api.tavily.com/search',
+    store.connection.SEARCH_URL,
     {
       query: query,
       search_depth: 'basic',
@@ -111,7 +110,7 @@ function runSearch(query: string): Promise<string> {
     {
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${store.connection.TAVILY_KEY}`,
+        Authorization: `Bearer ${store.connection.SEARCH_KEY}`,
       },
       timeout: 0,
     }
@@ -192,7 +191,7 @@ async function sendWithTools(): Promise<any> {
   const config = {
     headers: {
       'Content-Type': 'application/json',
-      Authorization: 'Bearer ' + props.token,
+      Authorization: 'Bearer ' + store.connection.TOKEN,
       'Cache-Control': 'no-cache, no-store'
     }
   };

@@ -25,6 +25,10 @@ npm run build
 ```
 
 ## Changelog
+### 2026-11-17 V0.10.1
+- Redone settings
+- Changed search to tavily
+
 ### 2026-11-16 V0.10.0
 - Add tool use (duckduckgo search, url fetch)
 - Add toggle for tool use

@@ -1,17 +1,19 @@
 export const ENV = [
   {
-    NAME: 'BFH MLMP (für extern)',
+    NAME: 'BFH MLMP GPT-oss (extern)',
     BASE_URL: 'https://inference.proxy.ti.bfh.ch',
     ENDPOINT: '/v1/chat/completions',
     MODEL: 'gpt-oss:120b',
     REASONING: 'low',
     JOULE_PER_INPUT_TOKEN: '0.1601',
     JOULE_PER_OUTPUT_TOKEN: '1.9598',
-    TOKEN: '', // insert your TOKEN here
-    TAVILY_KEY: ''
+    TOKEN: '', // insert your TOKEN here,
+    SEARCH_URL: 'https://api.tavily.com/search',
+    SEARCH_KEY: '',
+
   },
   {
-    NAME: 'BFH MLMP gemma (für extern)',
+    NAME: 'BFH MLMP gemma (extern)',
     BASE_URL: 'https://inference.proxy.ti.bfh.ch',
     ENDPOINT: '/v1/chat/completions',
     MODEL: 'gemma-4-26b',
@@ -19,10 +21,11 @@ export const ENV = [
     JOULE_PER_INPUT_TOKEN: '0.0916',
     JOULE_PER_OUTPUT_TOKEN: '1.177',
     TOKEN: '', // insert your TOKEN here
-    TAVILY_KEY: ''
+    SEARCH_URL: 'https://api.tavily.com/search',
+    SEARCH_KEY: '',
   },
   {
-    NAME: 'BFH MLMP (für intern)',
+    NAME: 'BFH MLMP (intern)',
     BASE_URL: 'https://inference.mlmp.ti.bfh.ch',
     ENDPOINT: '/v1/chat/completions',
     MODEL: 'gpt-oss:120b',
@@ -30,7 +33,8 @@ export const ENV = [
     JOULE_PER_INPUT_TOKEN: '0.1601',
     JOULE_PER_OUTPUT_TOKEN: '1.9598',
     TOKEN: '', // insert your TOKEN here
-    TAVILY_KEY: ''
+    SEARCH_URL: 'https://api.tavily.com/search',
+    SEARCH_KEY: '',
   },
   {
     NAME: 'LM Studio (lokal)',
@@ -41,7 +45,8 @@ export const ENV = [
     JOULE_PER_INPUT_TOKEN: '0.2',
     JOULE_PER_OUTPUT_TOKEN: '2',
     TOKEN: '', // insert your TOKEN here
-    TAVILY_KEY: ''
+    SEARCH_URL: '',
+    SEARCH_KEY: '',
   },
   {
     NAME: 'OpenAI (ChatGPT)',
@@ -52,6 +57,7 @@ export const ENV = [
     JOULE_PER_INPUT_TOKEN: '0.2',
     JOULE_PER_OUTPUT_TOKEN: '2',
     TOKEN: '', // insert your TOKEN here
-    TAVILY_KEY: ''
+    SEARCH_URL: 'https://api.tavily.com/search',
+    SEARCH_KEY: '',
   }
 ];
