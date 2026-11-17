@@ -1,18 +1,14 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { ENV } from "../env";
-import AuthForm from "./components/AuthForm.vue";
 import ConnectModal from "./components/ConnectModal.vue";
 import Settings from "./components/Settings.vue";
 import Chat from "./components/Chat.vue";
-import { getPersisted, LANG, persist, store, STORE_KEY } from "./store";
+import { LANG, store } from "./store";
 import PowerSimulator from "./components/PowerSimulator.vue";
 import QuizCardModal from "./components/QuizCardModal.vue";
 import { i18n } from "./assets/i18n";
 
 const version = require("../package.json").version;
-
-const token = ref(getPersisted<string>(STORE_KEY.TOKEN) || ENV[0].TOKEN);
 
 const error = ref<string | undefined>();
 
@@ -30,9 +26,6 @@ document.addEventListener("keydown", function (event) {
   }
 });
 
-// fast hack for displaying settings
-showSettings.value = window.location.search.includes("settings=true");
-
 /**
  * Calculates the header buttons
  * <div
@@ -45,54 +38,43 @@ showSettings.value = window.location.search.includes("settings=true");
       </div>
  */
 function getHeaderButtons() {
-  return [
-    {
-      icon: "🀙",
-      title: store.cardDrawn ? i18n("NEW_CARD") : i18n("SHOW_CARD"),
-      action: showCard,
-      style: store.cardDrawn
-        ? "text-shadow: #fac300 0px 0 3px; line-height: 1.8em;"
-        : "line-height: 1.8em;",
-    },
-    {
-      icon: "⟲",
-      title: i18n("RESET"),
-      action: resetUser,
-      style: "",
-    },
-    {
-      icon: "🔍",
-      title: store.getUseTools() ? i18n("TOOL_USE_OFF") : i18n("TOOL_USE_ON"),
-      action: () => store.toggleUseTools(),
-      style: store.getUseTools()
-        ? "line-height: 2.8em; font-size: 1.5em; text-shadow: rgb(250, 195, 0) 0px 0px 3px; margin-right: 0.2em;"
-        : "line-height: 2.8em; font-size: 1.5em; filter: saturate(0); margin-right: 0.2em;",
-    },
-    {
-      icon: store.lang === LANG.DE ? "🇩🇪" : "🇫🇷",
-      title: i18n("LANGUAGE"),
-      action: toggleLanguage,
-      style: "filter: saturate(0)",
-    },
-    // {
-    //   icon: '⚙︎',
-    //   title: 'Einstellungen',
-    //   action: () => (showSettings.value = !showSettings.value),
-    //   style: '',
-    // },
-  ];
-}
-
-/**
- * Sets the token recieved from authentication
- * @param t    object with the new token and a boolean value
- *             that defines if the token should be persistet to local storage
- */
-function setToken(t: { token: string; persist: boolean }) {
-  token.value = t.token;
-  if (t.persist) {
-    persist(STORE_KEY.TOKEN, token.value);
-  }
+  const CARD = {
+    icon: "🀙",
+    title: store.cardDrawn ? i18n("NEW_CARD") : i18n("SHOW_CARD"),
+    action: showCard,
+    style: store.cardDrawn
+      ? "text-shadow: #fac300 0px 0 3px; line-height: 1.8em;"
+      : "line-height: 1.8em;",
+  };
+  const RESET = {
+    icon: "⟲",
+    title: i18n("RESET"),
+    action: resetUser,
+    style: "",
+  };
+  const TOOL = {
+    icon: "🔍",
+    title: store.getUseTools() ? i18n("TOOL_USE_OFF") : i18n("TOOL_USE_ON"),
+    action: () => store.toggleUseTools(),
+    style: store.getUseTools()
+      ? "line-height: 2.8em; font-size: 1.5em; text-shadow: rgb(250, 195, 0) 0px 0px 3px; margin-right: 0.2em;"
+      : "line-height: 2.8em; font-size: 1.5em; filter: saturate(0); margin-right: 0.2em;",
+  };
+  const LANGUAGE = {
+    icon: store.lang === LANG.DE ? "🇩🇪" : "🇫🇷",
+    title: i18n("LANGUAGE"),
+    action: toggleLanguage,
+    style: "filter: saturate(0)",
+  };
+  const SETTINGS = {
+    icon: "⚙︎",
+    title: i18n("SETTINGS"),
+    action: () => (showSettings.value = !showSettings.value),
+    style: "",
+  };
+  return store.connection.SEARCH_URL == ""
+    ? [CARD, RESET, LANGUAGE, SETTINGS]
+    : [CARD, RESET, TOOL, LANGUAGE, SETTINGS];
 }
 
 /**
@@ -124,7 +106,6 @@ function resetUser() {
 function reset() {
   store.resetUser();
   error.value = undefined;
-  token.value = ENV[0].TOKEN;
 }
 
 /**
@@ -141,7 +122,6 @@ function showCard() {
  */
 function closeSettings() {
   showSettings.value = false;
-  window.location.search = "settings=" + showSettings.value;
 }
 
 /**
@@ -189,53 +169,49 @@ function getToastOpacity(i: number): string {
     </div>
   </header>
   <Settings v-if="showSettings" @on-close="closeSettings" />
-  <div v-else>
-    <!-- if no token is set, we show the auth form -->
-    <auth-form v-if="token?.length == 0" @on-token="setToken" @on-error="handleError" />
 
-    <main v-else>
-      <!-- display error message -->
-      <div class="error" v-if="error">
-        <h2>{{ i18n("ERROR") }}</h2>
-        {{ error }}
-        <br />
-        <div class="error-buttons">
-          <button @click="reset">{{ i18n("RESET") }}</button>
-          <button @click="error = ''">{{ i18n("OK") }}</button>
-        </div>
+  <main v-else>
+    <!-- display error message -->
+    <div class="error" v-if="error">
+      <h2>{{ i18n("ERROR") }}</h2>
+      {{ error }}
+      <br />
+      <div class="error-buttons">
+        <button @click="reset">{{ i18n("RESET") }}</button>
+        <button @click="error = ''">{{ i18n("OK") }}</button>
       </div>
+    </div>
 
-      <!-- chat window -->
-      <chat v-else :token="token" :percent="percent" @on-error="handleError" />
+    <!-- chat window -->
+    <chat v-else :percent="percent" @on-error="handleError" />
 
-      <!-- window for power simulation / debug -->
-      <PowerSimulator
-        v-if="store.connected && store.isPedalling() && !error"
-        :debug="store.isDebug"
-        :watt="Math.round(store.power.getValues().value)"
-      />
-    </main>
-
-    <ConnectModal v-if="!store.connected" @on-error="handleError" />
-    <QuizCardModal
-      v-if="store.activeCard && showCardModal"
-      :card="store.activeCard"
-      @on-close="showCardModal = false"
+    <!-- window for power simulation / debug -->
+    <PowerSimulator
+      v-if="store.connected && store.isPedalling() && !error"
+      :debug="store.isDebug"
+      :watt="Math.round(store.power.getValues().value)"
     />
+  </main>
 
-    <ul class="toast-list">
-      <!--li v-for="(toast, i) of store.toasts" :style="getToastOpacity(i)">
+  <ConnectModal v-if="!store.connected" @on-error="handleError" />
+  <QuizCardModal
+    v-if="store.activeCard && showCardModal"
+    :card="store.activeCard"
+    @on-close="showCardModal = false"
+  />
+
+  <ul class="toast-list">
+    <!--li v-for="(toast, i) of store.toasts" :style="getToastOpacity(i)">
         <div class="alert alert-info" role="alert">
           {{ toast }}
         </div>
       </li-->
-      <li v-if="store.toasts.length > 0">
-        <div class="alert alert-info" role="alert">
-          {{ store.toasts.at(-1) }}
-        </div>
-      </li>
-    </ul>
-  </div>
+    <li v-if="store.toasts.length > 0">
+      <div class="alert alert-info" role="alert">
+        {{ store.toasts.at(-1) }}
+      </div>
+    </li>
+  </ul>
 </template>
 
 <style scoped>
@@ -264,20 +240,23 @@ header h1 {
   font-size: 1.5em;
   font-weight: bold;
 }
+
 .error-buttons {
   width: fit-content;
   margin: 0 auto;
   display: block;
 }
+
 .error button {
   margin: 0.2em;
 }
+
 .header-buttons {
-  width: 8em;
   margin-left: auto;
   justify-content: space-evenly;
   display: flex;
 }
+
 .header-button {
   cursor: pointer;
   text-decoration: none;
@@ -286,6 +265,7 @@ header h1 {
   line-height: 2em;
   margin-left: 0.2em;
 }
+
 .glow {
   text-shadow: #fac300 0px 0 3px;
 }

@@ -1,53 +1,35 @@
 <script setup lang="ts">
-import { i18n } from '@/assets/i18n';
-import { ref } from 'vue';
-import { store } from '../store';
+import { i18n } from "@/assets/i18n";
+import { ref } from "vue";
+import { store, persist, STORE_KEY, getPersisted } from "../store";
 
-const emit = defineEmits(['onToken', 'onError']);
+const llm_token = ref(getPersisted<string>(STORE_KEY.TOKEN) || "");
+const search_token = ref(getPersisted<string>(STORE_KEY.SEARCH_TOKEN) || "");
 
-const token = ref('');
-const persist = ref(false);
-
-// TODO: very basic validation, update this later
-function isValid(token: string): Promise<boolean> {
-  return Promise.resolve(token.length > 0);
-}
-
-function setToken() {
-  isValid(token.value).then((valid) => {
-    if (valid) {
-      emit('onToken', {
-        token: token.value,
-        persist: persist.value
-      });
-    }
-  });
-}
-function togglePersist() {
-  if (persist.value) {
-    persist.value = false;
-  } else {
-    const confirm = window.confirm(i18n('AUTH_CONFIRM'));
-    window.setTimeout(() => (persist.value = confirm), 1); // hack necessary to set negative answer when user checked checkbox and said no in prompt
-  }
+function setTokens() {
+  persist(STORE_KEY.TOKEN, llm_token.value);
+  persist(STORE_KEY.SEARCH_TOKEN, search_token.value);
 }
 </script>
 
 <template>
   <form action="#">
-    <div class="token-box">
+    <div>
       <input
         type="text"
-        v-model="token"
+        v-model="llm_token"
         :placeholder="i18n('ENTER_TOKEN') + store.connection.NAME"
-        style="width: 100%"
+        style="width: 80%"
       />
-      <button @click="setToken" type="submit" :disabled="token.length == 0">
-        {{ i18n('SAVE').toUpperCase() }}
+      <input
+        type="text"
+        v-model="search_token"
+        :placeholder="i18n('ENTER_TOKEN') + ' TAVILY'"
+        style="width: 80%"
+      />
+      <button @click="setTokens" type="submit" :disabled="llm_token.length == 0">
+        {{ i18n("SAVE").toUpperCase() }}
       </button>
-    </div>
-    <div class="persist-box">
-      <input type="checkbox" v-model="persist" @click="togglePersist" />{{ i18n('AUTH_PERSIST') }}
     </div>
   </form>
 </template>

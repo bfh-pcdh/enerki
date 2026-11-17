@@ -11,7 +11,6 @@ import { i18n } from '@/assets/i18n';
 
 // define props
 const props = defineProps<{
-  token: string;
   percent: number;
 }>();
 
@@ -96,13 +95,29 @@ function getUsageInfoString(usage: {input_tokens: number, output_tokens: number}
 }
 
 /**
- * Runs a search on duck duck go with a given query
+ * Runs a web search with a given query
  * @param query the search string to query
  */
 function runSearch(query: string): Promise<string> {
-  return axios
-    .get(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`)
-    .then((res) => JSON.stringify(res.data));
+  return axios.post(
+    store.connection.SEARCH_URL,
+    {
+      query: query,
+      search_depth: 'basic',
+      include_favicon: false,
+      include_usage: true,
+    },
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${store.connection.SEARCH_KEY}`,
+      },
+      timeout: 0,
+    }
+  ).then((res) => JSON.stringify(res.data));
+  // return axios
+  //   .get(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`)
+  //   .then((res) => JSON.stringify(res.data));
 }
 
 /**
@@ -118,9 +133,6 @@ function fetchUrl(url: string): Promise<string> {
  * for tool use
  */
 async function sendWithTools(): Promise<any> {
-  const MAX_TOOL_CALLS = 5;
-
-
   const SEARCH_TOOL = {
     type: 'function',
     function: {
@@ -176,7 +188,7 @@ async function sendWithTools(): Promise<any> {
   const config = {
     headers: {
       'Content-Type': 'application/json',
-      Authorization: 'Bearer ' + props.token,
+      Authorization: 'Bearer ' + store.connection.TOKEN,
       'Cache-Control': 'no-cache, no-store'
     }
   };
@@ -186,7 +198,7 @@ async function sendWithTools(): Promise<any> {
   let messages = [...store.chatMessages];
 
   // loop for maximum tool calls
-  for (let i = 0; i < MAX_TOOL_CALLS; i++) {
+  for (let i = 0; i < store.connection.MAX_TOOL_CALLS; i++) {
     const result = await axios.post(url, { ...body, messages }, config);
     const msg = result.data.choices[0].message;
     messages.push(msg);

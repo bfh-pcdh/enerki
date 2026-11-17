@@ -20,15 +20,15 @@
 
 ### Problem: Es kommt eine rote Fehlermeldung "Es ist etwas schiefgegangen"
 #### In der Fehlermeldung steht der ```status code 401```
-- Klicke auf den Knopf "zurücksetzen" und gib ein gültiges Access-Token ein
+- Überprüfe in den Einstellungen, ob das LLM Token für die entsprechende Verbindung gesetzt und noch gültig ist.
 #### Es steht ein anderer status code
 - Stelle sicher, dass eine Internetverbindung besteht und OpenVPN Connect verbunden ist (falls sich der Rechner nicht im BFH-Netz befindet)
-- Prüfe auf [https://bfh-pcdh.github.io/enerki/?settings=true](https://bfh-pcdh.github.io/enerki/?settings=true), ob das richtige Modell ausgewählt ist (und du das entsprechende Token eingegeben hast)
+- Prüfe in den Einstellungen, ob das richtige Modell ausgewählt ist (und du das entsprechende Token eingegeben hast)
 - Falls du keine Lösung findest: Kopiere die Fehlermeldung und schicke sie an heg2@bfh.ch.
 #### Der Laptop ist NICHT im BFH-Netzwerk
-- Falls enerKI extern zum Einsatz kommt, muss entweder auf [https://bfh-pcdh.github.io/enerki/?settings=true](https://bfh-pcdh.github.io/enerki/?settings=true) das Modell `MLMP (für extern)` ausgewählt sein, oder eine VPN-Verbindung mittels OpenVPN Connect (installiert und im Dock) hergestellt werden.
+- Falls enerKI extern zum Einsatz kommt, muss entweder in den Einstellungen ein Modell mit dem Vermerk "extern" ausgewählt sein, oder eine VPN-Verbindung mittels OpenVPN Connect (installiert und im Dock) hergestellt werden.
 
 ### Problem: Ich muss ein Access-Token eingeben, aber kenne keines
 - Melde dich beim enerKI-Team!
 
-2027-10-12 heg2@bfh.ch
+2027-11-17 heg2@bfh.ch

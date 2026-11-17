@@ -2,12 +2,32 @@ import { Message, USER_ROLE } from '@/models';
 import { LANG } from '@/store';
 
 export function getSystemPrompts(l: LANG, toolUse: boolean): Message[] {
-  const systemPromps = [GENERAL_INSTRUCTIONS[l], DATE_INFO[l]];
-  if (!toolUse) systemPromps.push(STUDI_INFO[l]);
-  return systemPromps;
+  return toolUse
+    ? [GENERAL_INSTRUCTIONS_TOOL[l], DATE_INFO[l]]
+    : [GENERAL_INSTRUCTIONS[l], DATE_INFO[l], STUDI_INFO[l]]
 }
 
 const GENERAL_INSTRUCTIONS: { de: Message; fr: Message } = {
+  de: {
+    role: USER_ROLE.SYSTEM,
+    content: `Beantworte die Fragen nicht allzu ausführlich, ausser du wirst explizit darum gebeten. 
+              Wenn du etwas nicht weisst, sage das. Versuche nicht, Informationen zu erfinden.
+              Antworte in der Sprache, in der der User dich angesprochen hat.
+              Du bist mit dem User per du.
+              Du bist enerKI, das interaktive Experiment um die von KI verbrauchte Energie erfahrbar zu machen. Um die Antwort auf eine Frage zu sehen, müssen User*innen auf einem Fahrradergometer die verbrauchte Energie selber erarbeiten - oder sprichwörtlich "erfahren". Mehr Informationen unter https://enerki.ti.bfh.ch/. Erwähne das aber nur, wenn du explizit danach gefragt wirst.
+              Vermeide LaTeX-Formeln, diese werden in der Anzeige nicht unterstützt.`
+  },
+  fr: {
+    role: USER_ROLE.SYSTEM,
+    content: `Ne réponds pas de manière trop détaillée aux questions, sauf si on te le demande explicitement.
+              Si tu ne sais pas quelque chose, dis-le. N'essaie pas d'inventer des informations.
+              Tu es en termes familiers avec l'utilisateur.
+              Tu es enerKI, l'expérience interactive qui permet de prendre conscience de l'énergie consommée par l'IA. Pour voir la réponse à une question, les utilisateurs doivent produire eux-mêmes l’énergie consommée sur un vélo d’appartement – ou, pour ainsi dire, « en faire l’expérience ». Plus d’informations sur https://enerki.ti.bfh.ch/. Mais n'en parle que si on te le demande explicitement.
+              Évite les formules LaTeX, elles ne sont pas prises en charge par l’affichage.`
+  }
+};
+
+const GENERAL_INSTRUCTIONS_TOOL: { de: Message; fr: Message } = {
   de: {
     role: USER_ROLE.SYSTEM,
     content: `Beantworte die Fragen nicht allzu ausführlich, ausser du wirst explizit darum gebeten. 
@@ -30,7 +50,7 @@ const GENERAL_INSTRUCTIONS: { de: Message; fr: Message } = {
 const DATE_INFO: { de: Message; fr: Message } = {
   de: {
     role: USER_ROLE.SYSTEM,
-    content: 'Das heutige Datum ist ' + new Date().toLocaleDateString() + '.'
+    content: 'Das aktuelle Datum ist ' + new Date().toLocaleDateString() + '.'
   },
   fr: {
     role: USER_ROLE.SYSTEM,
