@@ -25,6 +25,9 @@ npm run build
 ```
 
 ## Changelog
+### 2026-11-20 V0.10.2
+- Disable URL tool due to buggy behaviour
+
 ### 2026-11-17 V0.10.1
 - Redone settings
 - Changed search to tavily
