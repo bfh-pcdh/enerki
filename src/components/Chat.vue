@@ -168,7 +168,7 @@ async function sendWithTools(): Promise<any> {
     messages: [...store.chatMessages],
     tools: store.getUseTools() ? [
       SEARCH_TOOL,
-      WEBSITE_TOOL
+      // WEBSITE_TOOL disabled because it is too buggy right now
     ] : [],
     tool_choice: 'auto',
     reasoning: {
@@ -223,7 +223,7 @@ async function sendWithTools(): Promise<any> {
           messages.push({
             role: USER_ROLE.TOOL,
             tool_call_id: call.id,
-            content: await fetchUrl(args.url)
+            content: await fetchUrl(args.query)
           });
           break;
       }
